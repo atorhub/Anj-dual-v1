@@ -1,141 +1,87 @@
-* {
-  box-sizing: border-box;
+/* ===============================
+   RESPONSIVE LAYOUT FIX
+   Mobile First Adjustments
+   =============================== */
+
+@media (max-width: 768px) {
+
+  /* App shell becomes vertical */
+  .app-shell {
+    display: block;
+  }
+
+  /* Sidebar hidden by default on mobile */
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    width: 240px;
+    z-index: 999;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+
+  /* When toggled */
+  body:not(.sidebar-hidden) .sidebar {
+    transform: translateX(0);
+  }
+
+  /* Main content full width */
+  .main {
+    margin-left: 0 !important;
+    width: 100%;
+    padding: 12px;
+  }
+
+  /* Top bar spacing */
+  .topbar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* Grid becomes stacked */
+  .grid {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* Panels full width */
+  .panel {
+    width: 100%;
+  }
+
+  /* Parsed inputs stack */
+  .panel label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  /* History list scrollable */
+  .history-panel {
+    max-height: 40vh;
+    overflow-y: auto;
+  }
 }
 
-body {
-  margin: 0;
-  font-family: system-ui, sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  transition: background .5s ease;
-}
+/* ===============================
+   Desktop Overrides
+   =============================== */
 
-body.theme-default {
-  --bg: radial-gradient(circle at top,#1e1b4b,#020617);
-  --card: rgba(255,255,255,.08);
-  --text: #e5e7eb;
-  --accent: #8b5cf6;
-}
+@media (min-width: 769px) {
 
-body.theme-galaxy {
-  --bg: radial-gradient(circle at top,#2d1b69,#07000f);
-  --card: rgba(255,255,255,.1);
-  --text: #f5f3ff;
-  --accent: #c084fc;
-}
+  .sidebar {
+    transform: translateX(0) !important;
+    position: relative;
+  }
 
-body.theme-fairy {
-  --bg: linear-gradient(135deg,#2e026d,#a21caf);
-  --card: rgba(255,255,255,.12);
-  --text: #fdf4ff;
-  --accent: #f0abfc;
-}
+  .main {
+    margin-left: 240px;
+  }
 
-body.theme-pink {
-  --bg: linear-gradient(135deg,#3b021f,#831843);
-  --card: rgba(255,255,255,.14);
-  --text: #ffe4f1;
-  --accent: #fb7185;
-}
-
-body.theme-dark {
-  --bg: #020617;
-  --card: rgba(255,255,255,.06);
-  --text: #e5e7eb;
-  --accent: #38bdf8;
-}
-
-body.theme-aqua {
-  --bg: radial-gradient(circle at top, #1ddfd3, #0b2c3d 70%);
-  --card: rgba(40, 180, 190, 0.18);
-  --accent: #1ddfd3;
-  --text: #eaffff;
-}
-
-body.theme-mint {
-  --bg: radial-gradient(circle at top, #7fffd4, #063b2c 70%);
-  --card: rgba(80, 200, 170, 0.18);
-  --accent: #7fffd4;
-  --text: #ecfffa;
-}
-
-body.theme-sunset {
-  --bg: radial-gradient(circle at top, #ff7a18, #3b1c2a 75%);
-  --card: rgba(255, 140, 90, 0.18);
-  --accent: #ff9a3c;
-  --text: #fff1e8;
-}
-
-body.theme-neon {
-  --bg: radial-gradient(circle at top, #00f2ff, #090a0f 75%);
-  --card: rgba(80, 220, 255, 0.18);
-  --accent: #00f2ff;
-  --text: #e9fcff;
-}
-
-body.theme-midnight {
-  --bg: radial-gradient(circle at top, #0b0f2f, #01010f 80%);
-  --card: rgba(40, 40, 80, 0.18);
-  --accent: #9aa5ff;
-  --text: #e6e9ff;
-}
-
-.app-shell {
-  display: flex;
-  min-height: 100vh;
-}
-
-.sidebar {
-  width: 220px;
-  padding: 20px;
-  background: rgba(0,0,0,.45);
-  backdrop-filter: blur(18px);
-  transition: width .3s ease, padding .3s ease;
-}
-
-.nav-item {
-  padding: 14px;
-  border-radius: 14px;
-  margin-bottom: 10px;
-  opacity: .7;
-  cursor: pointer;
-}
-
-.nav-item.active,
-.nav-item:hover {
-  opacity: 1;
-  background: var(--card);
-  box-shadow: 0 0 18px var(--accent);
-}
-
-.main {
-  flex: 1;
-  padding: 24px;
-}
-
-.panel {
-  background: var(--card);
-  border-radius: 22px;
-  padding: 22px;
-  backdrop-filter: blur(18px);
-}
-
-pre {
-  min-height: 120px;
-  padding: 16px;
-  border-radius: 14px;
-  background: rgba(255,255,255,.05);
-  white-space: pre-wrap;
-}
-
-pre:empty::before {
-  content: "Waiting for output…";
-  opacity: 0.35;
-  font-style: italic;
-}
-
-body.sidebar-hidden .sidebar {
-  width: 0;
-  padding: 0;
-  overflow: hidden;
+  body.sidebar-hidden .sidebar {
+    transform: translateX(0);
+  }
 }
