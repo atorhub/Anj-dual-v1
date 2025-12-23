@@ -10,7 +10,11 @@ document.addEventListener("DOMContentLoaded", () => {
     parse: document.getElementById("parseBtn"),
     theme: document.getElementById("themeSelect"),
     layout: document.getElementById("layoutSelect"),
-    historyList: document.getElementById("historyList")
+    historyList: document.getElementById("historyList"),
+    saveBtn: document.getElementById("saveBtn"),
+    editMerchant: document.getElementById("editMerchant"),
+    editDate: document.getElementById("editDate"),
+    editTotal: document.getElementById("editTotal")
   };
 
   function setStatus(msg, err = false) {
@@ -18,6 +22,7 @@ document.addEventListener("DOMContentLoaded", () => {
     el.status.style.color = err ? "#ff4d4d" : "#7CFC98";
   }
 
+  /* ---------- THEME & LAYOUT ---------- */
   el.theme.addEventListener("change", () => {
     document.body.classList.forEach(c => {
       if (c.startsWith("theme-")) document.body.classList.remove(c);
@@ -34,6 +39,7 @@ document.addEventListener("DOMContentLoaded", () => {
     localStorage.setItem("anj-layout", el.layout.value);
   });
 
+  /* ---------- OCR & PDF ---------- */
   async function runOCR(file) {
     setStatus("OCR running…");
     const res = await Tesseract.recognize(file, "eng", {
@@ -68,6 +74,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return txt.replace(/\s+/g, " ").trim();
   }
 
+  /* ---------- PARSER ---------- */
   function parseInvoice(text) {
     const out = { merchant: null, date: null, total: null };
     const total = text.match(/total[:\s]*₹?\s*([\d,.]+)/i);
@@ -78,6 +85,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return out;
   }
 
+  /* ---------- PROCESS ---------- */
   async function processFile(useOCR) {
     if (!el.file.files[0]) {
       setStatus("No file selected", true);
@@ -94,13 +102,17 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     text = cleanText(text);
-
     const parsed = parseInvoice(text);
+
     window._lastParsed = parsed;
 
     el.raw.textContent = text || "--";
     el.clean.textContent = text || "--";
     el.json.textContent = JSON.stringify(parsed, null, 2);
+
+    el.editMerchant.value = parsed.merchant || "";
+    el.editDate.value = parsed.date || "";
+    el.editTotal.value = parsed.total || "";
 
     setStatus("Done ✓");
   }
@@ -112,17 +124,23 @@ document.addEventListener("DOMContentLoaded", () => {
       setStatus("Nothing to parse", true);
       return;
     }
+
     const parsed = parseInvoice(el.clean.textContent);
     window._lastParsed = parsed;
+
     el.json.textContent = JSON.stringify(parsed, null, 2);
+    el.editMerchant.value = parsed.merchant || "";
+    el.editDate.value = parsed.date || "";
+    el.editTotal.value = parsed.total || "";
+
     setStatus("Parsed ✓");
   };
 
-  const sidebarToggle = document.getElementById("sidebarToggle");
-  sidebarToggle.onclick = () =>
+  /* ---------- SIDEBAR ---------- */
+  document.getElementById("sidebarToggle").onclick = () =>
     document.body.classList.toggle("sidebar-hidden");
 
-  /* -------- INDEXEDDB HISTORY -------- */
+  /* ---------- INDEXEDDB ---------- */
   let db;
 
   function initDB() {
@@ -144,16 +162,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function saveHistory(data) {
     if (!db) return;
+
     const tx = db.transaction("history", "readwrite");
     tx.objectStore("history").add({
-      ...data,
+      merchant: data.merchant,
+      date: data.date,
+      total: data.total,
       timestamp: Date.now()
     });
+
     tx.oncomplete = loadHistory;
   }
 
   function loadHistory() {
-    if (!el.historyList || !db) return;
+    if (!db || !el.historyList) return;
     el.historyList.innerHTML = "";
 
     const tx = db.transaction("history", "readonly");
@@ -179,22 +201,29 @@ document.addEventListener("DOMContentLoaded", () => {
     };
   }
 
-  document.addEventListener("keydown", e => {
-    if (e.ctrlKey && e.key === "s") {
-      e.preventDefault();
-      if (window._lastParsed) {
-        saveHistory(window._lastParsed);
-        setStatus("Saved to history ✓");
-      }
+  /* ---------- SAVE (MOBILE + DESKTOP) ---------- */
+  el.saveBtn.onclick = () => {
+    if (!window._lastParsed) {
+      setStatus("Nothing to save", true);
+      return;
     }
-  });
 
+    saveHistory({
+      merchant: el.editMerchant.value,
+      date: el.editDate.value,
+      total: el.editTotal.value
+    });
+
+    setStatus("Saved to history ✓");
+  };
+
+  /* ---------- RESTORE UI ---------- */
   const savedTheme = localStorage.getItem("anj-theme");
   const savedLayout = localStorage.getItem("anj-layout");
-
   if (savedTheme) document.body.classList.add(`theme-${savedTheme}`);
   if (savedLayout) document.body.classList.add(`layout-${savedLayout}`);
 
   initDB();
   setStatus("Ready ✓");
 });
+      
