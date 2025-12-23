@@ -11,7 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
     theme: document.getElementById("themeSelect"),
     layout: document.getElementById("layoutSelect"),
 
-    /* ✅ UI-only editable fields (ADDED) */
+    /* ✅ UI-only editable fields (ADDED earlier by you) */
     editMerchant: document.getElementById("editMerchant"),
     editDate: document.getElementById("editDate"),
     editTotal: document.getElementById("editTotal")
@@ -22,7 +22,7 @@ document.addEventListener("DOMContentLoaded", () => {
     el.status.style.color = err ? "#ff4d4d" : "#7CFC98";
   }
 
-  /* ================= THEME (UPDATED: SAVE) ================= */
+  /* ================= THEME (SAVE ON CHANGE) ================= */
   el.theme.addEventListener("change", () => {
     document.body.classList.forEach(c => {
       if (c.startsWith("theme-")) document.body.classList.remove(c);
@@ -33,7 +33,7 @@ document.addEventListener("DOMContentLoaded", () => {
     localStorage.setItem("anj-theme", theme);
   });
 
-  /* ================= LAYOUT (UPDATED: SAVE) ================= */
+  /* ================= LAYOUT (SAVE ON CHANGE) ================= */
   el.layout.addEventListener("change", () => {
     document.body.classList.forEach(c => {
       if (c.startsWith("layout-")) document.body.classList.remove(c);
@@ -181,7 +181,6 @@ document.addEventListener("DOMContentLoaded", () => {
     el.clean.textContent = text || "--";
     el.json.textContent = JSON.stringify(finalResult, null, 2);
 
-    /* ✅ Populate editable UI fields (ADDED) */
     el.editMerchant.value = finalResult.merchant || "";
     el.editDate.value = finalResult.date || "";
     el.editTotal.value = finalResult.total || "";
@@ -209,7 +208,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     el.json.textContent = JSON.stringify(result, null, 2);
 
-    /* ✅ Populate editable UI fields (ADDED) */
     el.editMerchant.value = result.merchant || "";
     el.editDate.value = result.date || "";
     el.editTotal.value = result.total || "";
@@ -223,18 +221,20 @@ document.addEventListener("DOMContentLoaded", () => {
       document.body.classList.toggle("sidebar-hidden");
   }
 
-  /* ================= RESTORE SAVED THEME & LAYOUT (ADDED) ================= */
-  const savedTheme = localStorage.getItem("anj-theme");
-  if (savedTheme) {
-    el.theme.value = savedTheme;
-    document.body.classList.add(`theme-${savedTheme}`);
-  }
+  /* ===== RESTORE THEME & LAYOUT (TIMING-SAFE, ANIMATION FIX) ===== */
+  requestAnimationFrame(() => {
+    const savedTheme = localStorage.getItem("anj-theme");
+    if (savedTheme) {
+      el.theme.value = savedTheme;
+      document.body.classList.add(`theme-${savedTheme}`);
+    }
 
-  const savedLayout = localStorage.getItem("anj-layout");
-  if (savedLayout) {
-    el.layout.value = savedLayout;
-    document.body.classList.add(`layout-${savedLayout}`);
-  }
+    const savedLayout = localStorage.getItem("anj-layout");
+    if (savedLayout) {
+      el.layout.value = savedLayout;
+      document.body.classList.add(`layout-${savedLayout}`);
+    }
+  });
 
   setStatus("Ready ✓");
 });
