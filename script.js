@@ -11,10 +11,8 @@ document.addEventListener("DOMContentLoaded", () => {
     theme: document.getElementById("themeSelect"),
     layout: document.getElementById("layoutSelect"),
 
-    /* ✅ UI-only editable fields (ADDED earlier by you) */
-    editMerchant: document.getElementById("editMerchant"),
-    editDate: document.getElementById("editDate"),
-    editTotal: document.getElementById("editTotal")
+    /* ✅ ADDED */
+    historyList: document.getElementById("historyList")
   };
 
   function setStatus(msg, err = false) {
@@ -22,26 +20,20 @@ document.addEventListener("DOMContentLoaded", () => {
     el.status.style.color = err ? "#ff4d4d" : "#7CFC98";
   }
 
-  /* ================= THEME (SAVE ON CHANGE) ================= */
+  /* THEME SWITCH – SAFE */
   el.theme.addEventListener("change", () => {
     document.body.classList.forEach(c => {
       if (c.startsWith("theme-")) document.body.classList.remove(c);
     });
-
-    const theme = el.theme.value;
-    document.body.classList.add(`theme-${theme}`);
-    localStorage.setItem("anj-theme", theme);
+    document.body.classList.add(`theme-${el.theme.value}`);
   });
 
-  /* ================= LAYOUT (SAVE ON CHANGE) ================= */
+  /* LAYOUT SWITCH – SAFE */
   el.layout.addEventListener("change", () => {
     document.body.classList.forEach(c => {
       if (c.startsWith("layout-")) document.body.classList.remove(c);
     });
-
-    const layout = el.layout.value;
-    document.body.classList.add(`layout-${layout}`);
-    localStorage.setItem("anj-layout", layout);
+    document.body.classList.add(`layout-${el.layout.value}`);
   });
 
   async function runOCR(file) {
@@ -78,7 +70,6 @@ document.addEventListener("DOMContentLoaded", () => {
     return txt.replace(/\s+/g, " ").trim();
   }
 
-  /* -------- LEGACY PARSER (UNCHANGED) -------- */
   function parseInvoice(text) {
     const out = { merchant: null, date: null, total: null };
     const total = text.match(/total[:\s]*₹?\s*([\d,.]+)/i);
@@ -89,66 +80,73 @@ document.addEventListener("DOMContentLoaded", () => {
     return out;
   }
 
-  /* -------- ANALYSIS PARSER (UNCHANGED) -------- */
-  function analyzeInvoice(text) {
-    const result = { merchant: null, date: null, total: null };
-    if (!text) return result;
+  /* -------- INDEXEDDB (HISTORY STORAGE) -------- */
+  let db;
 
-    const normalized = text
-      .replace(/₹/g, "Rs ")
-      .replace(/\s{2,}/g, " ")
-      .trim();
+  function initDB() {
+    const request = indexedDB.open("anj-dual-ocr", 1);
 
-    const lines = normalized
-      .split(/\r?\n/)
-      .map(l => l.trim())
-      .filter(Boolean);
-
-    const ignore = /invoice|bill|tax|gst|receipt|total|date/i;
-    for (let i = 0; i < Math.min(6, lines.length); i++) {
-      const l = lines[i];
-      if (!ignore.test(l) && !/[0-9]{3,}/.test(l) && l.length < 60) {
-        result.merchant = l;
-        break;
+    request.onupgradeneeded = e => {
+      db = e.target.result;
+      if (!db.objectStoreNames.contains("history")) {
+        db.createObjectStore("history", {
+          keyPath: "id",
+          autoIncrement: true
+        });
       }
-    }
+    };
 
-    const dateRx =
-      /\b((0?[1-9]|[12][0-9]|3[01])[\/\-.](0?[1-9]|1[012])[\/\-.]\d{2,4}|\d{4}[\/\-.](0?[1-9]|1[012])[\/\-.](0?[1-9]|[12][0-9]|3[01])|[A-Za-z]{3,9}\s+\d{1,2},\s*\d{4})\b/;
+    request.onsuccess = e => {
+      db = e.target.result;
+      loadHistory();
+    };
 
-    for (const l of lines) {
-      const m = l.match(dateRx);
-      if (m) {
-        result.date = m[0];
-        break;
-      }
-    }
+    request.onerror = () => {
+      console.error("IndexedDB failed to open");
+    };
+  }
 
-    let candidates = [];
-    lines.forEach(l => {
-      if (/total|grand total|amount due|net payable|balance/i.test(l)) {
-        const num = l.replace(/[^0-9.,]/g, "").replace(/,+/g, "");
-        if (num) candidates.push(num);
-      }
+  function saveToHistory(data) {
+    if (!db) return;
+
+    const tx = db.transaction("history", "readwrite");
+    const store = tx.objectStore("history");
+
+    store.add({
+      ...data,
+      timestamp: Date.now()
     });
 
-    if (candidates.length) {
-      result.total = candidates[0];
-    } else {
-      let max = 0;
-      lines.forEach(l => {
-        const m = l.match(/([0-9]+[.,][0-9]{2})/g);
-        if (m) {
-          m.forEach(v => {
-            const n = parseFloat(v.replace(/,/g, ""));
-            if (n > max) max = n;
-          });
-        }
-      });
-      if (max > 0) result.total = String(max);
-    }
+    tx.oncomplete = loadHistory;
+  }
 
-    return result;
+  function loadHistory() {
+    if (!db || !el.historyList) return;
+
+    el.historyList.innerHTML = "";
+
+    const tx = db.transaction("history", "readonly");
+    const store = tx.objectStore("history");
+    const req = store.openCursor(null, "prev");
+
+    req.onsuccess = e => {
+      const cursor = e.target.result;
+      if (!cursor) return;
+
+      const item = cursor.value;
+      const li = document.createElement("li");
+      li.textContent =
+        (item.merchant || "Unknown") +
+        " • " +
+        new Date(item.timestamp).toLocaleString();
+
+      li.onclick = () => {
+        el.json.textContent = JSON.stringify(item, null, 2);
+      };
+
+      el.historyList.appendChild(li);
+      cursor.continue();
+    };
   }
 
   async function processFile(useOCR) {
@@ -167,23 +165,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     text = cleanText(text);
-
-    const legacy = parseInvoice(text);
-    const analysis = analyzeInvoice(text);
-
-    const finalResult = {
-      merchant: analysis.merchant || legacy.merchant,
-      date: analysis.date || legacy.date,
-      total: analysis.total || legacy.total
-    };
+    const finalResult = parseInvoice(text);
 
     el.raw.textContent = text || "--";
     el.clean.textContent = text || "--";
     el.json.textContent = JSON.stringify(finalResult, null, 2);
 
-    el.editMerchant.value = finalResult.merchant || "";
-    el.editDate.value = finalResult.date || "";
-    el.editTotal.value = finalResult.total || "";
+    /* expose save hook */
+    window._lastParsed = finalResult;
 
     setStatus("Done ✓");
   }
@@ -196,43 +185,26 @@ document.addEventListener("DOMContentLoaded", () => {
       setStatus("Nothing to parse", true);
       return;
     }
-
-    const legacy = parseInvoice(el.clean.textContent);
-    const analysis = analyzeInvoice(el.clean.textContent);
-
-    const result = {
-      merchant: analysis.merchant || legacy.merchant,
-      date: analysis.date || legacy.date,
-      total: analysis.total || legacy.total
-    };
-
+    const result = parseInvoice(el.clean.textContent);
     el.json.textContent = JSON.stringify(result, null, 2);
-
-    el.editMerchant.value = result.merchant || "";
-    el.editDate.value = result.date || "";
-    el.editTotal.value = result.total || "";
-
+    window._lastParsed = result;
     setStatus("Parsed ✓");
   };
 
   const sidebarToggle = document.getElementById("sidebarToggle");
-  if (sidebarToggle) {
-    sidebarToggle.onclick = () =>
-      document.body.classList.toggle("sidebar-hidden");
-  }
+  sidebarToggle.onclick = () =>
+    document.body.classList.toggle("sidebar-hidden");
 
-  /* ===== RESTORE THEME & LAYOUT (TIMING-SAFE, ANIMATION FIX) ===== */
-  requestAnimationFrame(() => {
-    const savedTheme = localStorage.getItem("anj-theme");
-    if (savedTheme) {
-      el.theme.value = savedTheme;
-      document.body.classList.add(`theme-${savedTheme}`);
-    }
+  /* -------- SAVE TRIGGER -------- */
+  initDB();
 
-    const savedLayout = localStorage.getItem("anj-layout");
-    if (savedLayout) {
-      el.layout.value = savedLayout;
-      document.body.classList.add(`layout-${savedLayout}`);
+  document.addEventListener("keydown", e => {
+    if (e.ctrlKey && e.key === "s") {
+      e.preventDefault();
+      if (!window._lastParsed) return;
+
+      saveToHistory(window._lastParsed);
+      setStatus("Saved to history ✓");
     }
   });
 
