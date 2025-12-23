@@ -10,8 +10,6 @@ document.addEventListener("DOMContentLoaded", () => {
     parse: document.getElementById("parseBtn"),
     theme: document.getElementById("themeSelect"),
     layout: document.getElementById("layoutSelect"),
-
-    /* ✅ ADDED */
     historyList: document.getElementById("historyList")
   };
 
@@ -20,20 +18,20 @@ document.addEventListener("DOMContentLoaded", () => {
     el.status.style.color = err ? "#ff4d4d" : "#7CFC98";
   }
 
-  /* THEME SWITCH – SAFE */
   el.theme.addEventListener("change", () => {
     document.body.classList.forEach(c => {
       if (c.startsWith("theme-")) document.body.classList.remove(c);
     });
     document.body.classList.add(`theme-${el.theme.value}`);
+    localStorage.setItem("anj-theme", el.theme.value);
   });
 
-  /* LAYOUT SWITCH – SAFE */
   el.layout.addEventListener("change", () => {
     document.body.classList.forEach(c => {
       if (c.startsWith("layout-")) document.body.classList.remove(c);
     });
     document.body.classList.add(`layout-${el.layout.value}`);
+    localStorage.setItem("anj-layout", el.layout.value);
   });
 
   async function runOCR(file) {
@@ -80,54 +78,86 @@ document.addEventListener("DOMContentLoaded", () => {
     return out;
   }
 
-  /* -------- INDEXEDDB (HISTORY STORAGE) -------- */
+  async function processFile(useOCR) {
+    if (!el.file.files[0]) {
+      setStatus("No file selected", true);
+      return;
+    }
+
+    let text = "";
+    const file = el.file.files[0];
+
+    if (file.type.startsWith("image/") && useOCR) {
+      text = await runOCR(file);
+    } else {
+      text = await extractText(file);
+    }
+
+    text = cleanText(text);
+
+    const parsed = parseInvoice(text);
+    window._lastParsed = parsed;
+
+    el.raw.textContent = text || "--";
+    el.clean.textContent = text || "--";
+    el.json.textContent = JSON.stringify(parsed, null, 2);
+
+    setStatus("Done ✓");
+  }
+
+  el.dual.onclick = () => processFile(true);
+  el.ocr.onclick = () => processFile(true);
+  el.parse.onclick = () => {
+    if (!el.clean.textContent || el.clean.textContent === "--") {
+      setStatus("Nothing to parse", true);
+      return;
+    }
+    const parsed = parseInvoice(el.clean.textContent);
+    window._lastParsed = parsed;
+    el.json.textContent = JSON.stringify(parsed, null, 2);
+    setStatus("Parsed ✓");
+  };
+
+  const sidebarToggle = document.getElementById("sidebarToggle");
+  sidebarToggle.onclick = () =>
+    document.body.classList.toggle("sidebar-hidden");
+
+  /* -------- INDEXEDDB HISTORY -------- */
   let db;
 
   function initDB() {
-    const request = indexedDB.open("anj-dual-ocr", 1);
+    const req = indexedDB.open("anj-dual-ocr", 1);
 
-    request.onupgradeneeded = e => {
+    req.onupgradeneeded = e => {
       db = e.target.result;
-      if (!db.objectStoreNames.contains("history")) {
-        db.createObjectStore("history", {
-          keyPath: "id",
-          autoIncrement: true
-        });
-      }
+      db.createObjectStore("history", {
+        keyPath: "id",
+        autoIncrement: true
+      });
     };
 
-    request.onsuccess = e => {
+    req.onsuccess = e => {
       db = e.target.result;
       loadHistory();
     };
-
-    request.onerror = () => {
-      console.error("IndexedDB failed to open");
-    };
   }
 
-  function saveToHistory(data) {
+  function saveHistory(data) {
     if (!db) return;
-
     const tx = db.transaction("history", "readwrite");
-    const store = tx.objectStore("history");
-
-    store.add({
+    tx.objectStore("history").add({
       ...data,
       timestamp: Date.now()
     });
-
     tx.oncomplete = loadHistory;
   }
 
   function loadHistory() {
-    if (!db || !el.historyList) return;
-
+    if (!el.historyList || !db) return;
     el.historyList.innerHTML = "";
 
     const tx = db.transaction("history", "readonly");
-    const store = tx.objectStore("history");
-    const req = store.openCursor(null, "prev");
+    const req = tx.objectStore("history").openCursor(null, "prev");
 
     req.onsuccess = e => {
       const cursor = e.target.result;
@@ -149,65 +179,22 @@ document.addEventListener("DOMContentLoaded", () => {
     };
   }
 
-  async function processFile(useOCR) {
-    if (!el.file.files[0]) {
-      setStatus("No file selected", true);
-      return;
-    }
-
-    let text = "";
-    const file = el.file.files[0];
-
-    if (file.type.startsWith("image/") && useOCR) {
-      text = await runOCR(file);
-    } else {
-      text = await extractText(file);
-    }
-
-    text = cleanText(text);
-    const finalResult = parseInvoice(text);
-
-    el.raw.textContent = text || "--";
-    el.clean.textContent = text || "--";
-    el.json.textContent = JSON.stringify(finalResult, null, 2);
-
-    /* expose save hook */
-    window._lastParsed = finalResult;
-
-    setStatus("Done ✓");
-  }
-
-  el.dual.onclick = () => processFile(true);
-  el.ocr.onclick = () => processFile(true);
-
-  el.parse.onclick = () => {
-    if (!el.clean.textContent || el.clean.textContent === "--") {
-      setStatus("Nothing to parse", true);
-      return;
-    }
-    const result = parseInvoice(el.clean.textContent);
-    el.json.textContent = JSON.stringify(result, null, 2);
-    window._lastParsed = result;
-    setStatus("Parsed ✓");
-  };
-
-  const sidebarToggle = document.getElementById("sidebarToggle");
-  sidebarToggle.onclick = () =>
-    document.body.classList.toggle("sidebar-hidden");
-
-  /* -------- SAVE TRIGGER -------- */
-  initDB();
-
   document.addEventListener("keydown", e => {
     if (e.ctrlKey && e.key === "s") {
       e.preventDefault();
-      if (!window._lastParsed) return;
-
-      saveToHistory(window._lastParsed);
-      setStatus("Saved to history ✓");
+      if (window._lastParsed) {
+        saveHistory(window._lastParsed);
+        setStatus("Saved to history ✓");
+      }
     }
   });
 
+  const savedTheme = localStorage.getItem("anj-theme");
+  const savedLayout = localStorage.getItem("anj-layout");
+
+  if (savedTheme) document.body.classList.add(`theme-${savedTheme}`);
+  if (savedLayout) document.body.classList.add(`layout-${savedLayout}`);
+
+  initDB();
   setStatus("Ready ✓");
 });
-      
