@@ -6,7 +6,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -26,7 +25,7 @@
       <div class="nav-item">⚙️ Settings</div>
     </nav>
 
-    <!-- ✅ ADDED: History Panel -->
+    <!-- ✅ History panel (added only) -->
     <div class="history-panel">
       <h3>History</h3>
       <ul id="historyList"></ul>
@@ -86,8 +85,27 @@
         <pre id="cleanedText"></pre>
       </section>
 
+      <!-- ✅ Parsed + Edit + Save -->
       <section class="panel">
         <h2>Parsed JSON</h2>
+
+        <button id="saveBtn">💾 Save to History</button>
+
+        <label>
+          Merchant
+          <input type="text" id="editMerchant" />
+        </label>
+
+        <label>
+          Date
+          <input type="text" id="editDate" />
+        </label>
+
+        <label>
+          Total
+          <input type="text" id="editTotal" />
+        </label>
+
         <pre id="jsonPreview"></pre>
       </section>
 
