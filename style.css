@@ -1,109 +1,137 @@
-/* =========================================================
-   ORIGINAL CSS (UNCHANGED)
-   ========================================================= */
+/* ===============================
+   BASE RESET & VARIABLES
+================================= */
+:root {
+  --bg-main: #0f172a;
+  --bg-card: rgba(255, 255, 255, 0.08);
+  --bg-soft: rgba(255, 255, 255, 0.12);
+  --text-main: #e5e7eb;
+  --text-muted: #9ca3af;
+  --accent: #7cfc98;
+  --border-soft: rgba(255,255,255,0.15);
+  --radius: 14px;
+}
 
 * {
   box-sizing: border-box;
 }
 
-body {
+html, body {
   margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+body {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  transition: background 0.3s ease, color 0.3s ease;
-}
-
-/* ---------- Theme Variables ---------- */
-
-body.theme-default {
-  --bg: #0f172a;
-  --panel: #111827;
-  --panel-soft: #1f2933;
-  --border: #334155;
-  --text: #e5e7eb;
-  --accent: #38bdf8;
-}
-
-body.theme-mint {
-  --bg: #064e3b;
-  --panel: #065f46;
-  --panel-soft: #047857;
-  --border: #059669;
-  --text: #ecfdf5;
-  --accent: #34d399;
-}
-
-body.theme-fairy {
-  --bg: #4c1d95;
-  --panel: #5b21b6;
-  --panel-soft: #6d28d9;
-  --border: #8b5cf6;
-  --text: #ede9fe;
-  --accent: #c084fc;
-}
-
-/* ---------- Layout ---------- */
-
-.app {
+  background: linear-gradient(135deg, #0f172a, #020617);
+  color: var(--text-main);
   display: flex;
-  min-height: 100vh;
 }
 
+/* ===============================
+   SIDEBAR
+================================= */
 .sidebar {
   width: 240px;
-  background: var(--panel);
-  border-right: 1px solid var(--border);
-  padding: 16px;
+  min-height: 100vh;
+  background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(12px);
+  border-right: 1px solid var(--border-soft);
+  padding: 18px 14px;
+  transition: transform 0.3s ease;
 }
 
-.sidebar h2 {
-  margin-top: 0;
+.sidebar h3 {
+  margin: 0 0 14px;
+  font-size: 18px;
 }
 
-.sidebar a {
-  display: block;
-  padding: 8px 10px;
-  margin-bottom: 6px;
-  color: var(--text);
-  text-decoration: none;
-  border-radius: 6px;
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 
-.sidebar a:hover {
-  background: var(--panel-soft);
+.sidebar li {
+  padding: 10px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-main);
 }
 
+.sidebar li:hover {
+  background: rgba(255,255,255,0.1);
+}
+
+/* Sidebar hidden (mobile) */
+body.sidebar-hidden .sidebar {
+  transform: translateX(-100%);
+}
+
+/* ===============================
+   MAIN CONTENT
+================================= */
 .main {
   flex: 1;
   padding: 20px;
+  overflow-x: hidden;
 }
 
-/* ---------- Cards ---------- */
-
-.card {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 16px;
+/* Header */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin-bottom: 20px;
 }
 
-.card h3 {
+#sidebarToggle {
+  font-size: 22px;
+  cursor: pointer;
+}
+
+/* ===============================
+   CARDS / SECTIONS
+================================= */
+.section,
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 18px;
+}
+
+.section h2,
+.section h3 {
   margin-top: 0;
 }
 
-/* ---------- Inputs ---------- */
+/* Text blocks */
+pre,
+.output-box {
+  background: var(--bg-soft);
+  border-radius: 10px;
+  padding: 12px;
+  overflow-x: auto;
+  color: var(--text-main);
+}
 
+/* ===============================
+   FORMS & BUTTONS
+================================= */
 input,
 select,
-button,
-textarea {
-  background: var(--panel-soft);
-  border: 1px solid var(--border);
-  color: var(--text);
+button {
+  background: rgba(255,255,255,0.15);
+  border: 1px solid var(--border-soft);
+  color: var(--text-main);
+  border-radius: 8px;
   padding: 8px 10px;
-  border-radius: 6px;
 }
 
 button {
@@ -111,88 +139,106 @@ button {
 }
 
 button:hover {
-  border-color: var(--accent);
+  background: rgba(255,255,255,0.25);
 }
 
-/* =========================================================
-   🔥 VISUAL BINDING + RESPONSIVE FIXES (ADDED – DO NOT REMOVE)
-   ========================================================= */
-
-/* --- Prevent desktop layout leaking into mobile --- */
-body {
-  overflow-x: hidden;
+button.primary {
+  background: var(--accent);
+  color: #022c22;
+  font-weight: 600;
 }
 
-/* --- Sidebar toggle binding --- */
-body.sidebar-hidden .sidebar {
-  display: none;
+button.primary:hover {
+  filter: brightness(1.1);
 }
 
-body.sidebar-hidden .main {
-  margin-left: 0 !important;
+/* ===============================
+   PARSED EDIT FIELDS
+================================= */
+.edit-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
 }
 
-/* --- Desktop layout guard --- */
-@media (min-width: 1024px) {
-  body.layout-dashboard .app {
-    flex-direction: row;
-  }
-
-  body.layout-vertical .app {
-    flex-direction: column;
-  }
+/* ===============================
+   HISTORY LIST
+================================= */
+.history-list li {
+  padding: 10px;
+  margin-bottom: 8px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 8px;
+  font-size: 14px;
 }
 
-/* --- Mobile layout (REAL mobile view) --- */
+/* ===============================
+   THEMES
+================================= */
+
+/* Default (Dark) */
+body.theme-default {
+  --bg-main: #020617;
+  --bg-card: rgba(255,255,255,0.08);
+  --accent: #7cfc98;
+}
+
+/* Aqua */
+body.theme-aqua {
+  background: linear-gradient(135deg, #0f766e, #042f2e);
+  --bg-card: rgba(255,255,255,0.12);
+  --accent: #5eead4;
+}
+
+/* Mint */
+body.theme-mint {
+  background: linear-gradient(135deg, #064e3b, #022c22);
+  --bg-card: rgba(255,255,255,0.14);
+  --accent: #6ee7b7;
+}
+
+/* Fairy / Purple */
+body.theme-fairy {
+  background: linear-gradient(135deg, #581c87, #2e1065);
+  --bg-card: rgba(255,255,255,0.14);
+  --accent: #d8b4fe;
+}
+
+/* ===============================
+   LAYOUT MODES
+================================= */
+
+/* Dashboard */
+body.layout-dashboard .main {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Stack (mobile-style) */
+body.layout-stack .edit-row {
+  grid-template-columns: 1fr;
+}
+
+/* ===============================
+   RESPONSIVE (IMPORTANT FIX)
+================================= */
 @media (max-width: 768px) {
-  .app {
+  body {
     flex-direction: column;
   }
 
   .sidebar {
-    width: 100%;
-    border-right: none;
-    border-bottom: 1px solid var(--border);
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
   }
 
   .main {
     padding: 14px;
   }
 
-  .card {
-    border-radius: 10px;
-  }
-
-  input,
-  button,
-  select,
-  textarea {
-    width: 100%;
-  }
-}
-
-/* --- Theme safety net (prevents white flash / override) --- */
-body[class*="theme-"] {
-  background: var(--bg);
-  color: var(--text);
-}
-
-/* --- Parsed JSON + editor alignment --- */
-.parsed-editor {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 10px;
-}
-
-@media (max-width: 768px) {
-  .parsed-editor {
+  .edit-row {
     grid-template-columns: 1fr;
   }
-}
-
-/* --- History panel readability --- */
-.history-list li {
-  padding: 6px 0;
-  border-bottom: 1px dashed var(--border);
-  font-size: 0.9rem;
 }
