@@ -216,3 +216,166 @@ button:hover {
     display: none;
   }
 }
+/* ===============================
+   MOBILE & LAYOUT BINDING FIX
+   =============================== */
+
+/* Global safety */
+* {
+  box-sizing: border-box;
+}
+
+/* Prevent horizontal overflow */
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* ===============================
+   SIDEBAR BINDING
+   =============================== */
+
+.sidebar {
+  flex-shrink: 0;
+  transition: transform 0.3s ease, width 0.3s ease;
+}
+
+body.sidebar-hidden .sidebar {
+  transform: translateX(-100%);
+}
+
+/* ===============================
+   MAIN CONTENT BINDING
+   =============================== */
+
+.main,
+.dashboard,
+.content,
+.app-content {
+  width: 100%;
+  min-width: 0;
+}
+
+/* ===============================
+   CARD / PANEL BINDING
+   =============================== */
+
+.card,
+.panel,
+.box,
+.section {
+  max-width: 100%;
+  overflow: hidden;
+}
+
+/* ===============================
+   OCR / TEXT CONTAINMENT
+   =============================== */
+
+.raw-text,
+.cleaned-text,
+.parsed-json,
+pre,
+textarea {
+  max-height: 280px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+/* ===============================
+   ACTIVE / FOCUS STATES (MOBILE)
+   =============================== */
+
+.sidebar a,
+.sidebar button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sidebar a:focus-visible,
+.sidebar button:focus-visible,
+.sidebar a.active {
+  outline: none;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+}
+
+/* ===============================
+   THEME BINDING (MOBILE SAFE)
+   =============================== */
+
+body.theme-dark {
+  background-color: #0b1020;
+  color: #e6e9f0;
+}
+
+body.theme-light {
+  background-color: #f6f8fc;
+  color: #0b1020;
+}
+
+/* Ensure cards follow theme */
+body.theme-dark .card,
+body.theme-dark .panel {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+body.theme-light .card,
+body.theme-light .panel {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+/* ===============================
+   MOBILE LAYOUT FIX
+   =============================== */
+
+@media (max-width: 768px) {
+
+  /* Stack layout */
+  .layout,
+  .dashboard {
+    flex-direction: column;
+  }
+
+  /* Sidebar overlay */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 260px;
+    z-index: 1000;
+    background: inherit;
+  }
+
+  body.sidebar-hidden .sidebar {
+    transform: translateX(-100%);
+  }
+
+  /* Content full width */
+  .main,
+  .dashboard,
+  .content {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Cards spacing */
+  .card,
+  .panel,
+  .section {
+    margin-bottom: 16px;
+  }
+}
+
+/* ===============================
+   DESKTOP SAFETY (NO CHANGE)
+   =============================== */
+
+@media (min-width: 769px) {
+  .sidebar {
+    transform: none !important;
+    position: relative;
+  }
+}
