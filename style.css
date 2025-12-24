@@ -1,191 +1,92 @@
-/* =========================
-   RESET & BASE
-========================= */
-* {
-  box-sizing: border-box;
-}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ANJ Dual OCR</title>
 
-html, body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  overflow-x: hidden;
-}
+  <!-- CSS -->
+  <link rel="stylesheet" href="style.css" />
+</head>
 
-/* =========================
-   THEME VARIABLES
-========================= */
-body {
-  --bg-main: #0f172a;
-  --bg-panel: rgba(255, 255, 255, 0.08);
-  --bg-sidebar: rgba(0, 0, 0, 0.35);
-  --text-main: #e5e7eb;
-  --text-muted: #94a3b8;
-  --border-soft: rgba(255, 255, 255, 0.12);
-  --accent: #22c55e;
+<body class="layout-default theme-default">
 
-  background: linear-gradient(135deg, #0f172a, #020617);
-  color: var(--text-main);
-}
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <button id="sidebarToggle" aria-label="Toggle Menu">☰</button>
+    <h1>ANJ Dual OCR</h1>
+  </header>
 
-/* THEMES */
-body.theme-default {
-  --bg-main: #0f172a;
-  --accent: #22c55e;
-}
+  <!-- APP LAYOUT -->
+  <div class="app-shell">
 
-body.theme-mint {
-  --bg-main: #064e3b;
-  --accent: #6ee7b7;
-}
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="brand">ANJ</div>
 
-body.theme-aqua {
-  --bg-main: #083344;
-  --accent: #67e8f9;
-}
+      <nav class="menu">
+        <button class="menu-item" data-view="upload">📤 Upload</button>
+        <button class="menu-item" data-view="ocr">🔍 OCR</button>
+        <button class="menu-item" data-view="parsed">📊 Parsed</button>
+        <button class="menu-item" data-view="history">🕘 History</button>
+        <button class="menu-item" data-view="settings">⚙️ Settings</button>
+      </nav>
 
-body.theme-fairy {
-  --bg-main: #3b0764;
-  --accent: #f0abfc;
-}
+      <section class="history-panel">
+        <h3>History</h3>
+        <ul id="historyList">
+          <!-- injected by JS -->
+        </ul>
+      </section>
+    </aside>
 
-/* =========================
-   APP LAYOUT
-========================= */
-body {
-  display: grid;
-  grid-template-columns: 260px 1fr;
-  min-height: 100vh;
-}
+    <!-- MAIN CONTENT -->
+    <main class="main">
 
-/* Sidebar */
-aside,
-.sidebar {
-  background: var(--bg-sidebar);
-  backdrop-filter: blur(12px);
-  padding: 16px;
-  border-right: 1px solid var(--border-soft);
-}
+      <!-- UPLOAD VIEW -->
+      <section class="view active" id="view-upload">
+        <h2>Upload Invoice</h2>
 
-.sidebar h3,
-.sidebar h4 {
-  margin-top: 16px;
-  margin-bottom: 8px;
-}
+        <input type="file" id="fileInput" />
 
-.sidebar ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
+        <div class="action-row">
+          <button id="dualOCR">Dual OCR</button>
+          <button id="quickOCR">Quick OCR</button>
+          <button id="parseBtn">Parse</button>
+        </div>
+      </section>
 
-.sidebar li {
-  margin-bottom: 12px;
-  color: var(--text-muted);
-}
+      <!-- OCR VIEW -->
+      <section class="view" id="view-ocr">
+        <h2>Raw Text</h2>
+        <pre id="rawText"></pre>
 
-/* Main content */
-main,
-.main {
-  padding: 20px;
-}
+        <h2>Cleaned Text</h2>
+        <pre id="cleanedText"></pre>
+      </section>
 
-/* =========================
-   PANELS / CARDS
-========================= */
-section,
-.panel,
-.card {
-  background: var(--bg-panel);
-  border-radius: 14px;
-  padding: 16px;
-  margin-bottom: 20px;
-  border: 1px solid var(--border-soft);
-}
+      <!-- PARSED VIEW -->
+      <section class="view" id="view-parsed">
+        <h2>Parsed JSON</h2>
+        <pre id="parsedJSON"></pre>
 
-h1, h2, h3 {
-  margin-top: 0;
-}
+        <button id="saveHistory">💾 Save to History</button>
+      </section>
 
-/* =========================
-   TEXT AREAS
-========================= */
-pre,
-textarea {
-  background: rgba(0, 0, 0, 0.35);
-  color: var(--text-main);
-  padding: 12px;
-  border-radius: 10px;
-  border: 1px solid var(--border-soft);
-  overflow-x: auto;
-}
+      <!-- SETTINGS VIEW -->
+      <section class="view" id="view-settings">
+        <h2>Theme</h2>
+        <select id="themeSelect">
+          <option value="default">Default</option>
+          <option value="aqua">Aqua</option>
+          <option value="dark">Dark</option>
+        </select>
+      </section>
 
-/* =========================
-   INPUTS & BUTTONS
-========================= */
-input,
-select,
-button {
-  background: rgba(0, 0, 0, 0.35);
-  color: var(--text-main);
-  border: 1px solid var(--border-soft);
-  border-radius: 8px;
-  padding: 8px 10px;
-}
+    </main>
+  </div>
 
-button {
-  cursor: pointer;
-}
-
-button:hover {
-  background: var(--accent);
-  color: #020617;
-}
-
-/* =========================
-   STATUS TEXT
-========================= */
-#statusBar {
-  color: var(--accent);
-  font-weight: 600;
-}
-
-/* =========================
-   SIDEBAR TOGGLE
-========================= */
-body.sidebar-hidden {
-  grid-template-columns: 0 1fr;
-}
-
-body.sidebar-hidden aside,
-body.sidebar-hidden .sidebar {
-  display: none;
-}
-
-/* =========================
-   RESPONSIVE (MOBILE)
-========================= */
-@media (max-width: 768px) {
-  body {
-    grid-template-columns: 1fr;
-  }
-
-  aside,
-  .sidebar {
-    position: fixed;
-    inset: 0 auto 0 0;
-    width: 260px;
-    z-index: 1000;
-  }
-
-  body.sidebar-hidden aside,
-  body.sidebar-hidden .sidebar {
-    display: none;
-  }
-
-  main,
-  .main {
-    padding: 14px;
-  }
-}
+  <!-- JS -->
+  <script src="script.js"></script>
+</body>
+</html>
