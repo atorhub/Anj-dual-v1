@@ -1,262 +1,198 @@
-/* ===============================
-   RESPONSIVE LAYOUT FIX
-   Mobile First Adjustments
-   =============================== */
+/* =========================================================
+   ORIGINAL CSS (UNCHANGED)
+   ========================================================= */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+/* ---------- Theme Variables ---------- */
+
+body.theme-default {
+  --bg: #0f172a;
+  --panel: #111827;
+  --panel-soft: #1f2933;
+  --border: #334155;
+  --text: #e5e7eb;
+  --accent: #38bdf8;
+}
+
+body.theme-mint {
+  --bg: #064e3b;
+  --panel: #065f46;
+  --panel-soft: #047857;
+  --border: #059669;
+  --text: #ecfdf5;
+  --accent: #34d399;
+}
+
+body.theme-fairy {
+  --bg: #4c1d95;
+  --panel: #5b21b6;
+  --panel-soft: #6d28d9;
+  --border: #8b5cf6;
+  --text: #ede9fe;
+  --accent: #c084fc;
+}
+
+/* ---------- Layout ---------- */
+
+.app {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: 240px;
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  padding: 16px;
+}
+
+.sidebar h2 {
+  margin-top: 0;
+}
+
+.sidebar a {
+  display: block;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  color: var(--text);
+  text-decoration: none;
+  border-radius: 6px;
+}
+
+.sidebar a:hover {
+  background: var(--panel-soft);
+}
+
+.main {
+  flex: 1;
+  padding: 20px;
+}
+
+/* ---------- Cards ---------- */
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.card h3 {
+  margin-top: 0;
+}
+
+/* ---------- Inputs ---------- */
+
+input,
+select,
+button,
+textarea {
+  background: var(--panel-soft);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 10px;
+  border-radius: 6px;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:hover {
+  border-color: var(--accent);
+}
+
+/* =========================================================
+   🔥 VISUAL BINDING + RESPONSIVE FIXES (ADDED – DO NOT REMOVE)
+   ========================================================= */
+
+/* --- Prevent desktop layout leaking into mobile --- */
+body {
+  overflow-x: hidden;
+}
+
+/* --- Sidebar toggle binding --- */
+body.sidebar-hidden .sidebar {
+  display: none;
+}
+
+body.sidebar-hidden .main {
+  margin-left: 0 !important;
+}
+
+/* --- Desktop layout guard --- */
+@media (min-width: 1024px) {
+  body.layout-dashboard .app {
+    flex-direction: row;
+  }
+
+  body.layout-vertical .app {
+    flex-direction: column;
+  }
+}
+
+/* --- Mobile layout (REAL mobile view) --- */
+@media (max-width: 768px) {
+  .app {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .main {
+    padding: 14px;
+  }
+
+  .card {
+    border-radius: 10px;
+  }
+
+  input,
+  button,
+  select,
+  textarea {
+    width: 100%;
+  }
+}
+
+/* --- Theme safety net (prevents white flash / override) --- */
+body[class*="theme-"] {
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* --- Parsed JSON + editor alignment --- */
+.parsed-editor {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+}
 
 @media (max-width: 768px) {
-
-  /* App shell becomes vertical */
-  .app-shell {
-    display: block;
-  }
-
-  /* Sidebar hidden by default on mobile */
-  .sidebar {
-    position: fixed;
-    left: 0;
-    top: 0;
-    height: 100vh;
-    width: 240px;
-    z-index: 999;
-    transform: translateX(-100%);
-    transition: transform 0.3s ease;
-  }
-
-  /* When toggled */
-  body:not(.sidebar-hidden) .sidebar {
-    transform: translateX(0);
-  }
-
-  /* Main content full width */
-  .main {
-    margin-left: 0 !important;
-    width: 100%;
-    padding: 12px;
-  }
-
-  /* Top bar spacing */
-  .topbar {
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  /* Grid becomes stacked */
-  .grid {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  /* Panels full width */
-  .panel {
-    width: 100%;
-  }
-
-  /* Parsed inputs stack */
-  .panel label {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  /* History list scrollable */
-  .history-panel {
-    max-height: 40vh;
-    overflow-y: auto;
+  .parsed-editor {
+    grid-template-columns: 1fr;
   }
 }
 
-/* ===============================
-   Desktop Overrides
-   =============================== */
-
-@media (min-width: 769px) {
-
-  .sidebar {
-    transform: translateX(0) !important;
-    position: relative;
-  }
-
-  .main {
-    margin-left: 240px;
-  }
-
-  body.sidebar-hidden .sidebar {
-    transform: translateX(0);
-  }
-}
-/* ==============================
-   RESPONSIVE MOBILE LAYOUT FIX
-   ============================== */
-
-/* Mobile responsiveness */
-@media (max-width: 768px) {
-
-  /* Stack the whole app vertically */
-  .app-shell {
-    display: block;
-  }
-
-  /* Sidebar hidden by default */
-  .sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    height: auto;
-    width: 100%;
-    transform: translateY(-100%);
-    transition: transform 0.3s ease;
-    z-index: 999;
-  }
-
-  /* Sidebar shown when not collapsed */
-  body:not(.sidebar-hidden) .sidebar {
-    transform: translateY(0);
-  }
-
-  /* Main content should take full width */
-  .main {
-    margin-left: 0 !important;
-    padding: 12px;
-  }
-
-  /* Panels stacked vertically */
-  .grid {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  /* Each panel should fill width */
-  .panel {
-    width: 100%;
-  }
-
-  /* Parsed edit fields stack */
-  .panel label {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  /* History panel scrollable */
-  .history-panel {
-    max-height: 40vh;
-    overflow-y: auto;
-  }
-}
-
-/* Desktop overrides remain unchanged */
-@media (min-width: 769px) {
-  .sidebar {
-    position: relative;
-    transform: translateX(0) !important;
-  }
-
-  .main {
-    margin-left: 240px;
-  }
-}
-/* =========================
-   FORCE MOBILE RESPONSIVE
-   ========================= */
-
-@media screen and (max-width: 768px) {
-
-  /* Force root layout */
-  html, body {
-    width: 100%;
-    overflow-x: hidden;
-  }
-
-  /* Main app wrapper */
-  .app-shell {
-    display: block !important;
-    width: 100% !important;
-  }
-
-  /* Sidebar override */
-  .app-shell .sidebar {
-    position: relative !important;
-    width: 100% !important;
-    height: auto !important;
-    left: 0 !important;
-    transform: none !important;
-  }
-
-  /* Main content override */
-  .app-shell .main {
-    margin-left: 0 !important;
-    width: 100% !important;
-    padding: 12px !important;
-  }
-
-  /* Grid override */
-  .app-shell .grid {
-    display: block !important;
-  }
-
-  /* Panels full width */
-  .app-shell .panel {
-    width: 100% !important;
-    max-width: 100% !important;
-  }
-
-  /* Inputs stack properly */
-  .app-shell label {
-    display: block !important;
-    width: 100% !important;
-  }
-}
-/* =========================
-   MOBILE THEME RESTORE
-   ========================= */
-
-@media screen and (max-width: 768px) {
-
-  /* Force theme surface */
-  .app-shell,
-  .app-shell .main {
-    background: var(--bg-main, #0f172a);
-    color: var(--text-main, #e5e7eb);
-  }
-
-  /* Card / panel visuals */
-  .app-shell .panel,
-  .app-shell section,
-  .app-shell .box {
-    background: var(--card-bg, rgba(255,255,255,0.08));
-    border-radius: 14px;
-    padding: 12px;
-    margin-bottom: 14px;
-    box-shadow: 0 8px 30px rgba(0,0,0,0.25);
-    backdrop-filter: blur(10px);
-  }
-
-  /* Headers */
-  .app-shell h1,
-  .app-shell h2,
-  .app-shell h3 {
-    color: var(--accent, #7dd3fc);
-  }
-
-  /* Buttons */
-  .app-shell button {
-    background: linear-gradient(135deg, #7dd3fc, #c084fc);
-    color: #020617;
-    border-radius: 10px;
-    padding: 10px 14px;
-    font-weight: 600;
-  }
-
-  /* Inputs */
-  .app-shell input,
-  .app-shell select,
-  .app-shell textarea {
-    background: rgba(255,255,255,0.12);
-    color: #e5e7eb;
-    border: 1px solid rgba(255,255,255,0.18);
-    border-radius: 10px;
-    padding: 10px;
-  }
+/* --- History panel readability --- */
+.history-list li {
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--border);
+  font-size: 0.9rem;
 }
