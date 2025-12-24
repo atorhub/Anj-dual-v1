@@ -85,3 +85,75 @@
     transform: translateX(0);
   }
 }
+/* ==============================
+   RESPONSIVE MOBILE LAYOUT FIX
+   ============================== */
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+
+  /* Stack the whole app vertically */
+  .app-shell {
+    display: block;
+  }
+
+  /* Sidebar hidden by default */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: auto;
+    width: 100%;
+    transform: translateY(-100%);
+    transition: transform 0.3s ease;
+    z-index: 999;
+  }
+
+  /* Sidebar shown when not collapsed */
+  body:not(.sidebar-hidden) .sidebar {
+    transform: translateY(0);
+  }
+
+  /* Main content should take full width */
+  .main {
+    margin-left: 0 !important;
+    padding: 12px;
+  }
+
+  /* Panels stacked vertically */
+  .grid {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* Each panel should fill width */
+  .panel {
+    width: 100%;
+  }
+
+  /* Parsed edit fields stack */
+  .panel label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  /* History panel scrollable */
+  .history-panel {
+    max-height: 40vh;
+    overflow-y: auto;
+  }
+}
+
+/* Desktop overrides remain unchanged */
+@media (min-width: 769px) {
+  .sidebar {
+    position: relative;
+    transform: translateX(0) !important;
+  }
+
+  .main {
+    margin-left: 240px;
+  }
+}
