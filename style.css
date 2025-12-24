@@ -250,4 +250,53 @@ body.sidebar-hidden .sidebar {
     padding: 14px;
   }
   }
-  
+  /* =========================
+   VISUAL BINDING PATCH
+   (DO NOT MOVE ABOVE)
+========================= */
+
+/* Bind panels to existing output blocks */
+#rawText,
+#cleanedText,
+#jsonPreview {
+  display: block;
+  background: var(--bg-panel, rgba(255,255,255,0.08));
+  border: 1px solid var(--border-soft, rgba(255,255,255,0.15));
+  border-radius: 12px;
+  padding: 12px;
+  margin-top: 8px;
+  margin-bottom: 16px;
+
+  /* Containment */
+  max-height: 260px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Ensure text sections never bleed */
+pre,
+code {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Theme visibility fix */
+body[class*="theme-"] #rawText,
+body[class*="theme-"] #cleanedText,
+body[class*="theme-"] #jsonPreview {
+  background: var(--bg-panel);
+  color: var(--text-main, #e5e7eb);
+}
+
+/* Mobile safety */
+@media (max-width: 768px) {
+  #rawText,
+  #cleanedText,
+  #jsonPreview {
+    max-height: 200px;
+    font-size: 13px;
+  }
+}
+
