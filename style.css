@@ -1,17 +1,6 @@
-/* ===============================
-   BASE RESET & VARIABLES
-================================= */
-:root {
-  --bg-main: #0f172a;
-  --bg-card: rgba(255, 255, 255, 0.08);
-  --bg-soft: rgba(255, 255, 255, 0.12);
-  --text-main: #e5e7eb;
-  --text-muted: #9ca3af;
-  --accent: #7cfc98;
-  --border-soft: rgba(255,255,255,0.15);
-  --radius: 14px;
-}
-
+/* =========================
+   RESET & BASE
+========================= */
 * {
   box-sizing: border-box;
 }
@@ -19,32 +8,70 @@
 html, body {
   margin: 0;
   padding: 0;
-  min-height: 100%;
+  height: 100%;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  overflow-x: hidden;
 }
 
+/* =========================
+   THEME VARIABLES
+========================= */
 body {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --bg-main: #0f172a;
+  --bg-panel: rgba(255, 255, 255, 0.08);
+  --bg-sidebar: rgba(0, 0, 0, 0.35);
+  --text-main: #e5e7eb;
+  --text-muted: #94a3b8;
+  --border-soft: rgba(255, 255, 255, 0.12);
+  --accent: #22c55e;
+
   background: linear-gradient(135deg, #0f172a, #020617);
   color: var(--text-main);
-  display: flex;
 }
 
-/* ===============================
-   SIDEBAR
-================================= */
-.sidebar {
-  width: 240px;
+/* THEMES */
+body.theme-default {
+  --bg-main: #0f172a;
+  --accent: #22c55e;
+}
+
+body.theme-mint {
+  --bg-main: #064e3b;
+  --accent: #6ee7b7;
+}
+
+body.theme-aqua {
+  --bg-main: #083344;
+  --accent: #67e8f9;
+}
+
+body.theme-fairy {
+  --bg-main: #3b0764;
+  --accent: #f0abfc;
+}
+
+/* =========================
+   APP LAYOUT
+========================= */
+body {
+  display: grid;
+  grid-template-columns: 260px 1fr;
   min-height: 100vh;
-  background: rgba(0,0,0,0.45);
-  backdrop-filter: blur(12px);
-  border-right: 1px solid var(--border-soft);
-  padding: 18px 14px;
-  transition: transform 0.3s ease;
 }
 
-.sidebar h3 {
-  margin: 0 0 14px;
-  font-size: 18px;
+/* Sidebar */
+aside,
+.sidebar {
+  background: var(--bg-sidebar);
+  backdrop-filter: blur(12px);
+  padding: 16px;
+  border-right: 1px solid var(--border-soft);
+}
+
+.sidebar h3,
+.sidebar h4 {
+  margin-top: 16px;
+  margin-bottom: 8px;
 }
 
 .sidebar ul {
@@ -54,82 +81,55 @@ body {
 }
 
 .sidebar li {
-  padding: 10px 12px;
-  border-radius: 10px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--text-main);
+  margin-bottom: 12px;
+  color: var(--text-muted);
 }
 
-.sidebar li:hover {
-  background: rgba(255,255,255,0.1);
-}
-
-/* Sidebar hidden (mobile) */
-body.sidebar-hidden .sidebar {
-  transform: translateX(-100%);
-}
-
-/* ===============================
-   MAIN CONTENT
-================================= */
+/* Main content */
+main,
 .main {
-  flex: 1;
   padding: 20px;
-  overflow-x: hidden;
 }
 
-/* Header */
-.topbar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-
-#sidebarToggle {
-  font-size: 22px;
-  cursor: pointer;
-}
-
-/* ===============================
-   CARDS / SECTIONS
-================================= */
-.section,
+/* =========================
+   PANELS / CARDS
+========================= */
+section,
+.panel,
 .card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius);
+  background: var(--bg-panel);
+  border-radius: 14px;
   padding: 16px;
-  margin-bottom: 18px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border-soft);
 }
 
-.section h2,
-.section h3 {
+h1, h2, h3 {
   margin-top: 0;
 }
 
-/* Text blocks */
+/* =========================
+   TEXT AREAS
+========================= */
 pre,
-.output-box {
-  background: var(--bg-soft);
-  border-radius: 10px;
-  padding: 12px;
-  overflow-x: auto;
+textarea {
+  background: rgba(0, 0, 0, 0.35);
   color: var(--text-main);
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border-soft);
+  overflow-x: auto;
 }
 
-/* ===============================
-   FORMS & BUTTONS
-================================= */
+/* =========================
+   INPUTS & BUTTONS
+========================= */
 input,
 select,
 button {
-  background: rgba(255,255,255,0.15);
-  border: 1px solid var(--border-soft);
+  background: rgba(0, 0, 0, 0.35);
   color: var(--text-main);
+  border: 1px solid var(--border-soft);
   border-radius: 8px;
   padding: 8px 10px;
 }
@@ -139,106 +139,53 @@ button {
 }
 
 button:hover {
-  background: rgba(255,255,255,0.25);
+  background: var(--accent);
+  color: #020617;
 }
 
-button.primary {
-  background: var(--accent);
-  color: #022c22;
+/* =========================
+   STATUS TEXT
+========================= */
+#statusBar {
+  color: var(--accent);
   font-weight: 600;
 }
 
-button.primary:hover {
-  filter: brightness(1.1);
+/* =========================
+   SIDEBAR TOGGLE
+========================= */
+body.sidebar-hidden {
+  grid-template-columns: 0 1fr;
 }
 
-/* ===============================
-   PARSED EDIT FIELDS
-================================= */
-.edit-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 10px;
+body.sidebar-hidden aside,
+body.sidebar-hidden .sidebar {
+  display: none;
 }
 
-/* ===============================
-   HISTORY LIST
-================================= */
-.history-list li {
-  padding: 10px;
-  margin-bottom: 8px;
-  background: rgba(255,255,255,0.1);
-  border-radius: 8px;
-  font-size: 14px;
-}
-
-/* ===============================
-   THEMES
-================================= */
-
-/* Default (Dark) */
-body.theme-default {
-  --bg-main: #020617;
-  --bg-card: rgba(255,255,255,0.08);
-  --accent: #7cfc98;
-}
-
-/* Aqua */
-body.theme-aqua {
-  background: linear-gradient(135deg, #0f766e, #042f2e);
-  --bg-card: rgba(255,255,255,0.12);
-  --accent: #5eead4;
-}
-
-/* Mint */
-body.theme-mint {
-  background: linear-gradient(135deg, #064e3b, #022c22);
-  --bg-card: rgba(255,255,255,0.14);
-  --accent: #6ee7b7;
-}
-
-/* Fairy / Purple */
-body.theme-fairy {
-  background: linear-gradient(135deg, #581c87, #2e1065);
-  --bg-card: rgba(255,255,255,0.14);
-  --accent: #d8b4fe;
-}
-
-/* ===============================
-   LAYOUT MODES
-================================= */
-
-/* Dashboard */
-body.layout-dashboard .main {
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-/* Stack (mobile-style) */
-body.layout-stack .edit-row {
-  grid-template-columns: 1fr;
-}
-
-/* ===============================
-   RESPONSIVE (IMPORTANT FIX)
-================================= */
+/* =========================
+   RESPONSIVE (MOBILE)
+========================= */
 @media (max-width: 768px) {
   body {
-    flex-direction: column;
+    grid-template-columns: 1fr;
   }
 
+  aside,
   .sidebar {
     position: fixed;
+    inset: 0 auto 0 0;
+    width: 260px;
     z-index: 1000;
-    left: 0;
-    top: 0;
   }
 
+  body.sidebar-hidden aside,
+  body.sidebar-hidden .sidebar {
+    display: none;
+  }
+
+  main,
   .main {
     padding: 14px;
-  }
-
-  .edit-row {
-    grid-template-columns: 1fr;
   }
 }
