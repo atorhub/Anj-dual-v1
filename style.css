@@ -208,3 +208,55 @@
     width: 100% !important;
   }
 }
+/* =========================
+   MOBILE THEME RESTORE
+   ========================= */
+
+@media screen and (max-width: 768px) {
+
+  /* Force theme surface */
+  .app-shell,
+  .app-shell .main {
+    background: var(--bg-main, #0f172a);
+    color: var(--text-main, #e5e7eb);
+  }
+
+  /* Card / panel visuals */
+  .app-shell .panel,
+  .app-shell section,
+  .app-shell .box {
+    background: var(--card-bg, rgba(255,255,255,0.08));
+    border-radius: 14px;
+    padding: 12px;
+    margin-bottom: 14px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+    backdrop-filter: blur(10px);
+  }
+
+  /* Headers */
+  .app-shell h1,
+  .app-shell h2,
+  .app-shell h3 {
+    color: var(--accent, #7dd3fc);
+  }
+
+  /* Buttons */
+  .app-shell button {
+    background: linear-gradient(135deg, #7dd3fc, #c084fc);
+    color: #020617;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-weight: 600;
+  }
+
+  /* Inputs */
+  .app-shell input,
+  .app-shell select,
+  .app-shell textarea {
+    background: rgba(255,255,255,0.12);
+    color: #e5e7eb;
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 10px;
+    padding: 10px;
+  }
+}
