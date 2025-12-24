@@ -1,92 +1,253 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ANJ Dual OCR</title>
+/* =====================
+   RESET & BASE
+===================== */
+* {
+  box-sizing: border-box;
+}
 
-  <!-- CSS -->
-  <link rel="stylesheet" href="style.css" />
-</head>
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  overflow-x: hidden;
+}
 
-<body class="layout-default theme-default">
+/* =====================
+   THEME VARIABLES
+===================== */
+body {
+  --bg-main: #020617;
+  --bg-panel: rgba(255, 255, 255, 0.08);
+  --bg-sidebar: rgba(0, 0, 0, 0.45);
+  --bg-hover: rgba(255, 255, 255, 0.12);
 
-  <!-- TOP BAR -->
-  <header class="topbar">
-    <button id="sidebarToggle" aria-label="Toggle Menu">☰</button>
-    <h1>ANJ Dual OCR</h1>
-  </header>
+  --text-main: #e5e7eb;
+  --text-muted: #94a3b8;
+  --border-soft: rgba(255, 255, 255, 0.15);
 
-  <!-- APP LAYOUT -->
-  <div class="app-shell">
+  --accent: #22c55e;
 
-    <!-- SIDEBAR -->
-    <aside class="sidebar">
-      <div class="brand">ANJ</div>
+  background: linear-gradient(135deg, #020617, #020617);
+  color: var(--text-main);
+}
 
-      <nav class="menu">
-        <button class="menu-item" data-view="upload">📤 Upload</button>
-        <button class="menu-item" data-view="ocr">🔍 OCR</button>
-        <button class="menu-item" data-view="parsed">📊 Parsed</button>
-        <button class="menu-item" data-view="history">🕘 History</button>
-        <button class="menu-item" data-view="settings">⚙️ Settings</button>
-      </nav>
+/* THEMES */
+body.theme-default { --accent: #22c55e; }
+body.theme-aqua    { --accent: #38bdf8; }
+body.theme-dark    { --accent: #a78bfa; }
+body.theme-fairy   { --accent: #f0abfc; }
 
-      <section class="history-panel">
-        <h3>History</h3>
-        <ul id="historyList">
-          <!-- injected by JS -->
-        </ul>
-      </section>
-    </aside>
+/* =====================
+   TOP BAR
+===================== */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(0, 0, 0, 0.6);
+  border-bottom: 1px solid var(--border-soft);
+}
 
-    <!-- MAIN CONTENT -->
-    <main class="main">
+.topbar h1 {
+  font-size: 18px;
+  margin: 0;
+}
 
-      <!-- UPLOAD VIEW -->
-      <section class="view active" id="view-upload">
-        <h2>Upload Invoice</h2>
+#sidebarToggle {
+  font-size: 18px;
+  background: none;
+  border: none;
+  color: var(--text-main);
+  cursor: pointer;
+}
 
-        <input type="file" id="fileInput" />
+/* =====================
+   APP LAYOUT
+===================== */
+.app-shell {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  min-height: calc(100vh - 52px);
+}
 
-        <div class="action-row">
-          <button id="dualOCR">Dual OCR</button>
-          <button id="quickOCR">Quick OCR</button>
-          <button id="parseBtn">Parse</button>
-        </div>
-      </section>
+/* =====================
+   SIDEBAR
+===================== */
+.sidebar {
+  background: var(--bg-sidebar);
+  backdrop-filter: blur(12px);
+  padding: 16px;
+  border-right: 1px solid var(--border-soft);
+}
 
-      <!-- OCR VIEW -->
-      <section class="view" id="view-ocr">
-        <h2>Raw Text</h2>
-        <pre id="rawText"></pre>
+.sidebar .brand {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
 
-        <h2>Cleaned Text</h2>
-        <pre id="cleanedText"></pre>
-      </section>
+.menu {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
 
-      <!-- PARSED VIEW -->
-      <section class="view" id="view-parsed">
-        <h2>Parsed JSON</h2>
-        <pre id="parsedJSON"></pre>
+.menu-item {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-main);
+  padding: 10px 12px;
+  text-align: left;
+  border-radius: 10px;
+  cursor: pointer;
+}
 
-        <button id="saveHistory">💾 Save to History</button>
-      </section>
+.menu-item:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-soft);
+}
 
-      <!-- SETTINGS VIEW -->
-      <section class="view" id="view-settings">
-        <h2>Theme</h2>
-        <select id="themeSelect">
-          <option value="default">Default</option>
-          <option value="aqua">Aqua</option>
-          <option value="dark">Dark</option>
-        </select>
-      </section>
+/* History panel */
+.history-panel {
+  margin-top: 20px;
+}
 
-    </main>
-  </div>
+.history-panel h3 {
+  font-size: 14px;
+  margin-bottom: 8px;
+}
 
-  <!-- JS -->
-  <script src="script.js"></script>
-</body>
-</html>
+#historyList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+#historyList li {
+  background: var(--bg-panel);
+  padding: 8px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* =====================
+   MAIN CONTENT
+===================== */
+.main {
+  padding: 20px;
+  overflow-y: auto;
+}
+
+/* =====================
+   VIEWS / PANELS
+===================== */
+.view {
+  display: none;
+}
+
+.view.active {
+  display: block;
+}
+
+.view h2 {
+  margin-top: 0;
+  font-size: 18px;
+}
+
+/* =====================
+   CARDS / BOXES
+===================== */
+.view > * {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-soft);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 16px;
+}
+
+/* =====================
+   TEXT CONTAINMENT
+===================== */
+pre {
+  background: rgba(0, 0, 0, 0.45);
+  border-radius: 10px;
+  padding: 12px;
+  max-height: 260px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 13px;
+}
+
+/* =====================
+   INPUTS & BUTTONS
+===================== */
+input[type="file"],
+select {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--text-main);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 8px;
+}
+
+.action-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+button {
+  background: transparent;
+  color: var(--text-main);
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: var(--accent);
+  color: #020617;
+}
+
+/* =====================
+   SIDEBAR TOGGLE
+===================== */
+body.sidebar-hidden .app-shell {
+  grid-template-columns: 0 1fr;
+}
+
+body.sidebar-hidden .sidebar {
+  display: none;
+}
+
+/* =====================
+   MOBILE
+===================== */
+@media (max-width: 768px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: fixed;
+    inset: 52px auto 0 0;
+    width: 260px;
+    z-index: 1000;
+  }
+
+  body.sidebar-hidden .sidebar {
+    display: none;
+  }
+
+  .main {
+    padding: 14px;
+  }
+  }
+  
