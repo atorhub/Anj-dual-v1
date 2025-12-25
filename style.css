@@ -444,3 +444,26 @@ body.theme-light .panel {
     margin-bottom: 16px;
   }
 }
+/* ===== MOBILE OVERRIDE: MATCH DESKTOP LOGIC ===== */
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed !important;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    transform: translateX(0);
+    z-index: 1000;
+  }
+
+  body.sidebar-hidden .sidebar {
+    transform: translateX(-100%);
+  }
+
+  /* MAIN CONTENT TAKES FULL WIDTH */
+  .main,
+  .dashboard,
+  .content {
+    width: 100% !important;
+    margin-left: 0 !important;
+  }
+}
