@@ -6,27 +6,105 @@
 }
 
 /* ===============================
-   THEME VARIABLES (RESUMED)
+   BASE VARIABLE BRIDGE
+   (THIS IS THE KEY FIX)
 ================================ */
 body {
+  /* default fallbacks */
   --bg: #020617;
-  --bg-panel: rgba(255,255,255,0.08);
-  --bg-panel-hover: rgba(255,255,255,0.14);
-  --bg-sidebar: rgba(0,0,0,0.45);
-
+  --card: rgba(255,255,255,.08);
   --text: #e5e7eb;
-  --text-muted: #9ca3af;
   --accent: #7c3aed;
 
+  /* map OLD vars → NEW layout vars */
+  --bg-main: var(--bg);
+  --bg-panel: var(--card);
+  --bg-panel-hover: rgba(255,255,255,.16);
+  --bg-sidebar: rgba(0,0,0,.45);
+
+  background: var(--bg-main);
+  color: var(--text);
   margin: 0;
   font-family: system-ui, sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  transition: background 0.4s ease, color 0.3s ease;
+  min-height: 100vh;
+  transition: background .5s ease, color .3s ease;
 }
 
 /* ===============================
-   APP LAYOUT (UNCHANGED LOGIC)
+   THEMES (FROM cool.css – UNCHANGED COLORS)
+================================ */
+body.theme-default {
+  --bg: radial-gradient(circle at top,#1e1b4b,#020617);
+  --card: rgba(255,255,255,.08);
+  --text: #e5e7eb;
+  --accent: #8b5cf6;
+}
+
+body.theme-galaxy {
+  --bg: radial-gradient(circle at top,#2d1b69,#07000f);
+  --card: rgba(255,255,255,.1);
+  --text: #f5f3ff;
+  --accent: #c084fc;
+}
+
+body.theme-fairy {
+  --bg: linear-gradient(135deg,#2e026d,#a21caf);
+  --card: rgba(255,255,255,.12);
+  --text: #fdf4ff;
+  --accent: #f0abfc;
+}
+
+body.theme-pink {
+  --bg: linear-gradient(135deg,#3b021f,#831843);
+  --card: rgba(255,255,255,.14);
+  --text: #ffe4f1;
+  --accent: #fb7185;
+}
+
+body.theme-dark {
+  --bg: #020617;
+  --card: rgba(255,255,255,.06);
+  --text: #e5e7eb;
+  --accent: #38bdf8;
+}
+
+body.theme-aqua {
+  --bg: radial-gradient(circle at top, #1ddfd3, #0b2c3d 70%);
+  --card: rgba(40,180,190,.18);
+  --text: #eaffff;
+  --accent: #1ddfd3;
+}
+
+body.theme-mint {
+  --bg: radial-gradient(circle at top, #7fffd4, #063b2c 70%);
+  --card: rgba(80,200,170,.18);
+  --text: #ecfffa;
+  --accent: #7fffd4;
+}
+
+body.theme-sunset {
+  --bg: radial-gradient(circle at top, #ff7a18, #3b1c2a 75%);
+  --card: rgba(255,140,90,.18);
+  --text: #fff1e8;
+  --accent: #ff9a3c;
+}
+
+body.theme-neon {
+  --bg: radial-gradient(circle at top, #00f2ff, #090a0f 75%);
+  --card: rgba(80,220,255,.18);
+  --text: #e9fcff;
+  --accent: #00f2ff;
+}
+
+body.theme-midnight {
+  --bg: radial-gradient(circle at top, #0b0f2f, #01010f 80%);
+  --card: rgba(40,40,80,.18);
+  --text: #e6e9ff;
+  --accent: #9aa5ff;
+}
+
+/* ===============================
+   APP SHELL (NEW – GRID LAYOUT)
 ================================ */
 .app-shell {
   display: grid;
@@ -35,13 +113,13 @@ body {
 }
 
 /* ===============================
-   SIDEBAR (MOBILE FIX KEPT)
+   SIDEBAR (NEW LOGIC KEPT)
 ================================ */
 .sidebar {
   width: 240px;
   background: var(--bg-sidebar);
-  backdrop-filter: blur(14px);
-  transition: transform 0.3s ease;
+  backdrop-filter: blur(16px);
+  transition: transform .3s ease;
 }
 
 body.sidebar-hidden .sidebar {
@@ -49,11 +127,11 @@ body.sidebar-hidden .sidebar {
 }
 
 /* ===============================
-   MAIN CONTENT
+   MAIN
 ================================ */
 .main {
   padding: 24px;
-  min-height: 100vh;
+  background: transparent;
 }
 
 /* ===============================
@@ -65,68 +143,58 @@ body.sidebar-hidden .sidebar {
 }
 
 /* ===============================
-   PANELS (FULLY RESUMED)
+   PANELS (RESTORED FROM cool.css)
 ================================ */
 .panel {
   background: var(--bg-panel);
-  border-radius: 16px;
-  padding: 18px 20px;
-
-  /* TEXT CONTAINMENT */
-  overflow: hidden;
-  word-break: break-word;
-  line-height: 1.5;
-
-  /* ANIMATION */
-  animation: panelFade 0.5s ease both;
+  border-radius: 22px;
+  padding: 22px;
+  backdrop-filter: blur(18px);
+  box-shadow:
+    0 8px 30px rgba(0,0,0,.35),
+    inset 0 0 0 1px rgba(255,255,255,.08);
+  animation: fadeUp .4s ease both;
   transition:
-    background 0.25s ease,
-    transform 0.25s ease,
-    box-shadow 0.25s ease;
+    background .25s ease,
+    transform .25s ease,
+    box-shadow .25s ease;
 }
 
-/* PANEL HOVER */
 .panel:hover {
-  background: var(--bg-panel-hover);
   transform: translateY(-3px);
-  box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+  box-shadow: 0 12px 35px rgba(0,0,0,.45);
 }
 
-/* ENSURE TEXT NEVER OVERFLOWS */
-.panel * {
+/* ===============================
+   TEXT CONTAINMENT (FIXED)
+================================ */
+.panel *,
+pre {
   max-width: 100%;
-  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 /* ===============================
-   EMPTY / LOADING PANEL TEXT
+   PRE / EMPTY STATE (RESTORED)
 ================================ */
-.panel.empty {
-  opacity: 0.6;
-  animation: pulseText 1.8s ease-in-out infinite;
+pre {
+  min-height: 120px;
+  padding: 16px;
+  border-radius: 14px;
+  background: rgba(255,255,255,.05);
+  animation: fadeUp .5s ease both;
+}
+
+pre:empty::before {
+  content: "Waiting for output…";
+  opacity: .35;
+  font-style: italic;
+  animation: pulseText 1.6s ease-in-out infinite;
 }
 
 /* ===============================
-   TEXT HELPERS
-================================ */
-.text-muted {
-  color: var(--text-muted);
-}
-
-/* ===============================
-   BUTTONS
-================================ */
-button {
-  background: var(--accent);
-  color: #fff;
-  border: none;
-  border-radius: 10px;
-  padding: 10px 14px;
-  cursor: pointer;
-}
-
-/* ===============================
-   FOCUS MODE (DESKTOP)
+   FOCUS MODE
 ================================ */
 body.sidebar-hidden .app-shell {
   grid-template-columns: 1fr;
@@ -138,7 +206,7 @@ body.sidebar-hidden .main {
 }
 
 /* ===============================
-   MOBILE MODE (UNCHANGED & WORKING)
+   MOBILE (NEW – KEPT WORKING)
 ================================ */
 @media (max-width: 768px) {
   .sidebar {
@@ -157,14 +225,14 @@ body.sidebar-hidden .main {
 
   #sidebarToggle {
     position: relative;
-    z-index: 1100;
+    z-index: 1200;
   }
 }
 
 /* ===============================
-   ANIMATIONS (RESUMED)
+   ANIMATIONS
 ================================ */
-@keyframes panelFade {
+@keyframes fadeUp {
   from {
     opacity: 0;
     transform: translateY(10px);
@@ -176,7 +244,8 @@ body.sidebar-hidden .main {
 }
 
 @keyframes pulseText {
-  0%   { opacity: 0.3; }
-  50%  { opacity: 0.6; }
-  100% { opacity: 0.3; }
-}
+  0% { opacity: .25; }
+  50% { opacity: .6; }
+  100% { opacity: .25; }
+   }
+     
