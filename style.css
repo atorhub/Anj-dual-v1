@@ -1,38 +1,44 @@
-/* ===============================
+/* =========================================
    GLOBAL RESET
-================================ */
+========================================= */
+
 * {
   box-sizing: border-box;
 }
 
-/* ===============================
-   BASE VARIABLE BRIDGE
-   (THIS IS THE KEY FIX)
-================================ */
+/* =========================================
+   ROOT + THEME BRIDGE
+   (abhiii layout vars + cool theme vars)
+========================================= */
+
 body {
-  /* default fallbacks */
-  --bg: #020617;
-  --card: rgba(255,255,255,.08);
-  --text: #e5e7eb;
+  /* abhiii base vars */
+  --bg-main: #020617;
+  --bg-panel: rgba(255,255,255,0.08);
+  --bg-panel-hover: rgba(255,255,255,0.12);
+  --bg-sidebar: rgba(0,0,0,0.45);
+  --text-main: #e5e7eb;
+  --text-muted: #9ca3af;
   --accent: #7c3aed;
 
-  /* map OLD vars → NEW layout vars */
-  --bg-main: var(--bg);
-  --bg-panel: var(--card);
-  --bg-panel-hover: rgba(255,255,255,.16);
-  --bg-sidebar: rgba(0,0,0,.45);
+  /* cool theme vars (mapped safely) */
+  --bg: var(--bg-main);
+  --card: var(--bg-panel);
+  --text: var(--text-main);
 
-  background: var(--bg-main);
+  background: var(--bg);
   color: var(--text);
   margin: 0;
-  font-family: system-ui, sans-serif;
+  padding: 0;
   min-height: 100vh;
-  transition: background .5s ease, color .3s ease;
+  font-family: system-ui, sans-serif;
+  transition: background .5s ease;
 }
 
-/* ===============================
-   THEMES (FROM cool.css – UNCHANGED COLORS)
-================================ */
+/* =========================================
+   THEMES (FROM cool.css — UNTOUCHED)
+========================================= */
+
 body.theme-default {
   --bg: radial-gradient(circle at top,#1e1b4b,#020617);
   --card: rgba(255,255,255,.08);
@@ -70,55 +76,57 @@ body.theme-dark {
 
 body.theme-aqua {
   --bg: radial-gradient(circle at top, #1ddfd3, #0b2c3d 70%);
-  --card: rgba(40,180,190,.18);
-  --text: #eaffff;
+  --card: rgba(40, 180, 190, 0.18);
   --accent: #1ddfd3;
+  --text: #eaffff;
 }
 
 body.theme-mint {
   --bg: radial-gradient(circle at top, #7fffd4, #063b2c 70%);
-  --card: rgba(80,200,170,.18);
-  --text: #ecfffa;
+  --card: rgba(80, 200, 170, 0.18);
   --accent: #7fffd4;
+  --text: #ecfffa;
 }
 
 body.theme-sunset {
   --bg: radial-gradient(circle at top, #ff7a18, #3b1c2a 75%);
-  --card: rgba(255,140,90,.18);
-  --text: #fff1e8;
+  --card: rgba(255, 140, 90, 0.18);
   --accent: #ff9a3c;
+  --text: #fff1e8;
 }
 
 body.theme-neon {
   --bg: radial-gradient(circle at top, #00f2ff, #090a0f 75%);
-  --card: rgba(80,220,255,.18);
-  --text: #e9fcff;
+  --card: rgba(80, 220, 255, 0.18);
   --accent: #00f2ff;
+  --text: #e9fcff;
 }
 
 body.theme-midnight {
   --bg: radial-gradient(circle at top, #0b0f2f, #01010f 80%);
-  --card: rgba(40,40,80,.18);
-  --text: #e6e9ff;
+  --card: rgba(40, 40, 80, 0.18);
   --accent: #9aa5ff;
+  --text: #e6e9ff;
 }
 
-/* ===============================
-   APP SHELL (NEW – GRID LAYOUT)
-================================ */
+/* =========================================
+   APP SHELL (abhiii — UNCHANGED)
+========================================= */
+
 .app-shell {
   display: grid;
   grid-template-columns: 240px 1fr;
   min-height: 100vh;
 }
 
-/* ===============================
-   SIDEBAR (NEW LOGIC KEPT)
-================================ */
+/* =========================================
+   SIDEBAR (STRUCTURE abhiii + VISUAL cool)
+========================================= */
+
 .sidebar {
   width: 240px;
   background: var(--bg-sidebar);
-  backdrop-filter: blur(16px);
+  backdrop-filter: blur(18px);
   transition: transform .3s ease;
 }
 
@@ -126,63 +134,92 @@ body.sidebar-hidden .sidebar {
   transform: translateX(-100%);
 }
 
-/* ===============================
-   MAIN
-================================ */
+/* =========================================
+   MAIN CONTENT (abhiii)
+========================================= */
+
 .main {
+  min-height: 100vh;
   padding: 24px;
-  background: transparent;
 }
 
-/* ===============================
+/* =========================================
    GRID
-================================ */
+========================================= */
+
 .grid {
   display: grid;
   gap: 20px;
+  width: 100%;
 }
 
-/* ===============================
-   PANELS (RESTORED FROM cool.css)
-================================ */
+/* =========================================
+   PANELS (MERGED: STRUCTURE + ANIMATION)
+========================================= */
+
 .panel {
-  background: var(--bg-panel);
+  background: var(--card);
   border-radius: 22px;
   padding: 22px;
+  overflow: hidden;
+  word-wrap: break-word;
+  line-height: 1.5;
   backdrop-filter: blur(18px);
   box-shadow:
     0 8px 30px rgba(0,0,0,.35),
     inset 0 0 0 1px rgba(255,255,255,.08);
-  animation: fadeUp .4s ease both;
   transition:
     background .25s ease,
     transform .25s ease,
     box-shadow .25s ease;
+  animation: fadeUp .4s ease both;
 }
 
 .panel:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 12px 35px rgba(0,0,0,.45);
+  background: var(--bg-panel-hover);
+  transform: translateY(-2px);
 }
 
-/* ===============================
-   TEXT CONTAINMENT (FIXED)
-================================ */
-.panel *,
-pre {
+.panel p,
+.panel span,
+.panel div {
   max-width: 100%;
-  white-space: pre-wrap;
-  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
-/* ===============================
-   PRE / EMPTY STATE (RESTORED)
-================================ */
+/* =========================================
+   TEXT
+========================================= */
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+/* =========================================
+   BUTTONS
+========================================= */
+
+button {
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+}
+
+/* =========================================
+   PRE / OUTPUT BOX (cool)
+========================================= */
+
 pre {
   min-height: 120px;
   padding: 16px;
   border-radius: 14px;
   background: rgba(255,255,255,.05);
+  white-space: pre-wrap;
+  word-break: break-word;
+  display: block;
   animation: fadeUp .5s ease both;
 }
 
@@ -193,26 +230,42 @@ pre:empty::before {
   animation: pulseText 1.6s ease-in-out infinite;
 }
 
-/* ===============================
-   FOCUS MODE
-================================ */
+/* =========================================
+   FOCUS MODE (abhiii)
+========================================= */
+
 body.sidebar-hidden .app-shell {
   grid-template-columns: 1fr;
 }
 
 body.sidebar-hidden .main {
   max-width: 1100px;
-  margin-inline: auto;
+  margin-left: auto;
+  margin-right: auto;
 }
 
-/* ===============================
-   MOBILE (NEW – KEPT WORKING)
-================================ */
+/* =========================================
+   MOBILE (abhiii — UNTOUCHED)
+========================================= */
+
 @media (max-width: 768px) {
   .sidebar {
     position: fixed;
-    inset: 0 auto 0 0;
+    top: 0;
+    bottom: 0;
     z-index: 1000;
+  }
+
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 1100;
+    background: var(--bg);
+  }
+
+  #sidebarToggle {
+    position: relative;
+    z-index: 1200;
   }
 
   .app-shell {
@@ -222,16 +275,12 @@ body.sidebar-hidden .main {
   .main {
     padding: 16px;
   }
-
-  #sidebarToggle {
-    position: relative;
-    z-index: 1200;
-  }
 }
 
-/* ===============================
-   ANIMATIONS
-================================ */
+/* =========================================
+   ANIMATIONS (cool)
+========================================= */
+
 @keyframes fadeUp {
   from {
     opacity: 0;
@@ -244,8 +293,7 @@ body.sidebar-hidden .main {
 }
 
 @keyframes pulseText {
-  0% { opacity: .25; }
-  50% { opacity: .6; }
-  100% { opacity: .25; }
-   }
-     
+  0%   { opacity: 0.25; }
+  50%  { opacity: 0.6; }
+  100% { opacity: 0.25; }
+}
