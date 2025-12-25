@@ -1,42 +1,46 @@
-/* =========================================
-   ROOT & THEME VARIABLES
-========================================= */
+/* ===============================
+   GLOBAL RESET
+================================ */
+* {
+  box-sizing: border-box;
+}
 
+/* ===============================
+   THEME VARIABLES (RESUMED)
+================================ */
 body {
-  --bg-main: #020617;
+  --bg: #020617;
   --bg-panel: rgba(255,255,255,0.08);
-  --bg-panel-hover: rgba(255,255,255,0.12);
+  --bg-panel-hover: rgba(255,255,255,0.14);
   --bg-sidebar: rgba(0,0,0,0.45);
 
-  --text-main: #e5e7eb;
+  --text: #e5e7eb;
   --text-muted: #9ca3af;
   --accent: #7c3aed;
 
-  background: var(--bg-main);
-  color: var(--text-main);
   margin: 0;
-  padding: 0;
-  min-height: 100vh;
+  font-family: system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  transition: background 0.4s ease, color 0.3s ease;
 }
 
-/* =========================================
-   APP SHELL LAYOUT (UNCHANGED)
-========================================= */
-
+/* ===============================
+   APP LAYOUT (UNCHANGED LOGIC)
+================================ */
 .app-shell {
   display: grid;
   grid-template-columns: 240px 1fr;
   min-height: 100vh;
 }
 
-/* =========================================
-   SIDEBAR (UNCHANGED)
-========================================= */
-
+/* ===============================
+   SIDEBAR (MOBILE FIX KEPT)
+================================ */
 .sidebar {
-  background: var(--bg-sidebar);
-  backdrop-filter: blur(12px);
   width: 240px;
+  background: var(--bg-sidebar);
+  backdrop-filter: blur(14px);
   transition: transform 0.3s ease;
 }
 
@@ -44,115 +48,103 @@ body.sidebar-hidden .sidebar {
   transform: translateX(-100%);
 }
 
-/* =========================================
+/* ===============================
    MAIN CONTENT
-========================================= */
-
+================================ */
 .main {
-  background: var(--bg-main);
-  min-height: 100vh;
   padding: 24px;
+  min-height: 100vh;
 }
 
-/* =========================================
+/* ===============================
    GRID
-========================================= */
-
+================================ */
 .grid {
   display: grid;
   gap: 20px;
-  width: 100%;
 }
 
-/* =========================================
-   PANELS (FIXED & RESUMED)
-========================================= */
-
+/* ===============================
+   PANELS (FULLY RESUMED)
+================================ */
 .panel {
   background: var(--bg-panel);
   border-radius: 16px;
   padding: 18px 20px;
-  overflow: hidden;                 /* 🔑 contain text */
-  word-wrap: break-word;
-  line-height: 1.5;                 /* 🔑 calm text */
+
+  /* TEXT CONTAINMENT */
+  overflow: hidden;
+  word-break: break-word;
+  line-height: 1.5;
+
+  /* ANIMATION */
+  animation: panelFade 0.5s ease both;
   transition:
     background 0.25s ease,
     transform 0.25s ease,
     box-shadow 0.25s ease;
 }
 
-/* Panel hover (illusion only) */
+/* PANEL HOVER */
 .panel:hover {
   background: var(--bg-panel-hover);
-  transform: translateY(-2px);
-  box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.35);
 }
 
-/* Text inside panels */
-.panel p,
-.panel span,
-.panel div {
+/* ENSURE TEXT NEVER OVERFLOWS */
+.panel * {
   max-width: 100%;
-  overflow-wrap: break-word;
+  overflow-wrap: anywhere;
 }
 
-/* =========================================
-   TEXT
-========================================= */
+/* ===============================
+   EMPTY / LOADING PANEL TEXT
+================================ */
+.panel.empty {
+  opacity: 0.6;
+  animation: pulseText 1.8s ease-in-out infinite;
+}
 
+/* ===============================
+   TEXT HELPERS
+================================ */
 .text-muted {
   color: var(--text-muted);
 }
 
-/* =========================================
+/* ===============================
    BUTTONS
-========================================= */
-
+================================ */
 button {
   background: var(--accent);
-  color: white;
+  color: #fff;
   border: none;
   border-radius: 10px;
   padding: 10px 14px;
   cursor: pointer;
 }
 
-/* =========================================
-   FOCUS MODE (UNCHANGED)
-========================================= */
-
+/* ===============================
+   FOCUS MODE (DESKTOP)
+================================ */
 body.sidebar-hidden .app-shell {
   grid-template-columns: 1fr;
 }
 
 body.sidebar-hidden .main {
   max-width: 1100px;
-  margin-left: auto;
-  margin-right: auto;
+  margin-inline: auto;
 }
 
-/* =========================================
-   MOBILE (UNCHANGED)
-========================================= */
-
+/* ===============================
+   MOBILE MODE (UNCHANGED & WORKING)
+================================ */
 @media (max-width: 768px) {
   .sidebar {
     position: fixed;
-    top: 0;
-    bottom: 0;
+    inset: 0 auto 0 0;
     z-index: 1000;
-  }
-
-  .topbar {
-    position: sticky;
-    top: 0;
-    z-index: 1100;
-    background: var(--bg-main);
-  }
-
-  #sidebarToggle {
-    position: relative;
-    z-index: 1200;
   }
 
   .app-shell {
@@ -162,4 +154,29 @@ body.sidebar-hidden .main {
   .main {
     padding: 16px;
   }
+
+  #sidebarToggle {
+    position: relative;
+    z-index: 1100;
+  }
+}
+
+/* ===============================
+   ANIMATIONS (RESUMED)
+================================ */
+@keyframes panelFade {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes pulseText {
+  0%   { opacity: 0.3; }
+  50%  { opacity: 0.6; }
+  100% { opacity: 0.3; }
 }
