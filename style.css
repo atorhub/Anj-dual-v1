@@ -235,3 +235,20 @@ button:hover {
     position: relative;
   }
 }
+/* =========================================
+   FINAL OVERRIDE — KILL SIDEBAR COLUMN
+   ========================================= */
+
+body.sidebar-hidden .app-shell {
+  grid-template-columns: 1fr !important;
+}
+
+body.sidebar-hidden .sidebar {
+  transform: translateX(-100%);
+  pointer-events: none;
+}
+
+body.sidebar-hidden .main {
+  margin: 0 !important;
+  width: 100%;
+}
