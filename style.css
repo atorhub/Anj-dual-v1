@@ -252,3 +252,14 @@ body.sidebar-hidden .main {
   margin: 0 !important;
   width: 100%;
 }
+/* =========================================
+   FOCUS MODE (SIDEBAR CLOSED)
+   ========================================= */
+
+body.sidebar-hidden .main {
+  max-width: 1100px;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  padding-left: 20px;
+  padding-right: 20px;
+}
