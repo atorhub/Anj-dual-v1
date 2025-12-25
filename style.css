@@ -1,265 +1,148 @@
-/* ===============================
-   BASE RESET
-=============================== */
-* {
-  box-sizing: border-box;
-}
+/* =========================================
+   ROOT & THEME VARIABLES
+========================================= */
 
-html, body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  max-width: 100%;
-  overflow-x: hidden;
-}
-
-/* ===============================
-   THEME VARIABLES
-=============================== */
 body {
   --bg-main: #020617;
   --bg-panel: rgba(255,255,255,0.08);
   --bg-sidebar: rgba(0,0,0,0.45);
-  --border-soft: rgba(255,255,255,0.15);
-  --text-main: #e5e7eb;
-  --text-muted: #94a3b8;
-  --accent: #22c55e;
 
-  background: linear-gradient(135deg, #020617, #020617);
+  --text-main: #e5e7eb;
+  --text-muted: #9ca3af;
+  --accent: #7c3aed;
+
+  background: var(--bg-main);
   color: var(--text-main);
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
-body.theme-galaxy { --accent:#a78bfa; }
-body.theme-fairy  { --accent:#f0abfc; }
-body.theme-pink   { --accent:#f472b6; }
-body.theme-dark   { --accent:#64748b; }
-body.theme-aqua   { --accent:#38bdf8; }
-body.theme-mint   { --accent:#6ee7b7; }
-body.theme-sunset { --accent:#fb7185; }
-body.theme-neon   { --accent:#22d3ee; }
-body.theme-midnight { --accent:#818cf8; }
+/* =========================================
+   APP SHELL LAYOUT (SINGLE AUTHORITY)
+========================================= */
 
-/* ===============================
-   APP LAYOUT (SOURCE OF TRUTH)
-=============================== */
 .app-shell {
   display: grid;
   grid-template-columns: 240px 1fr;
   min-height: 100vh;
+  width: 100%;
   transition: grid-template-columns 0.3s ease;
 }
 
-/* Collapse sidebar column completely */
-body.sidebar-hidden .app-shell {
-  grid-template-columns: 1fr;
-}
-
-/* ===============================
+/* =========================================
    SIDEBAR
-=============================== */
+========================================= */
+
 .sidebar {
   background: var(--bg-sidebar);
-  padding: 16px;
-  border-right: 1px solid var(--border-soft);
-  transition: transform 0.3s ease;
+  backdrop-filter: blur(12px);
+  position: relative;
+  width: 240px;
+  transition: transform 0.3s ease, background 0.3s ease;
 }
 
-/* Hide sidebar visually */
+/* Hidden sidebar (mobile + toggle) */
 body.sidebar-hidden .sidebar {
   transform: translateX(-100%);
-  pointer-events: none;
 }
 
-/* ===============================
-   SIDEBAR CONTENT
-=============================== */
-.logo {
-  font-size: 22px;
-  font-weight: 700;
-  margin-bottom: 16px;
-}
-
-.nav-item {
-  padding: 10px 12px;
-  border-radius: 10px;
-  cursor: pointer;
-  margin-bottom: 6px;
-}
-
-.nav-item:hover,
-.nav-item.active {
-  background: var(--accent);
-  color: #020617;
-}
-
-.history-panel {
-  margin-top: 16px;
-}
-
-#historyList {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-#historyList li {
-  background: var(--bg-panel);
-  border: 1px solid var(--border-soft);
-  padding: 8px;
-  border-radius: 8px;
-  margin-bottom: 6px;
-  font-size: 12px;
-  cursor: pointer;
-}
-
-/* ===============================
-   MAIN
-=============================== */
-.main {
-  padding: 16px;
-  min-width: 0;
-}
-
-/* ===============================
-   TOP BAR
-=============================== */
-.topbar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-.top-controls {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  align-items: center;
-}
-
-#statusBar {
-  font-weight: 600;
-  color: var(--accent);
-}
-
-/* ===============================
-   GRID & PANELS
-=============================== */
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 16px;
-  max-width: 980px;      /* GitHub-style canvas */
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.panel {
-  background: var(--bg-panel);
-  border: 1px solid var(--border-soft);
-  border-radius: 14px;
-  padding: 14px;
-}
-
-.panel h2 {
-  margin-top: 0;
-}
-
-/* ===============================
-   TEXT AREAS
-=============================== */
-#rawText,
-#cleanedText,
-#jsonPreview {
-  background: rgba(0,0,0,0.45);
-  border-radius: 10px;
-  padding: 12px;
-  max-height: 260px;
-  overflow-y: auto;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-/* ===============================
-   INPUTS & BUTTONS
-=============================== */
-input,
-select,
-button {
-  background: rgba(0,0,0,0.35);
-  color: var(--text-main);
-  border: 1px solid var(--border-soft);
-  border-radius: 8px;
-  padding: 8px;
-}
-
-button:hover {
-  background: var(--accent);
-  color: #020617;
-}
-
-.actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-/* ===============================
-   MOBILE
-=============================== */
-@media (max-width: 768px) {
-
-  .app-shell {
-    grid-template-columns: 1fr;
-  }
-
-  .sidebar {
-    width: 190px;
-  }
-
-  .grid {
-    display: flex;
-    flex-direction: column;
-    padding-left: 12px;
-    padding-right: 12px;
-  }
-}
-
-/* ===============================
-   DESKTOP SAFETY
-=============================== */
-@media (min-width: 769px) {
-  .sidebar {
-    transform: none !important;
-    position: relative;
-  }
-}
 /* =========================================
-   FINAL OVERRIDE — KILL SIDEBAR COLUMN
-   ========================================= */
+   MAIN CONTENT AREA
+========================================= */
 
+.main {
+  background: var(--bg-main);
+  width: 100%;
+  min-height: 100vh;
+  padding: 24px;
+  box-sizing: border-box;
+  transition: background 0.3s ease;
+}
+
+/* Grid / content wrapper */
+.grid {
+  width: 100%;
+  display: grid;
+  gap: 20px;
+}
+
+/* =========================================
+   FOCUS MODE (SIDEBAR HIDDEN)
+========================================= */
+
+/* Collapse sidebar column completely */
 body.sidebar-hidden .app-shell {
   grid-template-columns: 1fr !important;
 }
 
-body.sidebar-hidden .sidebar {
-  transform: translateX(-100%);
-  pointer-events: none;
-}
-
-body.sidebar-hidden .main {
-  margin: 0 !important;
-  width: 100%;
-}
-/* =========================================
-   FOCUS MODE (SIDEBAR CLOSED)
-   ========================================= */
-
+/* Center main content like GitHub */
 body.sidebar-hidden .main {
   max-width: 1100px;
   margin-left: auto !important;
   margin-right: auto !important;
   padding-left: 20px;
   padding-right: 20px;
+}
+
+/* =========================================
+   PANELS / CARDS
+========================================= */
+
+.panel {
+  background: var(--bg-panel);
+  border-radius: 16px;
+  padding: 20px;
+  backdrop-filter: blur(10px);
+  transition: background 0.3s ease;
+}
+
+/* =========================================
+   TEXT UTILS
+========================================= */
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+/* =========================================
+   BUTTONS (GENERIC)
+========================================= */
+
+button {
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+  opacity: 0.95;
+}
+
+/* =========================================
+   MOBILE HANDLING
+========================================= */
+
+@media (max-width: 768px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 1000;
+  }
+
+  .main {
+    padding: 16px;
+  }
 }
