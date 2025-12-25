@@ -202,21 +202,32 @@ body.sidebar-hidden .sidebar {
 =============================== */
 @media (max-width: 768px) {
 
+  /* Slim sidebar for mobile */
   .app-shell {
-    grid-template-columns: 240px 1fr;
+    grid-template-columns: 190px 1fr;
   }
 
   .sidebar {
-    position: relative;
+    width: 190px;
   }
 
+  /* Give main breathing room */
   .main {
-    width: 100%;
+    padding: 16px 14px;
   }
 
+  /* Stack cards cleanly */
   .grid {
     display: flex;
     flex-direction: column;
+    align-items: stretch;
+  }
+
+  /* Make panels feel centered */
+  .panel {
+    margin: 0 auto;
+    width: 100%;
+    max-width: 100%;
   }
 }
 
