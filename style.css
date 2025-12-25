@@ -43,7 +43,7 @@ body {
   transition: transform 0.3s ease, background 0.3s ease;
 }
 
-/* Hidden sidebar (mobile + toggle) */
+/* Hide sidebar */
 body.sidebar-hidden .sidebar {
   transform: translateX(-100%);
 }
@@ -58,10 +58,20 @@ body.sidebar-hidden .sidebar {
   min-height: 100vh;
   padding: 24px;
   box-sizing: border-box;
-  transition: background 0.3s ease;
 }
 
-/* Grid / content wrapper */
+/* Header / topbar */
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+}
+
+/* =========================================
+   GRID / CONTENT
+========================================= */
+
 .grid {
   width: 100%;
   display: grid;
@@ -72,12 +82,10 @@ body.sidebar-hidden .sidebar {
    FOCUS MODE (SIDEBAR HIDDEN)
 ========================================= */
 
-/* Collapse sidebar column completely */
 body.sidebar-hidden .app-shell {
   grid-template-columns: 1fr !important;
 }
 
-/* Center main content like GitHub */
 body.sidebar-hidden .main {
   max-width: 1100px;
   margin-left: auto !important;
@@ -95,11 +103,10 @@ body.sidebar-hidden .main {
   border-radius: 16px;
   padding: 20px;
   backdrop-filter: blur(10px);
-  transition: background 0.3s ease;
 }
 
 /* =========================================
-   TEXT UTILS
+   TEXT
 ========================================= */
 
 .text-muted {
@@ -107,7 +114,7 @@ body.sidebar-hidden .main {
 }
 
 /* =========================================
-   BUTTONS (GENERIC)
+   BUTTONS
 ========================================= */
 
 button {
@@ -117,29 +124,43 @@ button {
   border-radius: 10px;
   padding: 10px 14px;
   cursor: pointer;
-  transition: transform 0.15s ease, opacity 0.15s ease;
 }
 
 button:hover {
-  transform: translateY(-1px);
   opacity: 0.95;
 }
 
 /* =========================================
-   MOBILE HANDLING
+   MOBILE FIX (CRITICAL PART)
 ========================================= */
 
 @media (max-width: 768px) {
-  .app-shell {
-    grid-template-columns: 1fr;
-  }
 
+  /* Sidebar becomes overlay */
   .sidebar {
     position: fixed;
     left: 0;
     top: 0;
     bottom: 0;
     z-index: 1000;
+  }
+
+  /* 🔑 LIFT TOPBAR ABOVE SIDEBAR */
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 1100;
+    background: var(--bg-main);
+  }
+
+  /* Ensure toggle is clickable */
+  #sidebarToggle {
+    position: relative;
+    z-index: 1200;
+  }
+
+  .app-shell {
+    grid-template-columns: 1fr;
   }
 
   .main {
