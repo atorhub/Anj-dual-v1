@@ -240,21 +240,29 @@ body.sidebar-hidden .sidebar {
     position: relative;
   }
      }
+
 /* ===============================
-   GITHUB-STYLE CONTENT WIDTH
-   (SAFE: DOES NOT BREAK LAYOUT)
+   TRUE CENTERED CONTENT BEHAVIOR
    =============================== */
 
-.grid {
-  max-width: 980px;
-  margin-left: auto;
-  margin-right: auto;
+.layout-dashboard .main {
+  margin-left: 240px;
+  transition: margin-left 0.3s ease;
 }
 
-/* Mobile breathing space */
+.layout-dashboard.sidebar-hidden .main {
+  margin-left: 0;
+  display: flex;
+  justify-content: center;
+}
+
+.layout-dashboard.sidebar-hidden .main .grid {
+  max-width: 980px;
+  width: 100%;
+}
+
 @media (max-width: 768px) {
-  .grid {
-    padding-left: 12px;
-    padding-right: 12px;
+  .layout-dashboard .main {
+    margin-left: 0;
   }
 }
