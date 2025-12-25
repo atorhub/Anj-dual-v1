@@ -241,22 +241,19 @@ body.sidebar-hidden .sidebar {
   }
      }
 /* ===============================
-   GITHUB-STYLE CONTENT CENTERING
+   GITHUB-STYLE CONTENT WIDTH
+   (SAFE: DOES NOT BREAK LAYOUT)
    =============================== */
 
-.main {
-  display: flex;
-  justify-content: center;
+.grid {
+  max-width: 980px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
-.main > * {
-  width: 100%;
-  max-width: 980px;   /* GitHub-style reading width */
-}
-
-/* Mobile refinement */
+/* Mobile breathing space */
 @media (max-width: 768px) {
-  .main > * {
+  .grid {
     padding-left: 12px;
     padding-right: 12px;
   }
