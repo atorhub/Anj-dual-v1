@@ -41,12 +41,18 @@ body.theme-neon   { --accent:#22d3ee; }
 body.theme-midnight { --accent:#818cf8; }
 
 /* ===============================
-   APP LAYOUT
+   APP LAYOUT (SOURCE OF TRUTH)
 =============================== */
 .app-shell {
   display: grid;
   grid-template-columns: 240px 1fr;
   min-height: 100vh;
+  transition: grid-template-columns 0.3s ease;
+}
+
+/* Collapse sidebar column completely */
+body.sidebar-hidden .app-shell {
+  grid-template-columns: 1fr;
 }
 
 /* ===============================
@@ -57,6 +63,12 @@ body.theme-midnight { --accent:#818cf8; }
   padding: 16px;
   border-right: 1px solid var(--border-soft);
   transition: transform 0.3s ease;
+}
+
+/* Hide sidebar visually */
+body.sidebar-hidden .sidebar {
+  transform: translateX(-100%);
+  pointer-events: none;
 }
 
 /* ===============================
@@ -138,6 +150,9 @@ body.theme-midnight { --accent:#818cf8; }
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 16px;
+  max-width: 980px;      /* GitHub-style canvas */
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .panel {
@@ -191,78 +206,32 @@ button:hover {
 }
 
 /* ===============================
-   SIDEBAR STATE (GLOBAL)
-=============================== */
-body.sidebar-hidden .sidebar {
-  transform: translateX(-100%);
-}
-
-/* ===============================
-   MOBILE (PUSH LAYOUT, CLOSED BY DEFAULT)
+   MOBILE
 =============================== */
 @media (max-width: 768px) {
 
-  /* Slim sidebar for mobile */
   .app-shell {
-    grid-template-columns: 190px 1fr;
+    grid-template-columns: 1fr;
   }
 
   .sidebar {
     width: 190px;
   }
 
-  /* Give main breathing room */
-  .main {
-    padding: 16px 14px;
-  }
-
-  /* Stack cards cleanly */
   .grid {
     display: flex;
     flex-direction: column;
-    align-items: stretch;
-  }
-
-  /* Make panels feel centered */
-  .panel {
-    margin: 0 auto;
-    width: 100%;
-    max-width: 100%;
+    padding-left: 12px;
+    padding-right: 12px;
   }
 }
 
 /* ===============================
-   DESKTOP (NO CHANGE)
+   DESKTOP SAFETY
 =============================== */
 @media (min-width: 769px) {
   .sidebar {
     transform: none !important;
     position: relative;
-  }
-     }
-
-/* ===============================
-   TRUE CENTERED CONTENT BEHAVIOR
-   =============================== */
-
-.layout-dashboard .main {
-  margin-left: 240px;
-  transition: margin-left 0.3s ease;
-}
-
-.layout-dashboard.sidebar-hidden .main {
-  margin-left: 0;
-  display: flex;
-  justify-content: center;
-}
-
-.layout-dashboard.sidebar-hidden .main .grid {
-  max-width: 980px;
-  width: 100%;
-}
-
-@media (max-width: 768px) {
-  .layout-dashboard .main {
-    margin-left: 0;
   }
 }
