@@ -240,3 +240,24 @@ body.sidebar-hidden .sidebar {
     position: relative;
   }
      }
+/* ===============================
+   GITHUB-STYLE CONTENT CENTERING
+   =============================== */
+
+.main {
+  display: flex;
+  justify-content: center;
+}
+
+.main > * {
+  width: 100%;
+  max-width: 980px;   /* GitHub-style reading width */
+}
+
+/* Mobile refinement */
+@media (max-width: 768px) {
+  .main > * {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+}
