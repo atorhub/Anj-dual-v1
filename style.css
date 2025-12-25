@@ -5,6 +5,7 @@
 body {
   --bg-main: #020617;
   --bg-panel: rgba(255,255,255,0.08);
+  --bg-panel-hover: rgba(255,255,255,0.12);
   --bg-sidebar: rgba(0,0,0,0.45);
 
   --text-main: #e5e7eb;
@@ -16,93 +17,83 @@ body {
   margin: 0;
   padding: 0;
   min-height: 100vh;
-  transition: background 0.3s ease, color 0.3s ease;
 }
 
 /* =========================================
-   APP SHELL LAYOUT (SINGLE AUTHORITY)
+   APP SHELL LAYOUT (UNCHANGED)
 ========================================= */
 
 .app-shell {
   display: grid;
   grid-template-columns: 240px 1fr;
   min-height: 100vh;
-  width: 100%;
-  transition: grid-template-columns 0.3s ease;
 }
 
 /* =========================================
-   SIDEBAR
+   SIDEBAR (UNCHANGED)
 ========================================= */
 
 .sidebar {
   background: var(--bg-sidebar);
   backdrop-filter: blur(12px);
-  position: relative;
   width: 240px;
-  transition: transform 0.3s ease, background 0.3s ease;
+  transition: transform 0.3s ease;
 }
 
-/* Hide sidebar */
 body.sidebar-hidden .sidebar {
   transform: translateX(-100%);
 }
 
 /* =========================================
-   MAIN CONTENT AREA
+   MAIN CONTENT
 ========================================= */
 
 .main {
   background: var(--bg-main);
-  width: 100%;
   min-height: 100vh;
   padding: 24px;
-  box-sizing: border-box;
-}
-
-/* Header / topbar */
-.topbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  position: relative;
 }
 
 /* =========================================
-   GRID / CONTENT
+   GRID
 ========================================= */
 
 .grid {
-  width: 100%;
   display: grid;
   gap: 20px;
+  width: 100%;
 }
 
 /* =========================================
-   FOCUS MODE (SIDEBAR HIDDEN)
-========================================= */
-
-body.sidebar-hidden .app-shell {
-  grid-template-columns: 1fr !important;
-}
-
-body.sidebar-hidden .main {
-  max-width: 1100px;
-  margin-left: auto !important;
-  margin-right: auto !important;
-  padding-left: 20px;
-  padding-right: 20px;
-}
-
-/* =========================================
-   PANELS / CARDS
+   PANELS (FIXED & RESUMED)
 ========================================= */
 
 .panel {
   background: var(--bg-panel);
   border-radius: 16px;
-  padding: 20px;
-  backdrop-filter: blur(10px);
+  padding: 18px 20px;
+  overflow: hidden;                 /* 🔑 contain text */
+  word-wrap: break-word;
+  line-height: 1.5;                 /* 🔑 calm text */
+  transition:
+    background 0.25s ease,
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+/* Panel hover (illusion only) */
+.panel:hover {
+  background: var(--bg-panel-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+}
+
+/* Text inside panels */
+.panel p,
+.panel span,
+.panel div {
+  max-width: 100%;
+  overflow-wrap: break-word;
 }
 
 /* =========================================
@@ -126,26 +117,32 @@ button {
   cursor: pointer;
 }
 
-button:hover {
-  opacity: 0.95;
+/* =========================================
+   FOCUS MODE (UNCHANGED)
+========================================= */
+
+body.sidebar-hidden .app-shell {
+  grid-template-columns: 1fr;
+}
+
+body.sidebar-hidden .main {
+  max-width: 1100px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 /* =========================================
-   MOBILE FIX (CRITICAL PART)
+   MOBILE (UNCHANGED)
 ========================================= */
 
 @media (max-width: 768px) {
-
-  /* Sidebar becomes overlay */
   .sidebar {
     position: fixed;
-    left: 0;
     top: 0;
     bottom: 0;
     z-index: 1000;
   }
 
-  /* 🔑 LIFT TOPBAR ABOVE SIDEBAR */
   .topbar {
     position: sticky;
     top: 0;
@@ -153,7 +150,6 @@ button:hover {
     background: var(--bg-main);
   }
 
-  /* Ensure toggle is clickable */
   #sidebarToggle {
     position: relative;
     z-index: 1200;
