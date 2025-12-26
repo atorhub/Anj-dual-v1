@@ -2,10 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-
-  <!-- 📌 REQUIRED FOR RESPONSIVENESS -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ANJ Dual OCR Parser</title>
 
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
@@ -71,6 +68,7 @@
       <section class="panel">
         <h2>Upload Invoice</h2>
         <input type="file" id="fileInput" />
+
         <div class="actions">
           <button id="dualOCRBtn">Dual OCR</button>
           <button id="ocrOnlyBtn">Quick OCR</button>
@@ -108,7 +106,7 @@
           <input type="text" id="editTotal" />
         </label>
 
-        <!-- ✅ EXPORT BUTTONS (ADDED ONLY) -->
+        <!-- ✅ EXPORT SYSTEM -->
         <div class="actions">
           <button id="exportJSON">⬇ Export JSON</button>
           <button id="exportTXT">⬇ Export TXT</button>
