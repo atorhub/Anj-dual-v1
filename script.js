@@ -156,7 +156,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     setStatus("Parsed ✓");
 
-    // ✅ ADDED: switch to Parsed page (NO other changes)
+    // ✅ ADDED (1): auto switch to Parsed page after parse
     document.querySelector('[data-page="parsed"]')?.click();
   };
 
@@ -304,6 +304,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 /* ===== PAGE NAVIGATION (HYBRID) ===== */
+
 const navItems = document.querySelectorAll(".nav-item");
 const pages = document.querySelectorAll(".page");
 
@@ -321,6 +322,11 @@ navItems.forEach(item => {
     document.body.className = document.body.className
       .replace(/page-\S+/g, "")
       .trim() + " page-" + page;
+
+    // ✅ ADDED (2): auto-close sidebar on mobile after navigation
+    if (window.innerWidth <= 768) {
+      document.body.classList.add("sidebar-hidden");
+    }
   });
 });
       
