@@ -16,24 +16,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
     historyList: document.getElementById("historyList"),
     saveBtn: document.getElementById("saveBtn"),
+    historySearch: document.getElementById("historySearch"),
+    clearHistoryBtn: document.getElementById("clearHistoryBtn"),
 
     editMerchant: document.getElementById("editMerchant"),
     editDate: document.getElementById("editDate"),
     editTotal: document.getElementById("editTotal"),
 
-    /* ✅ EXPORT (ADDED ONLY) */
     exportJSON: document.getElementById("exportJSON"),
     exportTXT: document.getElementById("exportTXT"),
     exportCSV: document.getElementById("exportCSV")
   };
+
+  let db;
+  let selectedHistoryItem = null;
 
   function setStatus(msg, err = false) {
     el.status.textContent = msg;
     el.status.style.color = err ? "#ff4d4d" : "#7CFC98";
   }
 
-  /* ---------- THEME ---------- */
-  el.theme.addEventListener("change", () => {
+  /* ---------- THEME & LAYOUT ---------- */
+
+  el.theme?.addEventListener("change", () => {
     document.body.classList.forEach(c => {
       if (c.startsWith("theme-")) document.body.classList.remove(c);
     });
@@ -41,7 +46,7 @@ document.addEventListener("DOMContentLoaded", () => {
     localStorage.setItem("anj-theme", el.theme.value);
   });
 
-  el.layout.addEventListener("change", () => {
+  el.layout?.addEventListener("change", () => {
     document.body.classList.forEach(c => {
       if (c.startsWith("layout-")) document.body.classList.remove(c);
     });
@@ -49,7 +54,13 @@ document.addEventListener("DOMContentLoaded", () => {
     localStorage.setItem("anj-layout", el.layout.value);
   });
 
+  const savedTheme = localStorage.getItem("anj-theme");
+  const savedLayout = localStorage.getItem("anj-layout");
+  if (savedTheme) document.body.classList.add(`theme-${savedTheme}`);
+  if (savedLayout) document.body.classList.add(`layout-${savedLayout}`);
+
   /* ---------- OCR ---------- */
+
   async function runOCR(file) {
     setStatus("OCR running...");
     const res = await Tesseract.recognize(file, "eng");
@@ -80,23 +91,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function parseInvoice(text) {
     const out = { merchant: "", date: "", total: "" };
-
     const total = text.match(/total[:\s]*₹?\s*([\d,.]+)/i);
     const date = text.match(/\b\d{1,2}[-/]\d{1,2}[-/]\d{2,4}\b/);
-
     if (total) out.total = total[1];
     if (date) out.date = date[0];
-
     out.merchant = text.split(" ").slice(0, 4).join(" ");
     return out;
   }
 
   async function processFile(useOCR) {
-    if (!el.file.files[0]) {
-      setStatus("No file selected", true);
-      return;
-    }
-
+    if (!el.file.files[0]) return setStatus("No file selected", true);
     const file = el.file.files[0];
     let text = "";
 
@@ -109,6 +113,7 @@ document.addEventListener("DOMContentLoaded", () => {
     text = cleanText(text);
     const parsed = parseInvoice(text);
     window._lastParsed = parsed;
+    selectedHistoryItem = null;
 
     el.raw.textContent = text;
     el.clean.textContent = text;
@@ -126,98 +131,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
   el.parse.onclick = () => {
     if (!el.clean.textContent) return;
-
     const parsed = parseInvoice(el.clean.textContent);
     window._lastParsed = parsed;
-
+    selectedHistoryItem = null;
     el.json.textContent = JSON.stringify(parsed, null, 2);
     el.editMerchant.value = parsed.merchant;
     el.editDate.value = parsed.date;
     el.editTotal.value = parsed.total;
-
     setStatus("Parsed ✓");
   };
 
-  /* ---------- INDEXEDDB HISTORY ---------- */
-  let db;
-
-  function initDB() {
-    const req = indexedDB.open("anj-dual-ocr", 1);
-
-    req.onupgradeneeded = e => {
-      db = e.target.result;
-      db.createObjectStore("history", {
-        keyPath: "id",
-        autoIncrement: true
-      });
-    };
-
-    req.onsuccess = e => {
-      db = e.target.result;
-      loadHistory();
-    };
-  }
-
-  function saveHistory(data) {
-    if (!db) return;
-    const tx = db.transaction("history", "readwrite");
-    tx.objectStore("history").add({
-      merchant: data.merchant,
-      date: data.date,
-      total: data.total,
-      timestamp: Date.now()
-    });
-    tx.oncomplete = loadHistory;
-  }
-
-  function loadHistory() {
-    if (!db) return;
-    el.historyList.innerHTML = "";
-
-    const tx = db.transaction("history", "readonly");
-    const req = tx.objectStore("history").openCursor(null, "prev");
-
-    req.onsuccess = e => {
-      const cursor = e.target.result;
-      if (!cursor) return;
-
-      const item = cursor.value;
-      const li = document.createElement("li");
-      li.textContent =
-        (item.merchant || "Unknown") +
-        " • " +
-        new Date(item.timestamp).toLocaleString();
-
-      li.onclick = () => {
-        window._lastParsed = item;
-        el.editMerchant.value = item.merchant || "";
-        el.editDate.value = item.date || "";
-        el.editTotal.value = item.total || "";
-        el.json.textContent = JSON.stringify(item, null, 2);
-        setStatus("Loaded from history ✓");
-      };
-
-      el.historyList.appendChild(li);
-      cursor.continue();
-    };
-  }
-
-  el.saveBtn.onclick = () => {
-    if (!window._lastParsed) {
-      setStatus("Nothing to save", true);
-      return;
-    }
-    saveHistory({
-      merchant: el.editMerchant.value,
-      date: el.editDate.value,
-      total: el.editTotal.value
-    });
-    setStatus("Saved to history ✓");
-  };
-
-  /* ---------- EXPORT SYSTEM (MERGED, ADD-ONLY) ---------- */
+  /* ---------- EXPORT ---------- */
 
   function getExportData() {
+    if (selectedHistoryItem) return selectedHistoryItem;
     if (!window._lastParsed) return null;
     return {
       merchant: el.editMerchant.value,
@@ -237,46 +164,114 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   el.exportJSON.onclick = () => {
-    const data = getExportData();
-    if (!data) return setStatus("Nothing to export", true);
-    downloadFile("invoice.json", JSON.stringify(data, null, 2), "application/json");
+    const d = getExportData();
+    if (!d) return setStatus("Nothing to export", true);
+    downloadFile("invoice.json", JSON.stringify(d, null, 2), "application/json");
     setStatus("JSON exported ✓");
   };
 
   el.exportTXT.onclick = () => {
-    const data = getExportData();
-    if (!data) return setStatus("Nothing to export", true);
-    downloadFile(
-      "invoice.txt",
-      `Merchant: ${data.merchant}\nDate: ${data.date}\nTotal: ${data.total}`,
-      "text/plain"
-    );
+    const d = getExportData();
+    if (!d) return setStatus("Nothing to export", true);
+    downloadFile("invoice.txt", `Merchant: ${d.merchant}\nDate: ${d.date}\nTotal: ${d.total}`, "text/plain");
     setStatus("TXT exported ✓");
   };
 
   el.exportCSV.onclick = () => {
-    const data = getExportData();
-    if (!data) return setStatus("Nothing to export", true);
-    downloadFile(
-      "invoice.csv",
-      `Merchant,Date,Total\n"${data.merchant}","${data.date}","${data.total}"`,
-      "text/csv"
-    );
+    const d = getExportData();
+    if (!d) return setStatus("Nothing to export", true);
+    downloadFile("invoice.csv", `Merchant,Date,Total\n"${d.merchant}","${d.date}","${d.total}"`, "text/csv");
     setStatus("CSV exported ✓");
   };
 
-  /* ---------- SIDEBAR ---------- */
-  document.getElementById("sidebarToggle").onclick = () => {
-    document.body.classList.toggle("sidebar-hidden");
+  /* ---------- HISTORY ---------- */
+
+  function initDB() {
+    const req = indexedDB.open("anj-dual-ocr", 1);
+    req.onupgradeneeded = e => {
+      db = e.target.result;
+      db.createObjectStore("history", { keyPath: "id", autoIncrement: true });
+    };
+    req.onsuccess = e => {
+      db = e.target.result;
+      loadHistory();
+    };
+  }
+
+  function loadHistory(filter = "") {
+    el.historyList.innerHTML = "";
+    selectedHistoryItem = null;
+
+    const tx = db.transaction("history", "readonly");
+    tx.objectStore("history").openCursor(null, "prev").onsuccess = e => {
+      const cursor = e.target.result;
+      if (!cursor) return;
+
+      const item = cursor.value;
+      const text = `${item.merchant} ${item.date} ${item.total}`.toLowerCase();
+      if (filter && !text.includes(filter)) {
+        cursor.continue();
+        return;
+      }
+
+      const li = document.createElement("li");
+      li.textContent = `${item.merchant || "Unknown"} • ${new Date(item.timestamp).toLocaleString()}`;
+      li.onclick = () => {
+        selectedHistoryItem = item;
+        window._lastParsed = item;
+        el.editMerchant.value = item.merchant || "";
+        el.editDate.value = item.date || "";
+        el.editTotal.value = item.total || "";
+        el.json.textContent = JSON.stringify(item, null, 2);
+        [...el.historyList.children].forEach(x => x.classList.remove("active"));
+        li.classList.add("active");
+        setStatus("History item selected ✓");
+      };
+
+      const del = document.createElement("button");
+      del.textContent = "🗑";
+      del.onclick = ev => {
+        ev.stopPropagation();
+        const txd = db.transaction("history", "readwrite");
+        txd.objectStore("history").delete(item.id);
+        txd.oncomplete = () => loadHistory(el.historySearch.value.toLowerCase());
+      };
+
+      li.appendChild(del);
+      el.historyList.appendChild(li);
+      cursor.continue();
+    };
+  }
+
+  el.historySearch.oninput = () => {
+    loadHistory(el.historySearch.value.toLowerCase());
   };
 
-  /* ---------- RESTORE STATE ---------- */
-  const savedTheme = localStorage.getItem("anj-theme");
-  const savedLayout = localStorage.getItem("anj-layout");
-  if (savedTheme) document.body.classList.add(`theme-${savedTheme}`);
-  if (savedLayout) document.body.classList.add(`layout-${savedLayout}`);
+  el.clearHistoryBtn.onclick = () => {
+    if (!confirm("Clear ALL history?")) return;
+    const tx = db.transaction("history", "readwrite");
+    tx.objectStore("history").clear();
+    tx.oncomplete = () => {
+      el.historyList.innerHTML = "";
+      selectedHistoryItem = null;
+      setStatus("All history cleared ✓");
+    };
+  };
+
+  el.saveBtn.onclick = () => {
+    if (!window._lastParsed) return setStatus("Nothing to save", true);
+    const tx = db.transaction("history", "readwrite");
+    tx.objectStore("history").add({
+      merchant: el.editMerchant.value,
+      date: el.editDate.value,
+      total: el.editTotal.value,
+      timestamp: Date.now()
+    });
+    tx.oncomplete = () => loadHistory();
+    setStatus("Saved to history ✓");
+  };
 
   initDB();
   setStatus("Ready ✓");
 });
-    
+      
