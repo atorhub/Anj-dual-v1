@@ -14,7 +14,12 @@ document.addEventListener("DOMContentLoaded", () => {
     saveBtn: document.getElementById("saveBtn"),
     editMerchant: document.getElementById("editMerchant"),
     editDate: document.getElementById("editDate"),
-    editTotal: document.getElementById("editTotal")
+    editTotal: document.getElementById("editTotal"),
+
+    /* ✅ EXPORT ELEMENTS (ADDED) */
+    exportJSON: document.getElementById("exportJSON"),
+    exportTXT: document.getElementById("exportTXT"),
+    exportCSV: document.getElementById("exportCSV")
   };
 
   function setStatus(msg, err = false) {
@@ -136,6 +141,57 @@ document.addEventListener("DOMContentLoaded", () => {
     setStatus("Parsed ✓");
   };
 
+  /* ---------- EXPORT SYSTEM (ADDED) ---------- */
+
+  function getExportData() {
+    if (!window._lastParsed) return null;
+
+    return {
+      merchant: el.editMerchant.value,
+      date: el.editDate.value,
+      total: el.editTotal.value
+    };
+  }
+
+  function downloadFile(name, content, type) {
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = name;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  el.exportJSON.onclick = () => {
+    const data = getExportData();
+    if (!data) return setStatus("Nothing to export", true);
+    downloadFile("invoice.json", JSON.stringify(data, null, 2), "application/json");
+    setStatus("JSON exported ✓");
+  };
+
+  el.exportTXT.onclick = () => {
+    const data = getExportData();
+    if (!data) return setStatus("Nothing to export", true);
+    downloadFile(
+      "invoice.txt",
+      `Merchant: ${data.merchant}\nDate: ${data.date}\nTotal: ${data.total}`,
+      "text/plain"
+    );
+    setStatus("TXT exported ✓");
+  };
+
+  el.exportCSV.onclick = () => {
+    const data = getExportData();
+    if (!data) return setStatus("Nothing to export", true);
+    downloadFile(
+      "invoice.csv",
+      `Merchant,Date,Total\n"${data.merchant}","${data.date}","${data.total}"`,
+      "text/csv"
+    );
+    setStatus("CSV exported ✓");
+  };
+
   /* ---------- SIDEBAR ---------- */
   document.getElementById("sidebarToggle").onclick = () =>
     document.body.classList.toggle("sidebar-hidden");
@@ -145,7 +201,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function initDB() {
     const req = indexedDB.open("anj-dual-ocr", 1);
-
     req.onupgradeneeded = e => {
       db = e.target.result;
       db.createObjectStore("history", {
@@ -153,7 +208,6 @@ document.addEventListener("DOMContentLoaded", () => {
         autoIncrement: true
       });
     };
-
     req.onsuccess = e => {
       db = e.target.result;
       loadHistory();
@@ -162,7 +216,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function saveHistory(data) {
     if (!db) return;
-
     const tx = db.transaction("history", "readwrite");
     tx.objectStore("history").add({
       merchant: data.merchant,
@@ -170,54 +223,40 @@ document.addEventListener("DOMContentLoaded", () => {
       total: data.total,
       timestamp: Date.now()
     });
-
     tx.oncomplete = loadHistory;
   }
 
   function loadHistory() {
     if (!db || !el.historyList) return;
     el.historyList.innerHTML = "";
-
     const tx = db.transaction("history", "readonly");
     const req = tx.objectStore("history").openCursor(null, "prev");
-
     req.onsuccess = e => {
       const cursor = e.target.result;
       if (!cursor) return;
-
       const item = cursor.value;
       const li = document.createElement("li");
       li.textContent =
         (item.merchant || "Unknown") +
         " • " +
         new Date(item.timestamp).toLocaleString();
-
       li.onclick = () => {
         el.json.textContent = JSON.stringify(item, null, 2);
       };
-
       el.historyList.appendChild(li);
       cursor.continue();
     };
   }
 
-  /* ---------- SAVE (MOBILE + DESKTOP) ---------- */
   el.saveBtn.onclick = () => {
     if (!window._lastParsed) {
       setStatus("Nothing to save", true);
       return;
     }
-
-    saveHistory({
-      merchant: el.editMerchant.value,
-      date: el.editDate.value,
-      total: el.editTotal.value
-    });
-
+    saveHistory(getExportData());
     setStatus("Saved to history ✓");
   };
 
-  /* ---------- RESTORE UI ---------- */
   const savedTheme = localStorage.getItem("anj-theme");
   const savedLayout = localStorage.getItem("anj-layout");
   if (savedTheme) document.body.classList.add(`theme-${savedTheme}`);
@@ -226,4 +265,4 @@ document.addEventListener("DOMContentLoaded", () => {
   initDB();
   setStatus("Ready ✓");
 });
-      
+    
