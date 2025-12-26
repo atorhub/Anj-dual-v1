@@ -155,6 +155,9 @@ document.addEventListener("DOMContentLoaded", () => {
     el.editTotal.value = parsed.total || "";
 
     setStatus("Parsed ✓");
+
+    // ✅ ADDED: switch to Parsed page (NO other changes)
+    document.querySelector('[data-page="parsed"]')?.click();
   };
 
   /* ---------- EXPORT ---------- */
@@ -299,7 +302,8 @@ document.addEventListener("DOMContentLoaded", () => {
   initDB();
   setStatus("Ready ✓");
 });
-// ===== PAGE NAVIGATION (HYBRID) =====
+
+/* ===== PAGE NAVIGATION (HYBRID) ===== */
 const navItems = document.querySelectorAll(".nav-item");
 const pages = document.querySelectorAll(".page");
 
@@ -307,19 +311,16 @@ navItems.forEach(item => {
   item.addEventListener("click", () => {
     const page = item.dataset.page;
 
-    // nav active
     navItems.forEach(n => n.classList.remove("active"));
     item.classList.add("active");
 
-    // page switch
     pages.forEach(p => p.classList.remove("active"));
     const target = document.querySelector(".page-" + page);
     if (target) target.classList.add("active");
 
-    // body page class (for future debugging)
     document.body.className = document.body.className
       .replace(/page-\S+/g, "")
       .trim() + " page-" + page;
   });
 });
-
+      
