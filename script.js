@@ -21,6 +21,7 @@ document.addEventListener("DOMContentLoaded", () => {
     editDate: document.getElementById("editDate"),
     editTotal: document.getElementById("editTotal"),
 
+    /* ✅ EXPORT (ADDED ONLY) */
     exportJSON: document.getElementById("exportJSON"),
     exportTXT: document.getElementById("exportTXT"),
     exportCSV: document.getElementById("exportCSV")
@@ -31,8 +32,24 @@ document.addEventListener("DOMContentLoaded", () => {
     el.status.style.color = err ? "#ff4d4d" : "#7CFC98";
   }
 
-  /* ---------- OCR ---------- */
+  /* ---------- THEME ---------- */
+  el.theme.addEventListener("change", () => {
+    document.body.classList.forEach(c => {
+      if (c.startsWith("theme-")) document.body.classList.remove(c);
+    });
+    document.body.classList.add(`theme-${el.theme.value}`);
+    localStorage.setItem("anj-theme", el.theme.value);
+  });
 
+  el.layout.addEventListener("change", () => {
+    document.body.classList.forEach(c => {
+      if (c.startsWith("layout-")) document.body.classList.remove(c);
+    });
+    document.body.classList.add(`layout-${el.layout.value}`);
+    localStorage.setItem("anj-layout", el.layout.value);
+  });
+
+  /* ---------- OCR ---------- */
   async function runOCR(file) {
     setStatus("OCR running...");
     const res = await Tesseract.recognize(file, "eng");
@@ -91,7 +108,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     text = cleanText(text);
     const parsed = parseInvoice(text);
-
     window._lastParsed = parsed;
 
     el.raw.textContent = text;
@@ -122,11 +138,87 @@ document.addEventListener("DOMContentLoaded", () => {
     setStatus("Parsed ✓");
   };
 
-  /* ---------- EXPORT SYSTEM ---------- */
+  /* ---------- INDEXEDDB HISTORY ---------- */
+  let db;
+
+  function initDB() {
+    const req = indexedDB.open("anj-dual-ocr", 1);
+
+    req.onupgradeneeded = e => {
+      db = e.target.result;
+      db.createObjectStore("history", {
+        keyPath: "id",
+        autoIncrement: true
+      });
+    };
+
+    req.onsuccess = e => {
+      db = e.target.result;
+      loadHistory();
+    };
+  }
+
+  function saveHistory(data) {
+    if (!db) return;
+    const tx = db.transaction("history", "readwrite");
+    tx.objectStore("history").add({
+      merchant: data.merchant,
+      date: data.date,
+      total: data.total,
+      timestamp: Date.now()
+    });
+    tx.oncomplete = loadHistory;
+  }
+
+  function loadHistory() {
+    if (!db) return;
+    el.historyList.innerHTML = "";
+
+    const tx = db.transaction("history", "readonly");
+    const req = tx.objectStore("history").openCursor(null, "prev");
+
+    req.onsuccess = e => {
+      const cursor = e.target.result;
+      if (!cursor) return;
+
+      const item = cursor.value;
+      const li = document.createElement("li");
+      li.textContent =
+        (item.merchant || "Unknown") +
+        " • " +
+        new Date(item.timestamp).toLocaleString();
+
+      li.onclick = () => {
+        window._lastParsed = item;
+        el.editMerchant.value = item.merchant || "";
+        el.editDate.value = item.date || "";
+        el.editTotal.value = item.total || "";
+        el.json.textContent = JSON.stringify(item, null, 2);
+        setStatus("Loaded from history ✓");
+      };
+
+      el.historyList.appendChild(li);
+      cursor.continue();
+    };
+  }
+
+  el.saveBtn.onclick = () => {
+    if (!window._lastParsed) {
+      setStatus("Nothing to save", true);
+      return;
+    }
+    saveHistory({
+      merchant: el.editMerchant.value,
+      date: el.editDate.value,
+      total: el.editTotal.value
+    });
+    setStatus("Saved to history ✓");
+  };
+
+  /* ---------- EXPORT SYSTEM (MERGED, ADD-ONLY) ---------- */
 
   function getExportData() {
     if (!window._lastParsed) return null;
-
     return {
       merchant: el.editMerchant.value,
       date: el.editDate.value,
@@ -174,11 +266,17 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   /* ---------- SIDEBAR ---------- */
-
   document.getElementById("sidebarToggle").onclick = () => {
     document.body.classList.toggle("sidebar-hidden");
   };
 
+  /* ---------- RESTORE STATE ---------- */
+  const savedTheme = localStorage.getItem("anj-theme");
+  const savedLayout = localStorage.getItem("anj-layout");
+  if (savedTheme) document.body.classList.add(`theme-${savedTheme}`);
+  if (savedLayout) document.body.classList.add(`layout-${savedLayout}`);
+
+  initDB();
   setStatus("Ready ✓");
 });
-        
+    
