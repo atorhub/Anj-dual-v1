@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 
-<body class="theme-default layout-dashboard sidebar-hidden">
+<body class="theme-default layout-dashboard">
 
 <div class="app-shell">
 
@@ -29,10 +29,7 @@
     <div class="history-panel">
       <h3>History</h3>
 
-      <!-- 🔍 ADDED -->
       <input id="historySearch" placeholder="Search history..." />
-
-      <!-- 🗑 ADDED -->
       <button id="clearHistoryBtn">Clear History</button>
 
       <ul id="historyList"></ul>
@@ -109,14 +106,14 @@
           <input type="text" id="editTotal" />
         </label>
 
-        <!-- 📦 ADDED EXPORT BUTTONS -->
         <div class="actions">
           <button id="exportJSON">Export JSON</button>
           <button id="exportTXT">Export TXT</button>
           <button id="exportCSV">Export CSV</button>
         </div>
 
-        <pre id="jsonPreview"></pre>
+        <pre id="jso
+nPreview"></pre>
       </section>
 
     </section>
