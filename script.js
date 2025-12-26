@@ -15,10 +15,10 @@ document.addEventListener("DOMContentLoaded", () => {
     layout: document.getElementById("layoutSelect"),
 
     historyList: document.getElementById("historyList"),
-    saveBtn: document.getElementById("saveBtn"),
     historySearch: document.getElementById("historySearch"),
     clearHistoryBtn: document.getElementById("clearHistoryBtn"),
 
+    saveBtn: document.getElementById("saveBtn"),
     editMerchant: document.getElementById("editMerchant"),
     editDate: document.getElementById("editDate"),
     editTotal: document.getElementById("editTotal"),
@@ -38,7 +38,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /* ---------- THEME & LAYOUT ---------- */
 
-  el.theme?.addEventListener("change", () => {
+  el.theme.addEventListener("change", () => {
     document.body.classList.forEach(c => {
       if (c.startsWith("theme-")) document.body.classList.remove(c);
     });
@@ -46,7 +46,7 @@ document.addEventListener("DOMContentLoaded", () => {
     localStorage.setItem("anj-theme", el.theme.value);
   });
 
-  el.layout?.addEventListener("change", () => {
+  el.layout.addEventListener("change", () => {
     document.body.classList.forEach(c => {
       if (c.startsWith("layout-")) document.body.classList.remove(c);
     });
@@ -59,11 +59,17 @@ document.addEventListener("DOMContentLoaded", () => {
   if (savedTheme) document.body.classList.add(`theme-${savedTheme}`);
   if (savedLayout) document.body.classList.add(`layout-${savedLayout}`);
 
-  /* ---------- OCR ---------- */
+  /* ---------- OCR & PDF ---------- */
 
   async function runOCR(file) {
-    setStatus("OCR running...");
-    const res = await Tesseract.recognize(file, "eng");
+    setStatus("OCR running…");
+    const res = await Tesseract.recognize(file, "eng", {
+      logger: m => {
+        if (m.status === "recognizing text") {
+          setStatus(`OCR ${Math.round(m.progress * 100)}%`);
+        }
+      }
+    });
     return res.data.text || "";
   }
 
@@ -74,7 +80,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const pdf = await pdfjsLib.getDocument(URL.createObjectURL(file)).promise;
       let text = "";
-
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
         const content = await page.getTextContent();
@@ -90,7 +95,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function parseInvoice(text) {
-    const out = { merchant: "", date: "", total: "" };
+    const out = { merchant: null, date: null, total: null };
     const total = text.match(/total[:\s]*₹?\s*([\d,.]+)/i);
     const date = text.match(/\b\d{1,2}[-/]\d{1,2}[-/]\d{2,4}\b/);
     if (total) out.total = total[1];
@@ -100,9 +105,13 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function processFile(useOCR) {
-    if (!el.file.files[0]) return setStatus("No file selected", true);
-    const file = el.file.files[0];
+    if (!el.file.files[0]) {
+      setStatus("No file selected", true);
+      return;
+    }
+
     let text = "";
+    const file = el.file.files[0];
 
     if (file.type.startsWith("image/") && useOCR) {
       text = await runOCR(file);
@@ -112,16 +121,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
     text = cleanText(text);
     const parsed = parseInvoice(text);
+
     window._lastParsed = parsed;
     selectedHistoryItem = null;
 
-    el.raw.textContent = text;
-    el.clean.textContent = text;
+    el.raw.textContent = text || "--";
+    el.clean.textContent = text || "--";
     el.json.textContent = JSON.stringify(parsed, null, 2);
 
-    el.editMerchant.value = parsed.merchant;
-    el.editDate.value = parsed.date;
-    el.editTotal.value = parsed.total;
+    el.editMerchant.value = parsed.merchant || "";
+    el.editDate.value = parsed.date || "";
+    el.editTotal.value = parsed.total || "";
 
     setStatus("Done ✓");
   }
@@ -130,14 +140,20 @@ document.addEventListener("DOMContentLoaded", () => {
   el.ocr.onclick = () => processFile(true);
 
   el.parse.onclick = () => {
-    if (!el.clean.textContent) return;
+    if (!el.clean.textContent || el.clean.textContent === "--") {
+      setStatus("Nothing to parse", true);
+      return;
+    }
+
     const parsed = parseInvoice(el.clean.textContent);
     window._lastParsed = parsed;
     selectedHistoryItem = null;
+
     el.json.textContent = JSON.stringify(parsed, null, 2);
-    el.editMerchant.value = parsed.merchant;
-    el.editDate.value = parsed.date;
-    el.editTotal.value = parsed.total;
+    el.editMerchant.value = parsed.merchant || "";
+    el.editDate.value = parsed.date || "";
+    el.editTotal.value = parsed.total || "";
+
     setStatus("Parsed ✓");
   };
 
@@ -173,18 +189,31 @@ document.addEventListener("DOMContentLoaded", () => {
   el.exportTXT.onclick = () => {
     const d = getExportData();
     if (!d) return setStatus("Nothing to export", true);
-    downloadFile("invoice.txt", `Merchant: ${d.merchant}\nDate: ${d.date}\nTotal: ${d.total}`, "text/plain");
+    downloadFile(
+      "invoice.txt",
+      `Merchant: ${d.merchant}\nDate: ${d.date}\nTotal: ${d.total}`,
+      "text/plain"
+    );
     setStatus("TXT exported ✓");
   };
 
   el.exportCSV.onclick = () => {
     const d = getExportData();
     if (!d) return setStatus("Nothing to export", true);
-    downloadFile("invoice.csv", `Merchant,Date,Total\n"${d.merchant}","${d.date}","${d.total}"`, "text/csv");
+    downloadFile(
+      "invoice.csv",
+      `Merchant,Date,Total\n"${d.merchant}","${d.date}","${d.total}"`,
+      "text/csv"
+    );
     setStatus("CSV exported ✓");
   };
 
-  /* ---------- HISTORY ---------- */
+  /* ---------- SIDEBAR ---------- */
+
+  document.getElementById("sidebarToggle").onclick = () =>
+    document.body.classList.toggle("sidebar-hidden");
+
+  /* ---------- HISTORY / INDEXEDDB ---------- */
 
   function initDB() {
     const req = indexedDB.open("anj-dual-ocr", 1);
@@ -215,7 +244,11 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       const li = document.createElement("li");
-      li.textContent = `${item.merchant || "Unknown"} • ${new Date(item.timestamp).toLocaleString()}`;
+      li.textContent =
+        (item.merchant || "Unknown") +
+        " • " +
+        new Date(item.timestamp).toLocaleString();
+
       li.onclick = () => {
         selectedHistoryItem = item;
         window._lastParsed = item;
@@ -223,29 +256,16 @@ document.addEventListener("DOMContentLoaded", () => {
         el.editDate.value = item.date || "";
         el.editTotal.value = item.total || "";
         el.json.textContent = JSON.stringify(item, null, 2);
-        [...el.historyList.children].forEach(x => x.classList.remove("active"));
-        li.classList.add("active");
         setStatus("History item selected ✓");
       };
 
-      const del = document.createElement("button");
-      del.textContent = "🗑";
-      del.onclick = ev => {
-        ev.stopPropagation();
-        const txd = db.transaction("history", "readwrite");
-        txd.objectStore("history").delete(item.id);
-        txd.oncomplete = () => loadHistory(el.historySearch.value.toLowerCase());
-      };
-
-      li.appendChild(del);
       el.historyList.appendChild(li);
       cursor.continue();
     };
   }
 
-  el.historySearch.oninput = () => {
+  el.historySearch.oninput = () =>
     loadHistory(el.historySearch.value.toLowerCase());
-  };
 
   el.clearHistoryBtn.onclick = () => {
     if (!confirm("Clear ALL history?")) return;
@@ -259,7 +279,11 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   el.saveBtn.onclick = () => {
-    if (!window._lastParsed) return setStatus("Nothing to save", true);
+    if (!window._lastParsed) {
+      setStatus("Nothing to save", true);
+      return;
+    }
+
     const tx = db.transaction("history", "readwrite");
     tx.objectStore("history").add({
       merchant: el.editMerchant.value,
@@ -267,11 +291,12 @@ document.addEventListener("DOMContentLoaded", () => {
       total: el.editTotal.value,
       timestamp: Date.now()
     });
-    tx.oncomplete = () => loadHistory();
+
+    tx.oncomplete = loadHistory;
     setStatus("Saved to history ✓");
   };
 
   initDB();
   setStatus("Ready ✓");
 });
-      
+    
