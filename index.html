@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ANJ Dual OCR Parser</title>
 
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 
-<body class="theme-default layout-dashboard sidebar-hidden page-upload">
+<body class="theme-default layout-dashboard sidebar-hidden">
 
 <div class="app-shell">
 
@@ -20,7 +20,6 @@
 
     <nav>
       <div class="nav-item active" data-page="upload">📤 Upload</div>
-      <div class="nav-item" data-page="ocr">🔍 OCR</div>
       <div class="nav-item" data-page="parsed">📊 Parsed</div>
       <div class="nav-item" data-page="history">🕘 History</div>
       <div class="nav-item" data-page="settings">⚙️ Settings</div>
@@ -48,115 +47,82 @@
           <option value="fairy">Fairy</option>
           <option value="pink">Pink</option>
           <option value="dark">Dark</option>
-          <option value="aqua">Aqua</option>
-          <option value="mint">Mint</option>
-          <option value="sunset">Sunset</option>
-          <option value="neon">Neon</option>
-          <option value="midnight">Midnight</option>
         </select>
 
         <select id="layoutSelect">
           <option value="dashboard">Dashboard</option>
           <option value="focus">Focus</option>
-          <option value="vertical">Vertical</option>
         </select>
 
         <span id="statusBar">Ready ✓</span>
       </div>
     </header>
 
-    <!-- ================= PAGES ================= -->
+    <section class="grid">
 
-    <!-- UPLOAD PAGE (DEFAULT) -->
-    <section class="page page-upload active">
-      <section class="grid">
+      <!-- UPLOAD PAGE -->
+      <section class="panel page page-upload active">
+        <h2>Upload Invoice</h2>
 
-        <section class="panel">
-          <h2>Upload Invoice</h2>
-          <input type="file" id="fileInput" />
-          <div class="actions">
-            <button id="dualOCRBtn">Dual OCR</button>
-            <button id="ocrOnlyBtn">Quick OCR</button>
-            <button id="parseBtn">Parse</button>
-          </div>
-        </section>
+        <input type="file" id="fileInput" />
 
-        <section class="panel">
-          <h2>Raw Text</h2>
-          <pre id="rawText"></pre>
-        </section>
+        <div class="actions">
+          <button id="dualOCRBtn">Dual OCR</button>
+          <button id="ocrOnlyBtn">Quick OCR</button>
+          <button id="parseBtn">Parse</button>
+        </div>
 
-        <section class="panel">
-          <h2>Cleaned Text</h2>
-          <pre id="cleanedText"></pre>
-        </section>
-
+        <!-- ✅ ADDED: SAVE OCR RESULT -->
+        <div class="actions">
+          <button id="saveOCRBtn" disabled>💾 Save OCR Result</button>
+        </div>
       </section>
-    </section>
 
-    <!-- OCR PAGE -->
-    <section class="page page-ocr">
-      <section class="grid">
-        <section class="panel">
-          <h2>OCR Processing</h2>
-          <pre>Use Upload page to perform OCR.</pre>
-        </section>
+      <section class="panel">
+        <h2>Raw Text</h2>
+        <pre id="rawText">waiting for output...</pre>
       </section>
-    </section>
 
-    <!-- PARSED PAGE -->
-    <section class="page page-parsed">
-      <section class="grid">
-
-        <section class="panel">
-          <h2>Parsed JSON</h2>
-
-          <button id="saveBtn">💾 Save to History</button>
-
-          <label>Merchant
-            <input type="text" id="editMerchant" />
-          </label>
-
-          <label>Date
-            <input type="text" id="editDate" />
-          </label>
-
-          <label>Total
-            <input type="text" id="editTotal" />
-          </label>
-
-          <div class="actions">
-            <button id="exportJSON">Export JSON</button>
-            <button id="exportTXT">Export TXT</button>
-            <button id="exportCSV">Export CSV</button>
-          </div>
-
-          <pre id="jsonPreview"></pre>
-        </section>
-
+      <section class="panel">
+        <h2>Cleaned Text</h2>
+        <pre id="cleanedText">waiting for output...</pre>
       </section>
-    </section>
 
-    <!-- HISTORY PAGE -->
-    <section class="page page-history">
-      <section class="grid">
-        <section class="panel">
-          <h2>History</h2>
-          <ul id="historyPageList"></ul>
-        </section>
+      <!-- PARSED PAGE -->
+      <section class="panel page page-parsed">
+        <h2>Parsed JSON</h2>
+
+        <button id="saveBtn" disabled>💾 Save to History</button>
+
+        <label>Merchant
+          <input type="text" id="editMerchant" disabled />
+        </label>
+
+        <label>Date
+          <input type="text" id="editDate" disabled />
+        </label>
+
+        <label>Total
+          <input type="text" id="editTotal" disabled />
+        </label>
+
+        <div class="actions">
+          <button id="exportJSON" disabled>Export JSON</button>
+          <button id="exportTXT" disabled>Export TXT</button>
+          <button id="exportCSV" disabled>Export CSV</button>
+        </div>
+
+        <!-- ✅ FIXED ID -->
+        <pre id="jsonPreview">waiting for output...</pre>
       </section>
-    </section>
 
-    <!-- SETTINGS PAGE -->
-    <section class="page page-settings">
-      <section class="grid">
-        <section class="panel">
-          <h2>Settings</h2>
-          <p>Use top bar controls to change theme and layout.</p>
-        </section>
+      <!-- HISTORY PAGE -->
+      <section class="panel page page-history">
+        <h2>History</h2>
+        <ul id="historyPageList"></ul>
       </section>
-    </section>
 
+    </section>
   </main>
 </div>
 
