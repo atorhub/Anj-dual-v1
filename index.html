@@ -27,24 +27,10 @@
       <div class="nav-item" data-page="about">ℹ️ About</div>
     </nav>
 
-    <div class="history-panel">
-      <h3>History</h3>
-      <input id="historySearch" placeholder="Search history..." />
-      <button id="clearHistoryBtn">Clear History</button>
-      <ul id="historyList"></ul>
-    </div>
-  </aside>
-
-  <!-- ================= MAIN ================= -->
-  <main class="main">
-
-    <!-- TOP BAR -->
-    <header class="topbar">
-      <span class="brand">ANJ Dual OCR</span>
-
-      <div class="top-controls">
-        <button id="sidebarToggle">☰</button>
-
+    <!-- ✅ MOVED AS-IS (NO TRIMMING) -->
+    <div class="sidebar-controls">
+      <label>
+        Theme
         <select id="themeSelect">
           <option value="default">Default</option>
           <option value="galaxy">Galaxy</option>
@@ -57,15 +43,34 @@
           <option value="neon">Neon</option>
           <option value="midnight">Midnight</option>
         </select>
+      </label>
 
+      <label>
+        Layout
         <select id="layoutSelect">
           <option value="dashboard">Dashboard</option>
           <option value="focus">Focus</option>
           <option value="vertical">Vertical</option>
         </select>
+      </label>
+    </div>
 
-        <span id="statusBar">Ready ✓</span>
-      </div>
+    <div class="history-panel">
+      <h3>History</h3>
+      <input id="historySearch" placeholder="Search history..." />
+      <button id="clearHistoryBtn">Clear History</button>
+      <ul id="historyList"></ul>
+    </div>
+  </aside>
+
+  <!-- ================= MAIN ================= -->
+  <main class="main">
+
+    <!-- TOP BAR (MINIMAL) -->
+    <header class="topbar">
+      <button id="sidebarToggle">☰</button>
+      <span class="brand">ANJ Dual OCR</span>
+      <span id="statusBar">Ready ✓</span>
     </header>
 
     <!-- ================= PAGES ================= -->
@@ -135,7 +140,7 @@
       <section class="page page-settings">
         <section class="panel">
           <h2>Settings</h2>
-          <p>Theme and layout settings are available in the top bar.</p>
+          <p>Theme and layout controls are available in the sidebar.</p>
         </section>
       </section>
 
