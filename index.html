@@ -2,135 +2,156 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>ANJ Dual OCR</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ANJ Dual OCR Parser</title>
 
-  <!-- CSS -->
-  <link rel="stylesheet" href="style.css" />
-
-  <!-- PDF.js -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
-  <!-- Tesseract -->
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <link rel="stylesheet" href="style.css" />
 </head>
 
-<body class="layout-default">
+<body class="theme-default layout-dashboard sidebar-hidden">
 
-  <!-- =======================
-       SIDEBAR
-  ======================= -->
+<div class="app-shell">
+
+  <!-- ================= SIDEBAR ================= -->
   <aside class="sidebar">
-    <button id="sidebarToggle">☰</button>
+    <div class="logo">ANJ</div>
 
     <nav>
-      <div class="nav-item active" data-page="upload">Upload</div>
-      <div class="nav-item" data-page="parsed">Parsed</div>
-      <div class="nav-item" data-page="history">History</div>
-      <div class="nav-item" data-page="settings">Settings</div>
+      <div class="nav-item active" data-page="upload">📤 Upload</div>
+      <div class="nav-item" data-page="parsed">📄 Parsed</div>
+      <div class="nav-item" data-page="history">🕘 History</div>
+      <div class="nav-item" data-page="settings">⚙️ Settings</div>
+      <div class="nav-item" data-page="about">ℹ️ About</div>
     </nav>
 
-    <ul id="historyList"></ul>
+    <div class="history-panel">
+      <h3>History</h3>
+      <input id="historySearch" placeholder="Search history..." />
+      <button id="clearHistoryBtn">Clear History</button>
+      <ul id="historyList"></ul>
+    </div>
   </aside>
 
-  <!-- =======================
-       MAIN CONTENT
-  ======================= -->
-  <main class="content">
+  <!-- ================= MAIN ================= -->
+  <main class="main">
 
-    <!-- STATUS -->
-    <div id="statusBar">Ready</div>
+    <!-- TOP BAR -->
+    <header class="topbar">
+      <span class="brand">ANJ Dual OCR</span>
 
-    <!-- =======================
-         UPLOAD PAGE
-    ======================= -->
-    <section class="page page-upload active">
-      <h2>Upload</h2>
+      <div class="top-controls">
+        <button id="sidebarToggle">☰</button>
 
-      <input type="file" id="fileInput" />
+        <select id="themeSelect">
+          <option value="default">Default</option>
+          <option value="galaxy">Galaxy</option>
+          <option value="fairy">Fairy</option>
+          <option value="pink">Pink</option>
+          <option value="dark">Dark</option>
+          <option value="aqua">Aqua</option>
+          <option value="mint">Mint</option>
+          <option value="sunset">Sunset</option>
+          <option value="neon">Neon</option>
+          <option value="midnight">Midnight</option>
+        </select>
 
-      <div class="actions">
-        <button id="dualOCRBtn">OCR + Parse</button>
-        <button id="ocrOnlyBtn">OCR Only</button>
-        <button id="parseBtn">Parse</button>
+        <select id="layoutSelect">
+          <option value="dashboard">Dashboard</option>
+          <option value="focus">Focus</option>
+          <option value="vertical">Vertical</option>
+        </select>
+
+        <span id="statusBar">Ready ✓</span>
       </div>
+    </header>
 
-      <h3>Raw OCR</h3>
-      <pre id="rawText">--</pre>
+    <!-- ================= PAGES ================= -->
+    <section class="grid">
 
-      <h3>Cleaned Text</h3>
-      <pre id="cleanedText">--</pre>
+      <!-- UPLOAD PAGE -->
+      <section class="page page-upload active">
+        <section class="panel">
+          <h2>Upload Invoice</h2>
+          <input type="file" id="fileInput" />
+          <div class="actions">
+            <button id="dualOCRBtn">Dual OCR</button>
+            <button id="ocrOnlyBtn">Quick OCR</button>
+            <button id="parseBtn">Parse</button>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>Raw Text</h2>
+          <pre id="rawText"></pre>
+        </section>
+
+        <section class="panel">
+          <h2>Cleaned Text</h2>
+          <pre id="cleanedText"></pre>
+        </section>
+      </section>
+
+      <!-- PARSED PAGE -->
+      <section class="page page-parsed">
+        <section class="panel">
+          <h2>Parsed JSON</h2>
+
+          <button id="saveBtn">💾 Save to History</button>
+
+          <label>Merchant
+            <input type="text" id="editMerchant" />
+          </label>
+
+          <label>Date
+            <input type="text" id="editDate" />
+          </label>
+
+          <label>Total
+            <input type="text" id="editTotal" />
+          </label>
+
+          <div class="actions">
+            <button id="exportJSON">Export JSON</button>
+            <button id="exportTXT">Export TXT</button>
+            <button id="exportCSV">Export CSV</button>
+          </div>
+
+          <pre id="jsonPreview"></pre>
+        </section>
+      </section>
+
+      <!-- HISTORY PAGE -->
+      <section class="page page-history">
+        <section class="panel">
+          <h2>History</h2>
+          <ul id="historyPageList"></ul>
+        </section>
+      </section>
+
+      <!-- SETTINGS PAGE -->
+      <section class="page page-settings">
+        <section class="panel">
+          <h2>Settings</h2>
+          <p>Theme and layout settings are available in the top bar.</p>
+        </section>
+      </section>
+
+      <!-- ABOUT PAGE -->
+      <section class="page page-about">
+        <section class="panel">
+          <h2>About</h2>
+          <p>ANJ Dual OCR Parser</p>
+          <p>Offline OCR • Parse • Export • History</p>
+        </section>
+      </section>
+
     </section>
-
-    <!-- =======================
-         PARSED PAGE
-    ======================= -->
-    <section class="page page-parsed">
-      <h2>Parsed Invoice</h2>
-
-      <label>Merchant</label>
-      <input id="editMerchant" disabled />
-
-      <label>Date</label>
-      <input id="editDate" disabled />
-
-      <label>Total</label>
-      <input id="editTotal" disabled />
-
-      <h3>JSON Preview</h3>
-      <pre id="jsonPreview">--</pre>
-
-      <div class="actions">
-        <button id="saveBtn" disabled>Save</button>
-
-        <button id="exportJSON" disabled>Export JSON</button>
-        <button id="exportTXT" disabled>Export TXT</button>
-        <button id="exportCSV" disabled>Export CSV</button>
-      </div>
-    </section>
-
-    <!-- =======================
-         HISTORY PAGE
-    ======================= -->
-    <section class="page page-history">
-      <h2>History</h2>
-
-      <input
-        type="text"
-        id="historySearch"
-        placeholder="Search history..."
-      />
-
-      <ul id="historyPageList"></ul>
-
-      <button id="clearHistoryBtn">Clear History</button>
-    </section>
-
-    <!-- =======================
-         SETTINGS PAGE
-    ======================= -->
-    <section class="page page-settings">
-      <h2>Settings</h2>
-
-      <label>Theme</label>
-      <select id="themeSelect">
-        <option value="default">Default</option>
-        <option value="dark">Dark</option>
-        <option value="pink">Pink</option>
-        <option value="purple">Purple</option>
-      </select>
-
-      <label>Layout</label>
-      <select id="layoutSelect">
-        <option value="default">Default</option>
-        <option value="compact">Compact</option>
-        <option value="wide">Wide</option>
-      </select>
-    </section>
-
   </main>
+</div>
 
-  <!-- JS -->
-  <script src="script.js"></script>
+<script src="script.js"></script>
 </body>
 </html>
