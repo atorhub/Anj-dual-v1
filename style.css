@@ -305,3 +305,8 @@ body.sidebar-hidden .main {
 .page.active {
   display: block;
 }
+@media (max-width: 768px) {
+  body:not(.sidebar-hidden) .sidebar {
+    z-index: 1200;
+  }
+}
