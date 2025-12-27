@@ -52,50 +52,44 @@ document.addEventListener("DOMContentLoaded", () => {
      SIDEBAR TOGGLE
   ======================= */
 
-  if (el.sidebarToggle) {
-    el.sidebarToggle.addEventListener("click", () => {
-      document.body.classList.toggle("sidebar-hidden");
-    });
-  }
+  el.sidebarToggle?.addEventListener("click", () => {
+    document.body.classList.toggle("sidebar-hidden");
+  });
 
   /* =======================
      THEMES
   ======================= */
 
-  if (el.theme) {
-    el.theme.addEventListener("change", () => {
-      document.body.classList.forEach(c => {
-        if (c.startsWith("theme-")) document.body.classList.remove(c);
-      });
-      document.body.classList.add("theme-" + el.theme.value);
-      localStorage.setItem("anj-theme", el.theme.value);
+  el.theme?.addEventListener("change", () => {
+    document.body.classList.forEach(c => {
+      if (c.startsWith("theme-")) document.body.classList.remove(c);
     });
+    document.body.classList.add("theme-" + el.theme.value);
+    localStorage.setItem("anj-theme", el.theme.value);
+  });
 
-    const savedTheme = localStorage.getItem("anj-theme");
-    if (savedTheme) {
-      el.theme.value = savedTheme;
-      document.body.classList.add("theme-" + savedTheme);
-    }
+  const savedTheme = localStorage.getItem("anj-theme");
+  if (savedTheme) {
+    el.theme.value = savedTheme;
+    document.body.classList.add("theme-" + savedTheme);
   }
 
   /* =======================
      LAYOUTS
   ======================= */
 
-  if (el.layout) {
-    el.layout.addEventListener("change", () => {
-      document.body.classList.forEach(c => {
-        if (c.startsWith("layout-")) document.body.classList.remove(c);
-      });
-      document.body.classList.add("layout-" + el.layout.value);
-      localStorage.setItem("anj-layout", el.layout.value);
+  el.layout?.addEventListener("change", () => {
+    document.body.classList.forEach(c => {
+      if (c.startsWith("layout-")) document.body.classList.remove(c);
     });
+    document.body.classList.add("layout-" + el.layout.value);
+    localStorage.setItem("anj-layout", el.layout.value);
+  });
 
-    const savedLayout = localStorage.getItem("anj-layout");
-    if (savedLayout) {
-      el.layout.value = savedLayout;
-      document.body.classList.add("layout-" + savedLayout);
-    }
+  const savedLayout = localStorage.getItem("anj-layout");
+  if (savedLayout) {
+    el.layout.value = savedLayout;
+    document.body.classList.add("layout-" + savedLayout);
   }
 
   /* =======================
@@ -121,19 +115,49 @@ document.addEventListener("DOMContentLoaded", () => {
 
   updateParsedUI(false);
 
+  /* ======================================================
+     ✅ ONLY ADDED PART — PDF → CANVAS CONVERSION
+     (NO OTHER OCR LOGIC TOUCHED)
+  ====================================================== */
+
+  async function pdfToCanvas(file) {
+    const buffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+    const page = await pdf.getPage(1);
+
+    const viewport = page.getViewport({ scale: 2 });
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+
+    await page.render({ canvasContext: ctx, viewport }).promise;
+    return canvas;
+  }
+
   /* =======================
      OCR
   ======================= */
 
   async function runOCR(file) {
-    setStatus("OCR running…");
-    const result = await Tesseract.recognize(file, "eng", {
+    setStatus("OCR running...");
+
+    let source = file;
+
+    // 🔥 FIX: handle PDF properly
+    if (file.type === "application/pdf") {
+      source = await pdfToCanvas(file);
+    }
+
+    const result = await Tesseract.recognize(source, "eng", {
       logger: m => {
         if (m.status === "recognizing text") {
           setStatus(`OCR ${Math.round(m.progress * 100)}%`);
         }
       }
     });
+
     return result.data.text || "";
   }
 
@@ -235,7 +259,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!db) return;
 
     el.historyList.innerHTML = "";
-    if (el.historyPageList) el.historyPageList.innerHTML = "";
+    el.historyPageList && (el.historyPageList.innerHTML = "");
 
     const tx = db.transaction("history", "readonly");
     tx.objectStore("history").openCursor(null, "prev").onsuccess = e => {
@@ -246,7 +270,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const text = `${item.merchant} ${item.date} ${item.total}`.toLowerCase();
       if (!filter || text.includes(filter)) {
         renderHistoryItem(item, el.historyList);
-        if (el.historyPageList) renderHistoryItem(item, el.historyPageList);
+        el.historyPageList && renderHistoryItem(item, el.historyPageList);
       }
       c.continue();
     };
@@ -305,4 +329,4 @@ document.querySelectorAll(".nav-item").forEach(item => {
     }
   });
 });
-    
+  
