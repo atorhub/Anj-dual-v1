@@ -25,74 +25,44 @@ document.addEventListener("DOMContentLoaded", () => {
 
     exportJSON: document.getElementById("exportJSON"),
     exportTXT: document.getElementById("exportTXT"),
-    exportCSV: document.getElementById("exportCSV")
+    exportCSV: document.getElementById("exportCSV"),
+
+    // ✅ ADDED: History page container
+    historyPageList: document.getElementById("historyPageList")
   };
 
   let db;
   let selectedHistoryItem = null;
+  let hasParsedData = false; // ✅ ADDED
 
   function setStatus(msg, err = false) {
     el.status.textContent = msg;
     el.status.style.color = err ? "#ff4d4d" : "#7CFC98";
   }
 
-  /* ---------- THEME & LAYOUT ---------- */
+  /* ---------- PARSED UI STATE ---------- */
 
-  el.theme.addEventListener("change", () => {
-    document.body.classList.forEach(c => {
-      if (c.startsWith("theme-")) document.body.classList.remove(c);
+  // ✅ ADDED
+  function updateParsedUI(enabled) {
+    [
+      el.saveBtn,
+      el.exportJSON,
+      el.exportTXT,
+      el.exportCSV,
+      el.editMerchant,
+      el.editDate,
+      el.editTotal
+    ].forEach(elm => {
+      if (!elm) return;
+      elm.disabled = !enabled;
+      elm.style.opacity = enabled ? "1" : "0.5";
+      elm.style.pointerEvents = enabled ? "auto" : "none";
     });
-    document.body.classList.add(`theme-${el.theme.value}`);
-    localStorage.setItem("anj-theme", el.theme.value);
-  });
-
-  el.layout.addEventListener("change", () => {
-    document.body.classList.forEach(c => {
-      if (c.startsWith("layout-")) document.body.classList.remove(c);
-    });
-    document.body.classList.add(`layout-${el.layout.value}`);
-    localStorage.setItem("anj-layout", el.layout.value);
-  });
-
-  const savedTheme = localStorage.getItem("anj-theme");
-  const savedLayout = localStorage.getItem("anj-layout");
-  if (savedTheme) document.body.classList.add(`theme-${savedTheme}`);
-  if (savedLayout) document.body.classList.add(`layout-${savedLayout}`);
-
-  /* ---------- OCR & PDF ---------- */
-
-  async function runOCR(file) {
-    setStatus("OCR running…");
-    const res = await Tesseract.recognize(file, "eng", {
-      logger: m => {
-        if (m.status === "recognizing text") {
-          setStatus(`OCR ${Math.round(m.progress * 100)}%`);
-        }
-      }
-    });
-    return res.data.text || "";
   }
 
-  async function extractText(file) {
-    if (file.name.endsWith(".pdf")) {
-      pdfjsLib.GlobalWorkerOptions.workerSrc =
-        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+  updateParsedUI(false); // default disabled
 
-      const pdf = await pdfjsLib.getDocument(URL.createObjectURL(file)).promise;
-      let text = "";
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const content = await page.getTextContent();
-        text += content.items.map(i => i.str).join(" ") + "\n";
-      }
-      return text;
-    }
-    return "";
-  }
-
-  function cleanText(txt) {
-    return txt.replace(/\s+/g, " ").trim();
-  }
+  /* ---------- OCR / PARSE ---------- */
 
   function parseInvoice(text) {
     const out = { merchant: null, date: null, total: null };
@@ -104,41 +74,6 @@ document.addEventListener("DOMContentLoaded", () => {
     return out;
   }
 
-  async function processFile(useOCR) {
-    if (!el.file.files[0]) {
-      setStatus("No file selected", true);
-      return;
-    }
-
-    let text = "";
-    const file = el.file.files[0];
-
-    if (file.type.startsWith("image/") && useOCR) {
-      text = await runOCR(file);
-    } else {
-      text = await extractText(file);
-    }
-
-    text = cleanText(text);
-    const parsed = parseInvoice(text);
-
-    window._lastParsed = parsed;
-    selectedHistoryItem = null;
-
-    el.raw.textContent = text || "--";
-    el.clean.textContent = text || "--";
-    el.json.textContent = JSON.stringify(parsed, null, 2);
-
-    el.editMerchant.value = parsed.merchant || "";
-    el.editDate.value = parsed.date || "";
-    el.editTotal.value = parsed.total || "";
-
-    setStatus("Done ✓");
-  }
-
-  el.dual.onclick = () => processFile(true);
-  el.ocr.onclick = () => processFile(true);
-
   el.parse.onclick = () => {
     if (!el.clean.textContent || el.clean.textContent === "--") {
       setStatus("Nothing to parse", true);
@@ -148,91 +83,66 @@ document.addEventListener("DOMContentLoaded", () => {
     const parsed = parseInvoice(el.clean.textContent);
     window._lastParsed = parsed;
     selectedHistoryItem = null;
+    hasParsedData = true; // ✅ ADDED
 
     el.json.textContent = JSON.stringify(parsed, null, 2);
     el.editMerchant.value = parsed.merchant || "";
     el.editDate.value = parsed.date || "";
     el.editTotal.value = parsed.total || "";
 
+    updateParsedUI(true); // ✅ ADDED
     setStatus("Parsed ✓");
 
-    // ✅ ADDED (1): auto switch to Parsed page after parse
     document.querySelector('[data-page="parsed"]')?.click();
   };
-
-  /* ---------- EXPORT ---------- */
-
-  function getExportData() {
-    if (selectedHistoryItem) return selectedHistoryItem;
-    if (!window._lastParsed) return null;
-    return {
-      merchant: el.editMerchant.value,
-      date: el.editDate.value,
-      total: el.editTotal.value
-    };
-  }
-
-  function downloadFile(name, content, type) {
-    const blob = new Blob([content], { type });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = name;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  el.exportJSON.onclick = () => {
-    const d = getExportData();
-    if (!d) return setStatus("Nothing to export", true);
-    downloadFile("invoice.json", JSON.stringify(d, null, 2), "application/json");
-    setStatus("JSON exported ✓");
-  };
-
-  el.exportTXT.onclick = () => {
-    const d = getExportData();
-    if (!d) return setStatus("Nothing to export", true);
-    downloadFile(
-      "invoice.txt",
-      `Merchant: ${d.merchant}\nDate: ${d.date}\nTotal: ${d.total}`,
-      "text/plain"
-    );
-    setStatus("TXT exported ✓");
-  };
-
-  el.exportCSV.onclick = () => {
-    const d = getExportData();
-    if (!d) return setStatus("Nothing to export", true);
-    downloadFile(
-      "invoice.csv",
-      `Merchant,Date,Total\n"${d.merchant}","${d.date}","${d.total}"`,
-      "text/csv"
-    );
-    setStatus("CSV exported ✓");
-  };
-
-  /* ---------- SIDEBAR ---------- */
-
-  document.getElementById("sidebarToggle").onclick = () =>
-    document.body.classList.toggle("sidebar-hidden");
 
   /* ---------- HISTORY / INDEXEDDB ---------- */
 
   function initDB() {
     const req = indexedDB.open("anj-dual-ocr", 1);
+
     req.onupgradeneeded = e => {
       db = e.target.result;
       db.createObjectStore("history", { keyPath: "id", autoIncrement: true });
     };
+
     req.onsuccess = e => {
       db = e.target.result;
       loadHistory();
     };
   }
 
+  function renderHistoryItem(item, targetList) {
+    const li = document.createElement("li");
+    li.textContent =
+      (item.merchant || "Unknown") +
+      " • " +
+      new Date(item.timestamp).toLocaleString();
+
+    li.onclick = () => {
+      selectedHistoryItem = item;
+      window._lastParsed = item;
+      hasParsedData = true;
+
+      el.editMerchant.value = item.merchant || "";
+      el.editDate.value = item.date || "";
+      el.editTotal.value = item.total || "";
+      el.json.textContent = JSON.stringify(item, null, 2);
+
+      updateParsedUI(true); // ✅ ADDED
+      setStatus("History item loaded ✓");
+
+      document.querySelector('[data-page="parsed"]')?.click();
+    };
+
+    targetList.appendChild(li);
+  }
+
   function loadHistory(filter = "") {
+    if (!db) return;
+
     el.historyList.innerHTML = "";
-    selectedHistoryItem = null;
+    if (el.historyPageList) el.historyPageList.innerHTML = "";
 
     const tx = db.transaction("history", "readonly");
     tx.objectStore("history").openCursor(null, "prev").onsuccess = e => {
@@ -246,23 +156,11 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      const li = document.createElement("li");
-      li.textContent =
-        (item.merchant || "Unknown") +
-        " • " +
-        new Date(item.timestamp).toLocaleString();
+      renderHistoryItem(item, el.historyList);
+      if (el.historyPageList) {
+        renderHistoryItem(item, el.historyPageList); // ✅ ADDED
+      }
 
-      li.onclick = () => {
-        selectedHistoryItem = item;
-        window._lastParsed = item;
-        el.editMerchant.value = item.merchant || "";
-        el.editDate.value = item.date || "";
-        el.editTotal.value = item.total || "";
-        el.json.textContent = JSON.stringify(item, null, 2);
-        setStatus("History item selected ✓");
-      };
-
-      el.historyList.appendChild(li);
       cursor.continue();
     };
   }
@@ -270,22 +168,8 @@ document.addEventListener("DOMContentLoaded", () => {
   el.historySearch.oninput = () =>
     loadHistory(el.historySearch.value.toLowerCase());
 
-  el.clearHistoryBtn.onclick = () => {
-    if (!confirm("Clear ALL history?")) return;
-    const tx = db.transaction("history", "readwrite");
-    tx.objectStore("history").clear();
-    tx.oncomplete = () => {
-      el.historyList.innerHTML = "";
-      selectedHistoryItem = null;
-      setStatus("All history cleared ✓");
-    };
-  };
-
   el.saveBtn.onclick = () => {
-    if (!window._lastParsed) {
-      setStatus("Nothing to save", true);
-      return;
-    }
+    if (!hasParsedData) return;
 
     const tx = db.transaction("history", "readwrite");
     tx.objectStore("history").add({
@@ -303,7 +187,7 @@ document.addEventListener("DOMContentLoaded", () => {
   setStatus("Ready ✓");
 });
 
-/* ===== PAGE NAVIGATION (HYBRID) ===== */
+/* ---------- PAGE NAVIGATION ---------- */
 
 const navItems = document.querySelectorAll(".nav-item");
 const pages = document.querySelectorAll(".page");
@@ -316,17 +200,15 @@ navItems.forEach(item => {
     item.classList.add("active");
 
     pages.forEach(p => p.classList.remove("active"));
-    const target = document.querySelector(".page-" + page);
-    if (target) target.classList.add("active");
+    document.querySelector(".page-" + page)?.classList.add("active");
 
-    document.body.className = document.body.className
-      .replace(/page-\S+/g, "")
-      .trim() + " page-" + page;
+    document.body.className =
+      document.body.className.replace(/page-\S+/g, "").trim() +
+      " page-" + page;
 
-    // ✅ ADDED (2): auto-close sidebar on mobile after navigation
     if (window.innerWidth <= 768) {
       document.body.classList.add("sidebar-hidden");
     }
   });
 });
-      
+        
