@@ -1,5 +1,9 @@
 document.addEventListener("DOMContentLoaded", () => {
 
+  /* =======================
+     ELEMENT REFERENCES
+  ======================= */
+
   const el = {
     file: document.getElementById("fileInput"),
     raw: document.getElementById("rawText"),
@@ -11,13 +15,6 @@ document.addEventListener("DOMContentLoaded", () => {
     ocr: document.getElementById("ocrOnlyBtn"),
     parse: document.getElementById("parseBtn"),
 
-    theme: document.getElementById("themeSelect"),
-    layout: document.getElementById("layoutSelect"),
-
-    historyList: document.getElementById("historyList"),
-    historySearch: document.getElementById("historySearch"),
-    clearHistoryBtn: document.getElementById("clearHistoryBtn"),
-
     saveBtn: document.getElementById("saveBtn"),
     editMerchant: document.getElementById("editMerchant"),
     editDate: document.getElementById("editDate"),
@@ -27,22 +24,84 @@ document.addEventListener("DOMContentLoaded", () => {
     exportTXT: document.getElementById("exportTXT"),
     exportCSV: document.getElementById("exportCSV"),
 
-    // ✅ ADDED: History page container
-    historyPageList: document.getElementById("historyPageList")
+    theme: document.getElementById("themeSelect"),
+    layout: document.getElementById("layoutSelect"),
+
+    sidebarToggle: document.getElementById("sidebarToggle"),
+
+    historyList: document.getElementById("historyList"),
+    historyPageList: document.getElementById("historyPageList"),
+    historySearch: document.getElementById("historySearch"),
+    clearHistoryBtn: document.getElementById("clearHistoryBtn")
   };
 
-  let db;
+  let db = null;
+  let hasParsedData = false;
   let selectedHistoryItem = null;
-  let hasParsedData = false; // ✅ ADDED
+
+  /* =======================
+     STATUS
+  ======================= */
 
   function setStatus(msg, err = false) {
     el.status.textContent = msg;
     el.status.style.color = err ? "#ff4d4d" : "#7CFC98";
   }
 
-  /* ---------- PARSED UI STATE ---------- */
+  /* =======================
+     SIDEBAR TOGGLE
+  ======================= */
 
-  // ✅ ADDED
+  if (el.sidebarToggle) {
+    el.sidebarToggle.addEventListener("click", () => {
+      document.body.classList.toggle("sidebar-hidden");
+    });
+  }
+
+  /* =======================
+     THEMES
+  ======================= */
+
+  if (el.theme) {
+    el.theme.addEventListener("change", () => {
+      document.body.classList.forEach(c => {
+        if (c.startsWith("theme-")) document.body.classList.remove(c);
+      });
+      document.body.classList.add("theme-" + el.theme.value);
+      localStorage.setItem("anj-theme", el.theme.value);
+    });
+
+    const savedTheme = localStorage.getItem("anj-theme");
+    if (savedTheme) {
+      el.theme.value = savedTheme;
+      document.body.classList.add("theme-" + savedTheme);
+    }
+  }
+
+  /* =======================
+     LAYOUTS
+  ======================= */
+
+  if (el.layout) {
+    el.layout.addEventListener("change", () => {
+      document.body.classList.forEach(c => {
+        if (c.startsWith("layout-")) document.body.classList.remove(c);
+      });
+      document.body.classList.add("layout-" + el.layout.value);
+      localStorage.setItem("anj-layout", el.layout.value);
+    });
+
+    const savedLayout = localStorage.getItem("anj-layout");
+    if (savedLayout) {
+      el.layout.value = savedLayout;
+      document.body.classList.add("layout-" + savedLayout);
+    }
+  }
+
+  /* =======================
+     PARSED UI STATE
+  ======================= */
+
   function updateParsedUI(enabled) {
     [
       el.saveBtn,
@@ -52,57 +111,94 @@ document.addEventListener("DOMContentLoaded", () => {
       el.editMerchant,
       el.editDate,
       el.editTotal
-    ].forEach(elm => {
-      if (!elm) return;
-      elm.disabled = !enabled;
-      elm.style.opacity = enabled ? "1" : "0.5";
-      elm.style.pointerEvents = enabled ? "auto" : "none";
+    ].forEach(x => {
+      if (!x) return;
+      x.disabled = !enabled;
+      x.style.opacity = enabled ? "1" : "0.5";
+      x.style.pointerEvents = enabled ? "auto" : "none";
     });
   }
 
-  updateParsedUI(false); // default disabled
+  updateParsedUI(false);
 
-  /* ---------- OCR / PARSE ---------- */
+  /* =======================
+     OCR
+  ======================= */
+
+  async function runOCR(file) {
+    setStatus("OCR running…");
+    const result = await Tesseract.recognize(file, "eng", {
+      logger: m => {
+        if (m.status === "recognizing text") {
+          setStatus(`OCR ${Math.round(m.progress * 100)}%`);
+        }
+      }
+    });
+    return result.data.text || "";
+  }
+
+  async function processFile() {
+    if (!el.file.files[0]) {
+      setStatus("No file selected", true);
+      return;
+    }
+
+    const file = el.file.files[0];
+    const text = await runOCR(file);
+
+    el.raw.textContent = text || "--";
+    el.clean.textContent = text || "--";
+    setStatus("OCR done ✓");
+  }
+
+  el.dual?.addEventListener("click", processFile);
+  el.ocr?.addEventListener("click", processFile);
+
+  /* =======================
+     PARSE
+  ======================= */
 
   function parseInvoice(text) {
-    const out = { merchant: null, date: null, total: null };
+    const out = { merchant: "", date: "", total: "" };
     const total = text.match(/total[:\s]*₹?\s*([\d,.]+)/i);
     const date = text.match(/\b\d{1,2}[-/]\d{1,2}[-/]\d{2,4}\b/);
+
     if (total) out.total = total[1];
     if (date) out.date = date[0];
     out.merchant = text.split(" ").slice(0, 4).join(" ");
     return out;
   }
 
-  el.parse.onclick = () => {
+  el.parse?.addEventListener("click", () => {
     if (!el.clean.textContent || el.clean.textContent === "--") {
       setStatus("Nothing to parse", true);
       return;
     }
 
     const parsed = parseInvoice(el.clean.textContent);
-    window._lastParsed = parsed;
+    hasParsedData = true;
     selectedHistoryItem = null;
-    hasParsedData = true; // ✅ ADDED
 
     el.json.textContent = JSON.stringify(parsed, null, 2);
-    el.editMerchant.value = parsed.merchant || "";
-    el.editDate.value = parsed.date || "";
-    el.editTotal.value = parsed.total || "";
+    el.editMerchant.value = parsed.merchant;
+    el.editDate.value = parsed.date;
+    el.editTotal.value = parsed.total;
 
-    updateParsedUI(true); // ✅ ADDED
+    updateParsedUI(true);
     setStatus("Parsed ✓");
 
     document.querySelector('[data-page="parsed"]')?.click();
-  };
+  });
 
-  /* ---------- HISTORY / INDEXEDDB ---------- */
+  /* =======================
+     HISTORY (IndexedDB)
+  ======================= */
 
   function initDB() {
     const req = indexedDB.open("anj-dual-ocr", 1);
 
     req.onupgradeneeded = e => {
-      db = e.target.result;
+      const db = e.target.result;
       db.createObjectStore("history", { keyPath: "id", autoIncrement: true });
     };
 
@@ -112,30 +208,27 @@ document.addEventListener("DOMContentLoaded", () => {
     };
   }
 
-  function renderHistoryItem(item, targetList) {
+  function renderHistoryItem(item, list) {
     const li = document.createElement("li");
     li.textContent =
       (item.merchant || "Unknown") +
       " • " +
       new Date(item.timestamp).toLocaleString();
 
-    li.onclick = () => {
-      selectedHistoryItem = item;
-      window._lastParsed = item;
+    li.addEventListener("click", () => {
       hasParsedData = true;
+      selectedHistoryItem = item;
 
-      el.editMerchant.value = item.merchant || "";
-      el.editDate.value = item.date || "";
-      el.editTotal.value = item.total || "";
+      el.editMerchant.value = item.merchant;
+      el.editDate.value = item.date;
+      el.editTotal.value = item.total;
       el.json.textContent = JSON.stringify(item, null, 2);
 
-      updateParsedUI(true); // ✅ ADDED
-      setStatus("History item loaded ✓");
-
+      updateParsedUI(true);
       document.querySelector('[data-page="parsed"]')?.click();
-    };
+    });
 
-    targetList.appendChild(li);
+    list.appendChild(li);
   }
 
   function loadHistory(filter = "") {
@@ -146,29 +239,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const tx = db.transaction("history", "readonly");
     tx.objectStore("history").openCursor(null, "prev").onsuccess = e => {
-      const cursor = e.target.result;
-      if (!cursor) return;
+      const c = e.target.result;
+      if (!c) return;
 
-      const item = cursor.value;
+      const item = c.value;
       const text = `${item.merchant} ${item.date} ${item.total}`.toLowerCase();
-      if (filter && !text.includes(filter)) {
-        cursor.continue();
-        return;
+      if (!filter || text.includes(filter)) {
+        renderHistoryItem(item, el.historyList);
+        if (el.historyPageList) renderHistoryItem(item, el.historyPageList);
       }
-
-      renderHistoryItem(item, el.historyList);
-      if (el.historyPageList) {
-        renderHistoryItem(item, el.historyPageList); // ✅ ADDED
-      }
-
-      cursor.continue();
+      c.continue();
     };
   }
 
-  el.historySearch.oninput = () =>
-    loadHistory(el.historySearch.value.toLowerCase());
+  el.historySearch?.addEventListener("input", e =>
+    loadHistory(e.target.value.toLowerCase())
+  );
 
-  el.saveBtn.onclick = () => {
+  el.saveBtn?.addEventListener("click", () => {
     if (!hasParsedData) return;
 
     const tx = db.transaction("history", "readwrite");
@@ -180,35 +268,41 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     tx.oncomplete = loadHistory;
-    setStatus("Saved to history ✓");
-  };
+    setStatus("Saved ✓");
+  });
+
+  el.clearHistoryBtn?.addEventListener("click", () => {
+    if (!confirm("Clear all history?")) return;
+    const tx = db.transaction("history", "readwrite");
+    tx.objectStore("history").clear();
+    tx.oncomplete = loadHistory;
+  });
 
   initDB();
   setStatus("Ready ✓");
 });
 
-/* ---------- PAGE NAVIGATION ---------- */
+/* =======================
+   PAGE NAVIGATION
+======================= */
 
-const navItems = document.querySelectorAll(".nav-item");
-const pages = document.querySelectorAll(".page");
-
-navItems.forEach(item => {
+document.querySelectorAll(".nav-item").forEach(item => {
   item.addEventListener("click", () => {
     const page = item.dataset.page;
 
-    navItems.forEach(n => n.classList.remove("active"));
+    document.querySelectorAll(".nav-item").forEach(n =>
+      n.classList.remove("active")
+    );
     item.classList.add("active");
 
-    pages.forEach(p => p.classList.remove("active"));
+    document.querySelectorAll(".page").forEach(p =>
+      p.classList.remove("active")
+    );
     document.querySelector(".page-" + page)?.classList.add("active");
-
-    document.body.className =
-      document.body.className.replace(/page-\S+/g, "").trim() +
-      " page-" + page;
 
     if (window.innerWidth <= 768) {
       document.body.classList.add("sidebar-hidden");
     }
   });
 });
-        
+    
