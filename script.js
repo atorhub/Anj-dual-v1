@@ -335,8 +335,7 @@ sidebarCloseBtn?.addEventListener("click", () => {
   el.historySearch?.addEventListener("input", e =>
     loadHistory(e.target.value.toLowerCase())
   );
-
-  el.saveBtn?.addEventListener("click", () => {
+el.saveBtn?.addEventListener("click", () => {
   if (!hasParsedData || !db) return;
 
   const tx = db.transaction("history", "readwrite");
@@ -350,12 +349,14 @@ sidebarCloseBtn?.addEventListener("click", () => {
   });
 
   tx.oncomplete = () => {
-    // 🔥 FORCE UI REFRESH (this was missing)
-    if (el.historyList) el.historyList.innerHTML = "";
-    if (el.historyPageList) el.historyPageList.innerHTML = "";
+    // ⏳ TIMING FIX — allow IndexedDB to fully flush
+    setTimeout(() => {
+      if (el.historyList) el.historyList.innerHTML = "";
+      if (el.historyPageList) el.historyPageList.innerHTML = "";
 
-    loadHistory();   // reload from DB immediately
-    setStatus("Saved ✓");
+      loadHistory(); // now guaranteed to see new entry
+      setStatus("Saved ✓");
+    }, 0);
   };
 
   tx.onerror = () => {
