@@ -337,19 +337,32 @@ sidebarCloseBtn?.addEventListener("click", () => {
   );
 
   el.saveBtn?.addEventListener("click", () => {
-    if (!hasParsedData) return;
+  if (!hasParsedData || !db) return;
 
-    const tx = db.transaction("history", "readwrite");
-    tx.objectStore("history").add({
-      merchant: el.editMerchant.value,
-      date: el.editDate.value,
-      total: el.editTotal.value,
-      timestamp: Date.now()
-    });
+  const tx = db.transaction("history", "readwrite");
+  const store = tx.objectStore("history");
 
-    tx.oncomplete = loadHistory;
-    setStatus("Saved ✓");
+  store.add({
+    merchant: el.editMerchant.value,
+    date: el.editDate.value,
+    total: el.editTotal.value,
+    timestamp: Date.now()
   });
+
+  tx.oncomplete = () => {
+    // 🔥 FORCE UI REFRESH (this was missing)
+    if (el.historyList) el.historyList.innerHTML = "";
+    if (el.historyPageList) el.historyPageList.innerHTML = "";
+
+    loadHistory();   // reload from DB immediately
+    setStatus("Saved ✓");
+  };
+
+  tx.onerror = () => {
+    setStatus("Save failed", true);
+  };
+});
+  
 
   el.clearHistoryBtn?.addEventListener("click", () => {
     if (!confirm("Clear all history?")) return;
