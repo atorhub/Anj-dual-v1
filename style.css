@@ -331,3 +331,10 @@ body.sidebar-hidden .main {
     display: block;
   }
 }
+/* =======================
+   History highlight
+======================= */
+.history-active {
+  background: rgba(124, 252, 152, 0.15);
+  border-left: 3px solid #7CFC98;
+     }
