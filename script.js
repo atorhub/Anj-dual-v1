@@ -282,34 +282,35 @@ sidebarCloseBtn?.addEventListener("click", () => {
   }
 
   function renderHistoryItem(item, list) {
-    const li = document.createElement("li");
-    li.textContent =
-      (item.merchant || "Unknown") +
-      " • " +
-      new Date(item.timestamp).toLocaleString();
+  const li = document.createElement("li");
 
-    li.addEventListener("click", () => {
-      hasParsedData = true;
-      selectedHistoryItem = item;
+  li.textContent =
+    (item.merchant || "Unknown") +
+    " • " +
+    new Date(item.timestamp).toLocaleString();
 
-      el.editMerchant.value = item.merchant;
-      el.editDate.value = item.date;
-      el.editTotal.value = item.total;
-      el.json.textContent = JSON.stringify(item, null, 2);
-
-      /* ✅ KEEP EXPORT WORKING FROM HISTORY */
-      currentParsedData = {
-        merchant: item.merchant,
-        date: item.date,
-        total: item.total
-      };
-
-      updateParsedUI(true);
-      document.querySelector('[data-page="parsed"]')?.click();
-    });
-
-    list.appendChild(li);
+  // ✨ highlight newly saved item
+  if (item.id === lastSavedId) {
+    li.classList.add("history-active");
+    li.scrollIntoView({ block: "nearest" });
   }
+
+  li.addEventListener("click", () => {
+    hasParsedData = true;
+    selectedHistoryItem = item;
+
+    el.editMerchant.value = item.merchant;
+    el.editDate.value = item.date;
+    el.editTotal.value = item.total;
+    el.json.textContent = JSON.stringify(item, null, 2);
+
+    updateParsedUI(true);
+    document.querySelector('[data-page="parsed"]')?.click();
+  });
+
+  list.appendChild(li);
+  }
+  
 
   function loadHistory(filter = "") {
     if (!db) return;
@@ -341,12 +342,17 @@ el.saveBtn?.addEventListener("click", () => {
   const tx = db.transaction("history", "readwrite");
   const store = tx.objectStore("history");
 
-  store.add({
-    merchant: el.editMerchant.value,
-    date: el.editDate.value,
-    total: el.editTotal.value,
-    timestamp: Date.now()
-  });
+  const request = store.add({
+  merchant: el.editMerchant.value,
+  date: el.editDate.value,
+  total: el.editTotal.value,
+  timestamp: Date.now()
+});
+
+request.onsuccess = e => {
+  lastSavedId = e.target.result; // 👈 capture new ID
+};
+  
 
   tx.oncomplete = () => {
     // ⏳ TIMING FIX — allow IndexedDB to fully flush
