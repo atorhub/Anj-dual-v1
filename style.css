@@ -310,3 +310,24 @@ body.sidebar-hidden .main {
     z-index: 1200;
   }
 }
+/* Sidebar close button */
+.sidebar-close {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  padding: 12px 16px;
+  background: inherit;
+  border: none;
+  color: inherit;
+  font-size: 20px;
+  text-align: right;
+  cursor: pointer;
+  z-index: 1;
+}
+
+/* Mobile only */
+@media (max-width: 768px) {
+  .sidebar-close {
+    display: block;
+  }
+}
