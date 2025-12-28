@@ -28,7 +28,6 @@ document.addEventListener("DOMContentLoaded", () => {
     layout: document.getElementById("layoutSelect"),
 
     sidebarToggle: document.getElementById("sidebarToggle"),
-    sidebarClose: document.getElementById("sidebarCloseBtn"),
 
     historyList: document.getElementById("historyList"),
     historyPageList: document.getElementById("historyPageList"),
@@ -40,7 +39,10 @@ document.addEventListener("DOMContentLoaded", () => {
   let hasParsedData = false;
   let selectedHistoryItem = null;
 
-  // ✅ PATCH 1 — DECLARED
+  /* ✅ ADDED (REQUIRED FOR EXPORT – DOES NOT TOUCH EXISTING LOGIC) */
+  let currentParsedData = null;
+
+  /* ✅ MINIMAL PATCH — REQUIRED */
   let lastSavedId = null;
 
   /* =======================
@@ -48,7 +50,6 @@ document.addEventListener("DOMContentLoaded", () => {
   ======================= */
 
   function setStatus(msg, err = false) {
-    if (!el.status) return;
     el.status.textContent = msg;
     el.status.style.color = err ? "#ff4d4d" : "#7CFC98";
   }
@@ -61,7 +62,9 @@ document.addEventListener("DOMContentLoaded", () => {
     document.body.classList.toggle("sidebar-hidden");
   });
 
-  el.sidebarClose?.addEventListener("click", () => {
+  const sidebarCloseBtn = document.getElementById("sidebarCloseBtn");
+
+  sidebarCloseBtn?.addEventListener("click", () => {
     document.body.classList.add("sidebar-hidden");
   });
 
@@ -78,7 +81,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   const savedTheme = localStorage.getItem("anj-theme");
-  if (savedTheme && el.theme) {
+  if (savedTheme) {
     el.theme.value = savedTheme;
     document.body.classList.add("theme-" + savedTheme);
   }
@@ -96,7 +99,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   const savedLayout = localStorage.getItem("anj-layout");
-  if (savedLayout && el.layout) {
+  if (savedLayout) {
     el.layout.value = savedLayout;
     document.body.classList.add("layout-" + savedLayout);
   }
@@ -125,28 +128,57 @@ document.addEventListener("DOMContentLoaded", () => {
   updateParsedUI(false);
 
   /* =======================
+     PDF → CANVAS
+  ======================= */
+
+  async function pdfToCanvas(file) {
+    const buffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+    const page = await pdf.getPage(1);
+
+    const viewport = page.getViewport({ scale: 2 });
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+
+    await page.render({ canvasContext: ctx, viewport }).promise;
+    return canvas;
+  }
+
+  /* =======================
      OCR
   ======================= */
 
   async function runOCR(file) {
     setStatus("OCR running...");
-    const result = await Tesseract.recognize(file, "eng", {
+
+    let source = file;
+    if (file.type === "application/pdf") {
+      source = await pdfToCanvas(file);
+    }
+
+    const result = await Tesseract.recognize(source, "eng", {
       logger: m => {
         if (m.status === "recognizing text") {
           setStatus(`OCR ${Math.round(m.progress * 100)}%`);
         }
       }
     });
+
     return result.data.text || "";
   }
 
   async function processFile() {
-    if (!el.file?.files[0]) {
+    if (!el.file.files[0]) {
       setStatus("No file selected", true);
       return;
     }
 
-    const text = await runOCR(el.file.files[0]);
+    const file = el.file.files[0];
+    const text = await runOCR(file);
+
     el.raw.textContent = text || "--";
     el.clean.textContent = text || "--";
     setStatus("OCR done ✓");
@@ -177,6 +209,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const parsed = parseInvoice(el.clean.textContent);
+    currentParsedData = parsed;
+
     hasParsedData = true;
     selectedHistoryItem = null;
 
@@ -187,10 +221,43 @@ document.addEventListener("DOMContentLoaded", () => {
 
     updateParsedUI(true);
     setStatus("Parsed ✓");
+
+    document.querySelector('[data-page="parsed"]')?.click();
   });
 
   /* =======================
-     HISTORY (IndexedDB)
+     EXPORT
+  ======================= */
+
+  function downloadFile(name, content, type = "text/plain") {
+    const blob = new Blob([content], { type });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  el.exportJSON?.addEventListener("click", () => {
+    if (!currentParsedData) return;
+    downloadFile("invoice.json", JSON.stringify(currentParsedData, null, 2), "application/json");
+  });
+
+  el.exportTXT?.addEventListener("click", () => {
+    if (!currentParsedData) return;
+    downloadFile("invoice.txt", JSON.stringify(currentParsedData, null, 2));
+  });
+
+  el.exportCSV?.addEventListener("click", () => {
+    if (!currentParsedData) return;
+    const csv =
+      "merchant,date,total\n" +
+      `"${currentParsedData.merchant}","${currentParsedData.date}","${currentParsedData.total}"`;
+    downloadFile("invoice.csv", csv, "text/csv");
+  });
+
+  /* =======================
+     HISTORY
   ======================= */
 
   function initDB() {
@@ -203,14 +270,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     req.onsuccess = e => {
       db = e.target.result;
-
-      // ⏳ timing-safe initial load
       setTimeout(() => loadHistory(), 0);
     };
-  } // ✅ PATCH 2 — CLOSED FUNCTION
+  }
 
   function renderHistoryItem(item, list) {
     const li = document.createElement("li");
+
     li.textContent =
       (item.merchant || "Unknown") +
       " • " +
@@ -236,6 +302,7 @@ document.addEventListener("DOMContentLoaded", () => {
       el.json.textContent = JSON.stringify(item, null, 2);
 
       updateParsedUI(true);
+      document.querySelector('[data-page="parsed"]')?.click();
     });
 
     list.appendChild(li);
@@ -272,20 +339,28 @@ document.addEventListener("DOMContentLoaded", () => {
     const tx = db.transaction("history", "readwrite");
     const store = tx.objectStore("history");
 
-    const req = store.add({
+    const request = store.add({
       merchant: el.editMerchant.value,
       date: el.editDate.value,
       total: el.editTotal.value,
       timestamp: Date.now()
     });
 
-    req.onsuccess = e => {
+    request.onsuccess = e => {
       lastSavedId = e.target.result;
     };
 
     tx.oncomplete = () => {
-      setTimeout(() => loadHistory(), 0);
-      setStatus("Saved ✓");
+      setTimeout(() => {
+        if (el.historyList) el.historyList.innerHTML = "";
+        if (el.historyPageList) el.historyPageList.innerHTML = "";
+        loadHistory();
+        setStatus("Saved ✓");
+      }, 0);
+    };
+
+    tx.onerror = () => {
+      setStatus("Save failed", true);
     };
   });
 
@@ -293,10 +368,34 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!confirm("Clear all history?")) return;
     const tx = db.transaction("history", "readwrite");
     tx.objectStore("history").clear();
-    tx.oncomplete = () => loadHistory();
+    tx.oncomplete = loadHistory;
   });
 
   initDB();
   setStatus("Ready ✓");
 });
-    
+
+/* =======================
+   PAGE NAVIGATION
+======================= */
+
+document.querySelectorAll(".nav-item").forEach(item => {
+  item.addEventListener("click", () => {
+    const page = item.dataset.page;
+
+    document.querySelectorAll(".nav-item").forEach(n =>
+      n.classList.remove("active")
+    );
+    item.classList.add("active");
+
+    document.querySelectorAll(".page").forEach(p =>
+      p.classList.remove("active")
+    );
+    document.querySelector(".page-" + page)?.classList.add("active");
+
+    if (window.innerWidth <= 768) {
+      document.body.classList.add("sidebar-hidden");
+    }
+  });
+});
+                                     
