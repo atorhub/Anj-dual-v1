@@ -276,10 +276,14 @@ sidebarCloseBtn?.addEventListener("click", () => {
     };
 
     req.onsuccess = e => {
-      db = e.target.result;
-      loadHistory();
-    };
-  }
+  db = e.target.result;
+
+  // ⏳ ensure DB is fully ready before first read
+  setTimeout(() => {
+    loadHistory();
+  }, 0);
+};
+    
 
   function renderHistoryItem(item, list) {
   const li = document.createElement("li");
