@@ -58,7 +58,12 @@ document.addEventListener("DOMContentLoaded", () => {
   el.sidebarToggle?.addEventListener("click", () => {
     document.body.classList.toggle("sidebar-hidden");
   });
+const sidebarCloseBtn = document.getElementById("sidebarCloseBtn");
 
+sidebarCloseBtn?.addEventListener("click", () => {
+  document.body.classList.add("sidebar-hidden");
+});
+  
   /* =======================
      THEMES
   ======================= */
