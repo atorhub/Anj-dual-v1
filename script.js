@@ -288,11 +288,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     updateParsedUI(true);
     const confidence = calculateConfidence(parsed, el.clean.textContent, docType);
-applyConfidenceUI(confidence, parsed);
+    applyConfidenceUI(confidence, parsed, docType);
 setStatus(`Parsed ${docType === "PO" ? "📄 PO" : docType === "Invoice" ? "🧾 Invoice" : ""} | ${el.status.textContent}`);
     
-  
-   function applyConfidenceUI(confidence, parsed) {
+  function applyConfidenceUI(confidence, parsed, docType) {
   // Clear previous warnings
   [el.editMerchant, el.editDate, el.editTotal].forEach(f =>
     f && f.classList.remove("field-warning")
@@ -300,19 +299,31 @@ setStatus(`Parsed ${docType === "PO" ? "📄 PO" : docType === "Invoice" ? "🧾
 
   if (confidence >= 80) {
     setStatus("Parsed ✓ | Parse Confidence: High");
-  } 
-  else if (confidence >= 50) {
-    setStatus("Parsed ⚠ | Parse Confidence: Review recommended");
-  } 
-  else {
-    setStatus("Parsed ❗ | Parse Confidence: Manual check required");
+    return;
+  }
 
-    // Highlight missing fields only
+  if (confidence >= 50) {
+    setStatus("Parsed ⚠ | Parse Confidence: Review recommended");
+    return;
+  }
+
+  // Low confidence cases
+  setStatus("Parsed ❗ | Parse Confidence: Manual check required");
+
+  // Invoice → strict
+  if (docType === "Invoice") {
     if (!parsed.merchant) el.editMerchant?.classList.add("field-warning");
     if (!parsed.date) el.editDate?.classList.add("field-warning");
     if (!parsed.total) el.editTotal?.classList.add("field-warning");
   }
-   }
+
+  // PO → relaxed
+  if (docType === "PO") {
+    if (!parsed.merchant) el.editMerchant?.classList.add("field-warning");
+    // date & total are OPTIONAL for PO → do NOT highlight
+  }
+  }
+      
     
     document.querySelector('[data-page="parsed"]')?.click();
   });
