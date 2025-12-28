@@ -338,3 +338,12 @@ body.sidebar-hidden .main {
   background: rgba(124, 252, 152, 0.15);
   border-left: 3px solid #7CFC98;
      }
+/* =======================
+   Parse confidence warnings
+======================= */
+
+.field-warning {
+  border: 2px solid rgba(255, 99, 99, 0.75);
+  box-shadow: 0 0 0 3px rgba(255, 99, 99, 0.25);
+  background: rgba(255, 99, 99, 0.05);
+   }
