@@ -33,7 +33,14 @@ document.addEventListener("DOMContentLoaded", () => {
     historyPageList: document.getElementById("historyPageList"),
     historySearch: document.getElementById("historySearch"),
     clearHistoryBtn: document.getElementById("clearHistoryBtn")
-  };
+  };function applyConfidenceTooltip() {
+  if (!el.status) return;
+
+  el.status.title =
+    "Parse Confidence indicates how reliably key fields were extracted after parsing. " +
+    "Lower confidence means some fields may require manual review.";
+}
+  
 
   let db = null;
   let hasParsedData = false;
@@ -288,7 +295,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     updateParsedUI(true);
     const confidence = calculateConfidence(parsed, el.clean.textContent, docType);
-    applyConfidenceUI(confidence, parsed, docType);
+    applyConfidenceUI(confidence, parsed, docType);applyConfidenceTooltip();
+    
 setStatus(`Parsed ${docType === "PO" ? "📄 PO" : docType === "Invoice" ? "🧾 Invoice" : ""} | ${el.status.textContent}`);
     
   function applyConfidenceUI(confidence, parsed, docType) {
