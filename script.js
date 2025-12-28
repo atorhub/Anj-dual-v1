@@ -296,17 +296,24 @@ sidebarCloseBtn?.addEventListener("click", () => {
   }
 
   li.addEventListener("click", () => {
-    hasParsedData = true;
-    selectedHistoryItem = item;
+  hasParsedData = true;
+  selectedHistoryItem = item;
 
-    el.editMerchant.value = item.merchant;
-    el.editDate.value = item.date;
-    el.editTotal.value = item.total;
-    el.json.textContent = JSON.stringify(item, null, 2);
+  // ✅ remove highlight once user acknowledges it
+  if (item.id === lastSavedId) {
+    lastSavedId = null;
+    li.classList.remove("history-active");
+  }
 
-    updateParsedUI(true);
-    document.querySelector('[data-page="parsed"]')?.click();
-  });
+  el.editMerchant.value = item.merchant;
+  el.editDate.value = item.date;
+  el.editTotal.value = item.total;
+  el.json.textContent = JSON.stringify(item, null, 2);
+
+  updateParsedUI(true);
+  document.querySelector('[data-page="parsed"]')?.click();
+});
+    
 
   list.appendChild(li);
   }
