@@ -201,6 +201,44 @@ document.addEventListener("DOMContentLoaded", () => {
     out.merchant = text.split(" ").slice(0, 4).join(" ");
     return out;
   }
+  function detectDocumentType(text) {
+  const t = text.toLowerCase();
+
+  const invoiceKeywords = [
+    "invoice",
+    "tax invoice",
+    "bill no",
+    "amount payable",
+    "gst",
+    "invoice no"
+  ];
+
+  const poKeywords = [
+    "purchase order",
+    "po no",
+    "buyer",
+    "supplier",
+    "delivery",
+    "payment terms"
+  ];
+
+  let invoiceScore = 0;
+  let poScore = 0;
+
+  invoiceKeywords.forEach(k => {
+    if (t.includes(k)) invoiceScore++;
+  });
+
+  poKeywords.forEach(k => {
+    if (t.includes(k)) poScore++;
+  });
+
+  if (poScore > invoiceScore) return "PO";
+  if (invoiceScore > poScore) return "Invoice";
+
+  return "Unknown";
+  }
+    
 function calculateConfidence(parsed, text) {
   let score = 0;
 
@@ -219,8 +257,8 @@ function calculateConfidence(parsed, text) {
     }
 
     const parsed = parseInvoice(el.clean.textContent);
-    currentParsedData = parsed;
-
+    currentParsedData = parsed;const docType = detectDocumentType(el.clean.textContent);
+    
     hasParsedData = true;
     selectedHistoryItem = null;
 
@@ -232,6 +270,8 @@ function calculateConfidence(parsed, text) {
     updateParsedUI(true);
 const confidence = calculateConfidence(parsed, el.clean.textContent);
 applyConfidenceUI(confidence, parsed);
+setStatus(`Parsed ${docType === "PO" ? "📄 PO" : docType === "Invoice" ? "🧾 Invoice" : ""} | ${el.status.textContent}`);
+    
   
    function applyConfidenceUI(confidence, parsed) {
   // Clear previous warnings
