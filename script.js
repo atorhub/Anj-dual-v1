@@ -230,10 +230,31 @@ function calculateConfidence(parsed, text) {
     el.editTotal.value = parsed.total;
 
     updateParsedUI(true);
-  const confidence = calculateConfidence(parsed, el.clean.textContent);
-setStatus(`Parsed ✓  |  Confidence: ${confidence}%`);
-    
+const confidence = calculateConfidence(parsed, el.clean.textContent);
+applyConfidenceUI(confidence, parsed);
+  
+   function applyConfidenceUI(confidence, parsed) {
+  // Clear previous warnings
+  [el.editMerchant, el.editDate, el.editTotal].forEach(f =>
+    f && f.classList.remove("field-warning")
+  );
 
+  if (confidence >= 80) {
+    setStatus("Parsed ✓ | Parse Confidence: High");
+  } 
+  else if (confidence >= 50) {
+    setStatus("Parsed ⚠ | Parse Confidence: Review recommended");
+  } 
+  else {
+    setStatus("Parsed ❗ | Parse Confidence: Manual check required");
+
+    // Highlight missing fields only
+    if (!parsed.merchant) el.editMerchant?.classList.add("field-warning");
+    if (!parsed.date) el.editDate?.classList.add("field-warning");
+    if (!parsed.total) el.editTotal?.classList.add("field-warning");
+  }
+   }
+    
     document.querySelector('[data-page="parsed"]')?.click();
   });
 
