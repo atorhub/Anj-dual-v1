@@ -238,17 +238,36 @@ document.addEventListener("DOMContentLoaded", () => {
 
   return "Unknown";
   }
-    
-function calculateConfidence(parsed, text) {
+ function calculateConfidence(parsed, rawText, docType) {
   let score = 0;
 
-  if (parsed.total) score += 40;
-  if (parsed.date) score += 30;
-  if (parsed.merchant) score += 20;
-  if (text && text.length > 100) score += 10;
+  if (docType === "Invoice") {
+    // Invoice: strict
+    if (parsed.merchant) score += 30;
+    if (parsed.date) score += 30;
+    if (parsed.total) score += 30;
+  }
+
+  else if (docType === "PO") {
+    // Purchase Order: relaxed
+    if (parsed.merchant) score += 40;
+    if (rawText.length > 100) score += 30; // PO usually text-heavy
+    if (parsed.date || parsed.total) score += 20; // optional
+  }
+
+  else {
+    // Unknown document
+    if (parsed.merchant) score += 30;
+    if (parsed.date) score += 20;
+    if (parsed.total) score += 20;
+  }
+
+  // Small universal boost
+  if (rawText.length > 80) score += 10;
 
   return Math.min(score, 100);
-}
+ }
+  
   
   el.parse?.addEventListener("click", () => {
     if (!el.clean.textContent || el.clean.textContent === "--") {
@@ -268,7 +287,7 @@ function calculateConfidence(parsed, text) {
     el.editTotal.value = parsed.total;
 
     updateParsedUI(true);
-const confidence = calculateConfidence(parsed, el.clean.textContent);
+    const confidence = calculateConfidence(parsed, el.clean.textContent, docType);
 applyConfidenceUI(confidence, parsed);
 setStatus(`Parsed ${docType === "PO" ? "📄 PO" : docType === "Invoice" ? "🧾 Invoice" : ""} | ${el.status.textContent}`);
     
