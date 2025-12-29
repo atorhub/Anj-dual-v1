@@ -224,98 +224,24 @@ document.addEventListener("DOMContentLoaded", () => {
   el.ocr?.addEventListener("click", processFile);
 
   /* =======================
-     PARSE
+     PARSE (SINGLE SOURCE)
   ======================= */
 
   function parseInvoice(text) {
     const out = { merchant: "", date: "", total: "" };
-    const total = text.match(/total[:\s]*₹?\s*([\d,.]+)/i);
-    const date = text.match(/\b\d{1,2}[-/]\d{1,2}[-/]\d{2,4}\b/);
 
-    if (total) out.total = total[1];
-    if (date) out.date = date[0];
-    out.merchant = text.split(" ").slice(0, 4).join(" ");
-    return out;
-  }
-  function detectDocumentType(text) {
-  const t = text.toLowerCase();
+    const totalMatch = text.match(/total[:\s]*₹?\s*([\d,.]+)/i);
+    const dateMatch = text.match(/\b\d{1,2}[-/]\d{1,2}[-/]\d{2,4}\b/);
 
-  const invoiceKeywords = [
-    "invoice",
-    "tax invoice",
-    "bill no",
-    "amount payable",
-    "gst",
-    "invoice no"
-  ];
+    if (totalMatch) out.total = totalMatch[1];
+    if (dateMatch) out.date = dateMatch[0];
 
-  const poKeywords = [
-    "purchase order",
-    "po no",
-    "buyer",
-    "supplier",
-    "delivery",
-    "payment terms"
-  ];
+    out.merchant = text
+      .split(/\n| /)
+      .slice(0, 4)
+      .join(" ")
+      .trim();
 
-  let invoiceScore = 0;
-  let poScore = 0;
-
-  invoiceKeywords.forEach(k => {
-    if (t.includes(k)) invoiceScore++;
-  });
-
-  poKeywords.forEach(k => {
-    if (t.includes(k)) poScore++;
-  });
-
-  if (poScore > invoiceScore) return "PO";
-  if (invoiceScore > poScore) return "Invoice";
-
-  return "Unknown";
-  }
- function calculateConfidence(parsed, rawText, docType) {
-  let score = 0;
-
-  if (docType === "Invoice") {
-    // Invoice: strict
-    if (parsed.merchant) score += 30;
-    if (parsed.date) score += 30;
-    if (parsed.total) score += 30;
-  }
-
-  else if (docType === "PO") {
-    // Purchase Order: relaxed
-    if (parsed.merchant) score += 40;
-    if (rawText.length > 100) score += 30; // PO usually text-heavy
-    if (parsed.date || parsed.total) score += 20; // optional
-  }
-
-  else {
-    // Unknown document
-    if (parsed.merchant) score += 30;
-    if (parsed.date) score += 20;
-    if (parsed.total) score += 20;
-  }
-
-  // Small universal boost
-  if (rawText.length > 80) score += 10;
-
-  return Math.min(score, 100);
- }
-  
-  /* =======================
-     PARSE
-  ======================= */
-
-  function parseInvoice(text) {
-    const out = { merchant: "", date: "", total: "" };
-    const total = text.match(/total[:\s]*₹?\s*([\d,.]+)/i);
-    const date = text.match(/\b\d{1,2}[-/]\d{1,2}[-/]\d{2,4}\b/);
-
-    if (total) out.total = total[1];
-    if (date) out.date = date[0];
-    out.merchant = text.split(" ").slice(0, 4).join(" ");
     return out;
   }
 
@@ -326,9 +252,8 @@ document.addEventListener("DOMContentLoaded", () => {
       "invoice",
       "tax invoice",
       "bill no",
-      "amount payable",
       "gst",
-      "invoice no"
+      "amount payable"
     ];
 
     const poKeywords = [
@@ -336,24 +261,17 @@ document.addEventListener("DOMContentLoaded", () => {
       "po no",
       "buyer",
       "supplier",
-      "delivery",
       "payment terms"
     ];
 
     let invoiceScore = 0;
     let poScore = 0;
 
-    invoiceKeywords.forEach(k => {
-      if (t.includes(k)) invoiceScore++;
-    });
-
-    poKeywords.forEach(k => {
-      if (t.includes(k)) poScore++;
-    });
+    invoiceKeywords.forEach(k => t.includes(k) && invoiceScore++);
+    poKeywords.forEach(k => t.includes(k) && poScore++);
 
     if (poScore > invoiceScore) return "PO";
     if (invoiceScore > poScore) return "Invoice";
-
     return "Unknown";
   }
 
@@ -364,13 +282,11 @@ document.addEventListener("DOMContentLoaded", () => {
       if (parsed.merchant) score += 30;
       if (parsed.date) score += 30;
       if (parsed.total) score += 30;
-    }
-    else if (docType === "PO") {
+    } else if (docType === "PO") {
       if (parsed.merchant) score += 40;
       if (rawText.length > 100) score += 30;
       if (parsed.date || parsed.total) score += 20;
-    }
-    else {
+    } else {
       if (parsed.merchant) score += 30;
       if (parsed.date) score += 20;
       if (parsed.total) score += 20;
@@ -414,12 +330,12 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const parsed = parseInvoice(el.clean.textContent);
+    const rawText = el.clean.textContent;
+    const parsed = parseInvoice(rawText);
+    const docType = detectDocumentType(rawText);
+    const confidence = calculateConfidence(parsed, rawText, docType);
+
     currentParsedData = parsed;
-
-    const docType = detectDocumentType(el.clean.textContent);
-    const confidence = calculateConfidence(parsed, el.clean.textContent, docType);
-
     hasParsedData = true;
     selectedHistoryItem = null;
 
@@ -429,44 +345,11 @@ document.addEventListener("DOMContentLoaded", () => {
     el.editTotal.value = parsed.total;
 
     updateParsedUI(true);
-
     applyConfidenceUI(confidence, parsed, docType);
     applyConfidenceTooltip();
     attachConfidenceInfo();
 
     document.querySelector('[data-page="parsed"]')?.click();
-  });
-        
-
-  /* =======================
-     EXPORT
-  ======================= */
-
-  function downloadFile(name, content, type = "text/plain") {
-    const blob = new Blob([content], { type });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = name;
-    a.click();
-    URL.revokeObjectURL(a.href);
-  }
-
-  el.exportJSON?.addEventListener("click", () => {
-    if (!currentParsedData) return;
-    downloadFile("invoice.json", JSON.stringify(currentParsedData, null, 2), "application/json");
-  });
-
-  el.exportTXT?.addEventListener("click", () => {
-    if (!currentParsedData) return;
-    downloadFile("invoice.txt", JSON.stringify(currentParsedData, null, 2));
-  });
-
-  el.exportCSV?.addEventListener("click", () => {
-    if (!currentParsedData) return;
-    const csv =
-      "merchant,date,total\n" +
-      `"${currentParsedData.merchant}","${currentParsedData.date}","${currentParsedData.total}"`;
-    downloadFile("invoice.csv", csv, "text/csv");
   });
 
   /* =======================
