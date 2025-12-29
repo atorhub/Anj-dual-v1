@@ -351,3 +351,9 @@ body.sidebar-hidden .main {
   cursor: help;
   text-decoration: dotted underline;
 }
+.confidence-info {
+  cursor: pointer;
+  opacity: 0.8;
+  margin-left: 4px;
+   }
+   
