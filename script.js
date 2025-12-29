@@ -35,7 +35,25 @@ document.addEventListener("DOMContentLoaded", () => {
     clearHistoryBtn: document.getElementById("clearHistoryBtn")
   };function applyConfidenceTooltip() {
   if (!el.status) return;
+function attachConfidenceInfo() {
+  if (!el.status) return;
 
+  let info = el.status.querySelector(".confidence-info");
+  if (info) return;
+
+  info = document.createElement("span");
+  info.textContent = " ⓘ";
+  info.className = "confidence-info";
+  info.onclick = () => {
+    alert(
+      "Parse Confidence indicates how reliably key fields were extracted after parsing.\n\n" +
+      "Lower confidence means some fields may require manual review."
+    );
+  };
+
+  el.status.appendChild(info);
+}
+    
   el.status.title =
     "Parse Confidence indicates how reliably key fields were extracted after parsing. " +
     "Lower confidence means some fields may require manual review.";
@@ -295,7 +313,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     updateParsedUI(true);
     const confidence = calculateConfidence(parsed, el.clean.textContent, docType);
-    applyConfidenceUI(confidence, parsed, docType);applyConfidenceTooltip();
+    applyConfidenceUI(confidence, parsed, docType);applyConfidenceTooltip();attachConfidenceInfo();
+    
     
 setStatus(`Parsed ${docType === "PO" ? "📄 PO" : docType === "Invoice" ? "🧾 Invoice" : ""} | ${el.status.textContent}`);
     
