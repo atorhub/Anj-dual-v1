@@ -33,41 +33,41 @@ document.addEventListener("DOMContentLoaded", () => {
     historyPageList: document.getElementById("historyPageList"),
     historySearch: document.getElementById("historySearch"),
     clearHistoryBtn: document.getElementById("clearHistoryBtn")
-  };function applyConfidenceTooltip() {
-  if (!el.status) return;
-function attachConfidenceInfo() {
-  if (!el.status) return;
-
-  let info = el.status.querySelector(".confidence-info");
-  if (info) return;
-
-  info = document.createElement("span");
-  info.textContent = " ⓘ";
-  info.className = "confidence-info";
-  info.onclick = () => {
-    alert(
-      "Parse Confidence indicates how reliably key fields were extracted after parsing.\n\n" +
-      "Lower confidence means some fields may require manual review."
-    );
   };
+   /* =======================
+     CONFIDENCE HELPERS (FIXED)
+  ======================= */
 
-  el.status.appendChild(info);
-}
-    
-  el.status.title =
-    "Parse Confidence indicates how reliably key fields were extracted after parsing. " +
-    "Lower confidence means some fields may require manual review.";
-}
-  
+  function applyConfidenceTooltip() {
+    if (!el.status) return;
+    el.status.title =
+      "Parse Confidence indicates how reliably key fields were extracted after parsing. " +
+      "Lower confidence means some fields may require manual review.";
+  }
+
+  function attachConfidenceInfo() {
+    if (!el.status) return;
+
+    let info = el.status.querySelector(".confidence-info");
+    if (info) return;
+
+    info = document.createElement("span");
+    info.textContent = " ⓘ";
+    info.className = "confidence-info";
+    info.onclick = () => {
+      alert(
+        "Parse Confidence indicates how reliably key fields were extracted after parsing.\n\n" +
+        "Lower confidence means some fields may require manual review."
+      );
+    };
+
+    el.status.appendChild(info);
+  }
 
   let db = null;
   let hasParsedData = false;
   let selectedHistoryItem = null;
-
-  /* ✅ ADDED (REQUIRED FOR EXPORT – DOES NOT TOUCH EXISTING LOGIC) */
   let currentParsedData = null;
-
-  /* ✅ MINIMAL PATCH — REQUIRED */
   let lastSavedId = null;
 
   /* =======================
@@ -312,8 +312,9 @@ function attachConfidenceInfo() {
     el.editTotal.value = parsed.total;
 
     updateParsedUI(true);
-    const confidence = calculateConfidence(parsed, el.clean.textContent, docType);
-    applyConfidenceUI(confidence, parsed, docType);applyConfidenceTooltip();attachConfidenceInfo();
+    applyConfidenceUI(confidence, parsed, docType);
+    applyConfidenceTooltip();
+    attachConfidenceInfo();
     
     
 setStatus(`Parsed ${docType === "PO" ? "📄 PO" : docType === "Invoice" ? "🧾 Invoice" : ""} | ${el.status.textContent}`);
