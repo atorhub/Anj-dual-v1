@@ -54,12 +54,8 @@ document.addEventListener("DOMContentLoaded", () => {
     info = document.createElement("span");
     info.textContent = " ⓘ";
     info.className = "confidence-info";
-    info.onclick = () => {
-      alert(
-        "Parse Confidence indicates how reliably key fields were extracted after parsing.\n\n" +
-        "Lower confidence means some fields may require manual review."
-      );
-    };
+    info.onclick = showConfidenceHelpOnce;
+    
 
     el.status.appendChild(info);
   }
@@ -69,6 +65,21 @@ document.addEventListener("DOMContentLoaded", () => {
   let selectedHistoryItem = null;
   let currentParsedData = null;
   let lastSavedId = null;
+  function showConfidenceHelpOnce() {
+  if (localStorage.getItem("hideConfidenceHelp") === "1") return;
+
+  const dontShow = confirm(
+    "Parse Confidence indicates how reliably key fields were extracted after parsing.\n\n" +
+    "Lower confidence means some fields may require manual review.\n\n" +
+    "Press OK to continue.\n\n" +
+    "Press Cancel to not show this again."
+  );
+
+  if (!dontShow) {
+    localStorage.setItem("hideConfidenceHelp", "1");
+  }
+  }
+  
 
   /* =======================
      STATUS
