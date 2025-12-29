@@ -363,10 +363,15 @@ body.sidebar-hidden .main {
 #statusBar {
   white-space: nowrap;
 }
-
-.confidence-legend {
-  font-size: 0.85em;
-  opacity: 0.85;
-  margin-left: 6px;
+#statusBar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  overflow: hidden;
 }
-   
+.confidence-legend {
+  font-size: 0.75rem;
+  opacity: 0.85;
+}
+
