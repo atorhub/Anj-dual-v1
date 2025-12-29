@@ -293,7 +293,110 @@ document.addEventListener("DOMContentLoaded", () => {
   return Math.min(score, 100);
  }
   
-  
+  /* =======================
+     PARSE
+  ======================= */
+
+  function parseInvoice(text) {
+    const out = { merchant: "", date: "", total: "" };
+    const total = text.match(/total[:\s]*₹?\s*([\d,.]+)/i);
+    const date = text.match(/\b\d{1,2}[-/]\d{1,2}[-/]\d{2,4}\b/);
+
+    if (total) out.total = total[1];
+    if (date) out.date = date[0];
+    out.merchant = text.split(" ").slice(0, 4).join(" ");
+    return out;
+  }
+
+  function detectDocumentType(text) {
+    const t = text.toLowerCase();
+
+    const invoiceKeywords = [
+      "invoice",
+      "tax invoice",
+      "bill no",
+      "amount payable",
+      "gst",
+      "invoice no"
+    ];
+
+    const poKeywords = [
+      "purchase order",
+      "po no",
+      "buyer",
+      "supplier",
+      "delivery",
+      "payment terms"
+    ];
+
+    let invoiceScore = 0;
+    let poScore = 0;
+
+    invoiceKeywords.forEach(k => {
+      if (t.includes(k)) invoiceScore++;
+    });
+
+    poKeywords.forEach(k => {
+      if (t.includes(k)) poScore++;
+    });
+
+    if (poScore > invoiceScore) return "PO";
+    if (invoiceScore > poScore) return "Invoice";
+
+    return "Unknown";
+  }
+
+  function calculateConfidence(parsed, rawText, docType) {
+    let score = 0;
+
+    if (docType === "Invoice") {
+      if (parsed.merchant) score += 30;
+      if (parsed.date) score += 30;
+      if (parsed.total) score += 30;
+    }
+    else if (docType === "PO") {
+      if (parsed.merchant) score += 40;
+      if (rawText.length > 100) score += 30;
+      if (parsed.date || parsed.total) score += 20;
+    }
+    else {
+      if (parsed.merchant) score += 30;
+      if (parsed.date) score += 20;
+      if (parsed.total) score += 20;
+    }
+
+    if (rawText.length > 80) score += 10;
+    return Math.min(score, 100);
+  }
+
+  function applyConfidenceUI(confidence, parsed, docType) {
+    [el.editMerchant, el.editDate, el.editTotal].forEach(f =>
+      f && f.classList.remove("field-warning")
+    );
+
+    if (confidence >= 80) {
+      setStatus("Parsed ✓ | Parse Confidence: High");
+      return;
+    }
+
+    if (confidence >= 50) {
+      setStatus("Parsed ⚠ | Parse Confidence: Review recommended");
+      return;
+    }
+
+    setStatus("Parsed ❗ | Parse Confidence: Manual check required");
+
+    if (docType === "Invoice") {
+      if (!parsed.merchant) el.editMerchant?.classList.add("field-warning");
+      if (!parsed.date) el.editDate?.classList.add("field-warning");
+      if (!parsed.total) el.editTotal?.classList.add("field-warning");
+    }
+
+    if (docType === "PO") {
+      if (!parsed.merchant) el.editMerchant?.classList.add("field-warning");
+    }
+  }
+
   el.parse?.addEventListener("click", () => {
     if (!el.clean.textContent || el.clean.textContent === "--") {
       setStatus("Nothing to parse", true);
@@ -301,8 +404,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const parsed = parseInvoice(el.clean.textContent);
-    currentParsedData = parsed;const docType = detectDocumentType(el.clean.textContent);
-    
+    currentParsedData = parsed;
+
+    const docType = detectDocumentType(el.clean.textContent);
+    const confidence = calculateConfidence(parsed, el.clean.textContent, docType);
+
     hasParsedData = true;
     selectedHistoryItem = null;
 
@@ -312,49 +418,14 @@ document.addEventListener("DOMContentLoaded", () => {
     el.editTotal.value = parsed.total;
 
     updateParsedUI(true);
+
     applyConfidenceUI(confidence, parsed, docType);
     applyConfidenceTooltip();
     attachConfidenceInfo();
-    
-    
-setStatus(`Parsed ${docType === "PO" ? "📄 PO" : docType === "Invoice" ? "🧾 Invoice" : ""} | ${el.status.textContent}`);
-    
-  function applyConfidenceUI(confidence, parsed, docType) {
-  // Clear previous warnings
-  [el.editMerchant, el.editDate, el.editTotal].forEach(f =>
-    f && f.classList.remove("field-warning")
-  );
 
-  if (confidence >= 80) {
-    setStatus("Parsed ✓ | Parse Confidence: High");
-    return;
-  }
-
-  if (confidence >= 50) {
-    setStatus("Parsed ⚠ | Parse Confidence: Review recommended");
-    return;
-  }
-
-  // Low confidence cases
-  setStatus("Parsed ❗ | Parse Confidence: Manual check required");
-
-  // Invoice → strict
-  if (docType === "Invoice") {
-    if (!parsed.merchant) el.editMerchant?.classList.add("field-warning");
-    if (!parsed.date) el.editDate?.classList.add("field-warning");
-    if (!parsed.total) el.editTotal?.classList.add("field-warning");
-  }
-
-  // PO → relaxed
-  if (docType === "PO") {
-    if (!parsed.merchant) el.editMerchant?.classList.add("field-warning");
-    // date & total are OPTIONAL for PO → do NOT highlight
-  }
-  }
-      
-    
     document.querySelector('[data-page="parsed"]')?.click();
   });
+        
 
   /* =======================
      EXPORT
