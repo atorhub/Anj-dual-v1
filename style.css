@@ -356,4 +356,17 @@ body.sidebar-hidden .main {
   opacity: 0.8;
   margin-left: 4px;
    }
+/* =======================
+   Parse Confidence (status bar)
+======================= */
+
+#statusBar {
+  white-space: nowrap;
+}
+
+.confidence-legend {
+  font-size: 0.85em;
+  opacity: 0.85;
+  margin-left: 6px;
+}
    
