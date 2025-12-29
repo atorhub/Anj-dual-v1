@@ -357,19 +357,33 @@ body.sidebar-hidden .main {
   margin-left: 4px;
    }
 /* Parse confidence status */
-
 #statusBar {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  flex-wrap: wrap;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: normal;
 }
+
+.confidence-legend {
+  font-size: 0.85em;
+  opacity: 0.9;
+}
+
+.confidence-info {
+  cursor: pointer;
+  margin-left: 4px;
+  position: relative;
+  font-weight: bold;
+}
+
 
 .confidence-high { color: #7CFC98; }
 .confidence-medium { color: #FFD966; }
 .confidence-low { color: #FF6B6B; }
 
-.confidence-info {
-  cursor: help;
   position: relative;
   font-weight: bold;
 }
