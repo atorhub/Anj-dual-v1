@@ -348,7 +348,17 @@ document.addEventListener("DOMContentLoaded", () => {
     applyConfidenceUI(confidence, parsed, docType);
     applyConfidenceTooltip();
     attachConfidenceInfo();
-
+if (!el.status.querySelector(".confidence-legend")) {
+  const legend = document.createElement("span");
+  legend.className = "confidence-legend";
+  legend.innerHTML = `
+    &nbsp;🟢 High
+    &nbsp;🟡 Medium
+    &nbsp;🔴 Low
+  `;
+  el.status.appendChild(legend);
+}
+    
     document.querySelector('[data-page="parsed"]')?.click();
   });
 
