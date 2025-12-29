@@ -384,9 +384,6 @@ body.sidebar-hidden .main {
 .confidence-medium { color: #FFD966; }
 .confidence-low { color: #FF6B6B; }
 
-  position: relative;
-  font-weight: bold;
-}
 
 .confidence-tooltip {
   display: none;
@@ -400,6 +397,37 @@ body.sidebar-hidden .main {
   width: 220px;
   font-size: 12px;
   z-index: 999;
+}
+
+.confidence-info:hover .confidence-tooltip {
+  display: block;
+}
+/* --- FIX STATUS BAR TOOLTIP LAYOUT --- */
+
+#statusBar {
+  position: relative;
+  overflow: visible;
+}
+
+.confidence-info {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.confidence-tooltip {
+  position: absolute;
+  top: 120%;
+  left: 0;
+  transform: translateX(-40%);
+  background: rgba(0,0,0,0.85);
+  color: #fff;
+  padding: 8px 10px;
+  border-radius: 6px;
+  width: 220px;
+  font-size: 12px;
+  z-index: 20;
+  display: none;
 }
 
 .confidence-info:hover .confidence-tooltip {
