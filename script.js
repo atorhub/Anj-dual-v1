@@ -1,4 +1,5 @@
-import { verifyInvoiceTotals } from "./invoiceVerification.js";
+export function verifyInvoiceTotals(invoice) {
+
 
 document.addEventListener("DOMContentLoaded", () => {
   
