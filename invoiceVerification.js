@@ -3,8 +3,8 @@
  * -------------------
  * Pure function to verify invoice total against calculated totals.
  */
-
-function verifyInvoiceTotals(invoice) {
+export function verifyInvoiceTotals(invoice) {
+  
   const TOLERANCE = 2;
 
   const warnings = [];
@@ -121,4 +121,3 @@ function verifyInvoiceTotals(invoice) {
     mismatch_amount: Number(diff.toFixed(2)),
     warnings
   };
-  }
