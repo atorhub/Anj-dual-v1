@@ -1,4 +1,5 @@
-export function verifyInvoiceTotals(invoice) {
+import { verifyInvoiceTotals } from "./invoiceVerification.js";
+
 document.addEventListener("DOMContentLoaded", () => { 
   /* =======================
      ELEMENT REFERENCES
