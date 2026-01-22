@@ -1,7 +1,5 @@
-document.addEventListener("DOMContentLoaded", () => {
-  
 export function verifyInvoiceTotals(invoice) {
-  
+document.addEventListener("DOMContentLoaded", () => { 
   /* =======================
      ELEMENT REFERENCES
   ======================= */
