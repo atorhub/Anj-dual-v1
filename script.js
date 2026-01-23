@@ -1,6 +1,7 @@
 import { verifyInvoiceTotals } from "./invoiceVerification.js";
-
 document.addEventListener("DOMContentLoaded", () => { 
+  alert("JS IS RUNNING");
+
   /* =======================
      ELEMENT REFERENCES
   ======================= */
