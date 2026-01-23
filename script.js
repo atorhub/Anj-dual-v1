@@ -496,5 +496,4 @@ document.querySelectorAll(".nav-item").forEach(item => {
       document.body.classList.add("sidebar-hidden");
     }
   });
-});
                                      
