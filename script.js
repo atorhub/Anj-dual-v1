@@ -6,35 +6,36 @@ document.addEventListener("DOMContentLoaded", () => {
   ======================= */
 
   const el = {
-    file: document.getElementById("fileInput"),
-    raw: document.getElementById("rawText"),
-    clean: document.getElementById("cleanedText"),
-    json: document.getElementById("jsonPreview"),
-    status: document.getElementById("statusBar"),
+  file: document.getElementById("fileInput"),
+  raw: document.getElementById("rawText"),
+  clean: document.getElementById("cleanedText"),
+  json: document.getElementById("jsonPreview"),
+  status: document.getElementById("statusBar"),
 
-    dual: document.getElementById("dualOCRBtn"),
-    ocr: document.getElementById("ocrOnlyBtn"),
-    parse: document.getElementById("parseBtn"),
+  dual: document.getElementById("dualOCRBtn"),
+  ocr: document.getElementById("ocrOnlyBtn"),
+  parse: document.getElementById("parseBtn"),
 
-    saveBtn: document.getElementById("saveBtn"),
-    editMerchant: document.getElementById("editMerchant"),
-    editDate: document.getElementById("editDate"),
-    editTotal: document.getElementById("editTotal"),
+  saveBtn: document.getElementById("saveBtn"),
+  editMerchant: document.getElementById("editMerchant"),
+  editDate: document.getElementById("editDate"),
+  editTotal: document.getElementById("editTotal"),
 
-    exportJSON: document.getElementById("exportJSON"),
-    exportTXT: document.getElementById("exportTXT"),
-    exportCSV: document.getElementById("exportCSV"),
+  exportJSON: document.getElementById("exportJSON"),
+  exportTXT: document.getElementById("exportTXT"),
+  exportCSV: document.getElementById("exportCSV"),
 
-    theme: document.getElementById("themeSelect"),
-    layout: document.getElementById("layoutSelect"),
+  theme: document.getElementById("themeSelect"),
+  layout: document.getElementById("layoutSelect"),
 
-    sidebarToggle: document.getElementById("sidebarToggle"),
+  sidebarToggle: document.getElementById("sidebarToggle"),
 
-    historyList: document.getElementById("historyList"),
-    historyPageList: document.getElementById("historyPageList"),
-    historySearch: document.getElementById("historySearch"),
-    clearHistoryBtn: document.getElementById("clearHistoryBtn")
-  };
+  historyList: document.getElementById("historyList"),
+  historyPageList: document.getElementById("historyPageList"),
+  historySearch: document.getElementById("historySearch"),
+  clearHistoryBtn: document.getElementById("clearHistoryBtn")
+};
+  
    /* =======================
      CONFIDENCE HELPERS (FIXED)
   ======================= */
