@@ -1,4 +1,11 @@
-document.addEventListener("DOMContentLoaded", () => { 
+import { verifyInvoiceTotals } from "./invoiceVerification.js";
+
+// Bind legacy globals explicitly (CRITICAL)
+const pdfjsLib = window.pdfjsLib;
+const Tesseract = window.Tesseract;
+
+document.addEventListener("DOMContentLoaded", () => {
+  
 
   /* =======================
      ELEMENT REFERENCES
@@ -329,28 +336,17 @@ el.parse?.addEventListener("click", () => {
 
   const rawText = el.clean.textContent;
   const parsed = parseInvoice(rawText);
-  const confidence = calculateConfidence(parsed, rawText);
-const verification = verifyInvoiceTotals({
-  invoice_total: Number(parsed.total),
-  line_items: parsed.line_items || [],
-  taxes: parsed.taxes || []
-});
- if (verification.status === "Verified") {
+  const verification = verifyInvoiceTotals(parsedInvoice);
+
+if (verification.status === "Verified") {
   setStatus("✅ Verified");
 } else if (verification.status === "Needs Review") {
   setStatus("⚠ Needs Review", true);
 } else {
   setStatus("❌ Unverifiable", true);
- }
-  
-  el.json.textContent = JSON.stringify(parsed, null, 2);
-  el.editMerchant.value = parsed.merchant;
-  el.editDate.value = parsed.date;
-  el.editTotal.value = parsed.total;
+}
 
-  updateParsedUI(true);
-  applyConfidenceUI(confidence);
-  attachConfidenceTooltip();
+  const confidence = calculateConfidence(parsed, rawText);
 
   document.querySelector('[data-page="parsed"]')?.click();
 });
@@ -494,6 +490,5 @@ document.querySelectorAll(".nav-item").forEach(item => {
 
     if (window.innerWidth <= 768) {
       document.body.classList.add("sidebar-hidden");
-    }
   });
                                      
