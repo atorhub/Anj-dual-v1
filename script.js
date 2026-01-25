@@ -331,35 +331,58 @@ function  attachConfidenceTooltipLegacy() {
   info.appendChild(tip);
   el.status.appendChild(info);
 }
-
 el.parse?.addEventListener("click", () => {
-  if (!el.clean.textContent || el.clean.textContent === "--") {
+  if (!el.clean || el.clean.textContent === "--") {
     setStatus("Nothing to parse", true);
     return;
   }
 
-  const rawText = el.clean.textContent;
-const parsed = parseInvoice(rawText);
+  try {
+    const rawText = el.clean.textContent;
 
-const verification = verifyInvoiceTotals({
-  invoice_total: Number(parsed.total),
-  line_items: [],
-  taxes: []
+    // 1️⃣ Parse invoice (existing parser)
+    const parsed = parseInvoice(rawText);
+
+    // 2️⃣ Show parsed JSON in UI
+    el.json.textContent = JSON.stringify(parsed, null, 2);
+
+    // 3️⃣ Fill editable fields
+    el.editMerchant.value = parsed.merchant || "";
+    el.editDate.value = parsed.date || "";
+    el.editTotal.value = parsed.total || "";
+
+    // 4️⃣ Verify invoice totals (MODULE-SAFE, NORMALIZED)
+    const verification = verifyInvoiceTotals({
+      invoice_total: Number(parsed.total),
+      line_items: Array.isArray(parsed.line_items) ? parsed.line_items : [],
+      taxes: Array.isArray(parsed.taxes) ? parsed.taxes : []
+    });
+
+    // 5️⃣ Status handling
+    if (verification.status === "Verified") {
+      setStatus("✅ Verified");
+    } else if (verification.status === "Needs Review") {
+      setStatus("⚠ Needs Review", true);
+    } else {
+      setStatus("❌ Unverifiable", true);
+    }
+
+    // 6️⃣ Confidence + UI updates
+    const confidence = calculateConfidence(parsed, rawText);
+    applyConfidenceUI(confidence);
+    attachConfidenceTooltip();
+
+    updateParsedUI(true);
+
+    // 7️⃣ Switch to parsed page
+    document.querySelector('[data-page="parsed"]')?.click();
+
+  } catch (err) {
+    console.error("Parse error:", err);
+    setStatus("Parse failed — check console", true);
+  }
 });
-  
 
-if (verification.status === "Verified") {
-  setStatus("✅ Verified");
-} else if (verification.status === "Needs Review") {
-  setStatus("⚠ Needs Review", true);
-} else {
-  setStatus("❌ Unverifiable", true);
-}
-
-  const confidence = calculateConfidence(parsed, rawText);
-
-  document.querySelector('[data-page="parsed"]')?.click();
-});
 
   /* =======================
      HISTORY
