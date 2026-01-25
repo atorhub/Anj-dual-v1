@@ -1,3 +1,5 @@
+console.log("SCRIPT LOADED");
+
 import { verifyInvoiceTotals } from "./invoiceVerification.js";
 
 // Bind legacy globals explicitly (CRITICAL)
@@ -10,7 +12,8 @@ document.addEventListener("DOMContentLoaded", () => {
   /* =======================
      ELEMENT REFERENCES
   ======================= */
-
+console.log("DOM READY");
+  
   const el = {
   file: document.getElementById("fileInput"),
   raw: document.getElementById("rawText"),
