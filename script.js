@@ -7,153 +7,59 @@ const pdfjsLib = window.pdfjsLib;
 const Tesseract = window.Tesseract;
 
 document.addEventListener("DOMContentLoaded", () => {
-  
+  console.log("DOM READY");
 
   /* =======================
      ELEMENT REFERENCES
   ======================= */
-console.log("DOM READY");
-  
   const el = {
-  file: document.getElementById("fileInput"),
-  raw: document.getElementById("rawText"),
-  clean: document.getElementById("cleanedText"),
-  json: document.getElementById("jsonPreview"),
-  status: document.getElementById("statusBar"),
+    file: document.getElementById("fileInput"),
+    raw: document.getElementById("rawText"),
+    clean: document.getElementById("cleanedText"),
+    json: document.getElementById("jsonPreview"),
+    status: document.getElementById("statusBar"),
 
-  dual: document.getElementById("dualOCRBtn"),
-  ocr: document.getElementById("ocrOnlyBtn"),
-  parse: document.getElementById("parseBtn"),
+    dual: document.getElementById("dualOCRBtn"),
+    ocr: document.getElementById("ocrOnlyBtn"),
+    parse: document.getElementById("parseBtn"),
 
-  saveBtn: document.getElementById("saveBtn"),
-  editMerchant: document.getElementById("editMerchant"),
-  editDate: document.getElementById("editDate"),
-  editTotal: document.getElementById("editTotal"),
+    saveBtn: document.getElementById("saveBtn"),
+    editMerchant: document.getElementById("editMerchant"),
+    editDate: document.getElementById("editDate"),
+    editTotal: document.getElementById("editTotal"),
 
-  exportJSON: document.getElementById("exportJSON"),
-  exportTXT: document.getElementById("exportTXT"),
-  exportCSV: document.getElementById("exportCSV"),
+    exportJSON: document.getElementById("exportJSON"),
+    exportTXT: document.getElementById("exportTXT"),
+    exportCSV: document.getElementById("exportCSV"),
 
-  theme: document.getElementById("themeSelect"),
-  layout: document.getElementById("layoutSelect"),
+    theme: document.getElementById("themeSelect"),
+    layout: document.getElementById("layoutSelect"),
 
-  sidebarToggle: document.getElementById("sidebarToggle"),
+    sidebarToggle: document.getElementById("sidebarToggle"),
 
-  historyList: document.getElementById("historyList"),
-  historyPageList: document.getElementById("historyPageList"),
-  historySearch: document.getElementById("historySearch"),
-  clearHistoryBtn: document.getElementById("clearHistoryBtn")
-};
-  
-   /* =======================
-     CONFIDENCE HELPERS (FIXED)
+    historyList: document.getElementById("historyList"),
+    historyPageList: document.getElementById("historyPageList"),
+    historySearch: document.getElementById("historySearch"),
+    clearHistoryBtn: document.getElementById("clearHistoryBtn")
+  };
+
+  /* =======================
+     STATE
   ======================= */
-
-  function applyConfidenceTooltip() {
-    if (!el.status) return;
-    el.status.title =
-      "Parse Confidence indicates how reliably key fields were extracted after parsing. " +
-      "Lower confidence means some fields may require manual review.";
-  }
-
-  function attachConfidenceInfo() {
-    if (!el.status) return;
-
-    let info = el.status.querySelector(".confidence-info");
-    if (info) return;
-
-    info = document.createElement("span");
-    info.textContent = " ⓘ";
-    info.className = "confidence-info";
-    info.onclick = showConfidenceHelpOnce;
-    
-
-    el.status.appendChild(info);
-  }
-
   let db = null;
   let hasParsedData = false;
   let selectedHistoryItem = null;
   let currentParsedData = null;
   let lastSavedId = null;
-  function showConfidenceHelpOnce() {
-  if (localStorage.getItem("hideConfidenceHelp") === "1") return;
-
-  const dontShow = confirm(
-    "Parse Confidence indicates how reliably key fields were extracted after parsing.\n\n" +
-    "Lower confidence means some fields may require manual review.\n\n" +
-    "Press OK to continue.\n\n" +
-    "Press Cancel to not show this again."
-  );
-
-  if (!dontShow) {
-    localStorage.setItem("hideConfidenceHelp", "1");
-  }
-  }
-  
 
   /* =======================
-     STATUS
+     STATUS & UI HELPERS
   ======================= */
-
   function setStatus(msg, err = false) {
+    if (!el.status) return;
     el.status.textContent = msg;
     el.status.style.color = err ? "#ff4d4d" : "#7CFC98";
   }
-
-  /* =======================
-     SIDEBAR TOGGLE
-  ======================= */
-
-  el.sidebarToggle?.addEventListener("click", () => {
-    document.body.classList.toggle("sidebar-hidden");
-  });
-
-  const sidebarCloseBtn = document.getElementById("sidebarCloseBtn");
-
-  sidebarCloseBtn?.addEventListener("click", () => {
-    document.body.classList.add("sidebar-hidden");
-  });
-
-  /* =======================
-     THEMES
-  ======================= */
-
-  el.theme?.addEventListener("change", () => {
-    document.body.classList.forEach(c => {
-      if (c.startsWith("theme-")) document.body.classList.remove(c);
-    });
-    document.body.classList.add("theme-" + el.theme.value);
-    localStorage.setItem("anj-theme", el.theme.value);
-  });
-
-  const savedTheme = localStorage.getItem("anj-theme");
-  if (savedTheme) {
-    el.theme.value = savedTheme;
-    document.body.classList.add("theme-" + savedTheme);
-  }
-
-  /* =======================
-     LAYOUTS
-  ======================= */
-
-  el.layout?.addEventListener("change", () => {
-    document.body.classList.forEach(c => {
-      if (c.startsWith("layout-")) document.body.classList.remove(c);
-    });
-    document.body.classList.add("layout-" + el.layout.value);
-    localStorage.setItem("anj-layout", el.layout.value);
-  });
-
-  const savedLayout = localStorage.getItem("anj-layout");
-  if (savedLayout) {
-    el.layout.value = savedLayout;
-    document.body.classList.add("layout-" + savedLayout);
-  }
-
-  /* =======================
-     PARSED UI STATE
-  ======================= */
 
   function updateParsedUI(enabled) {
     [
@@ -175,9 +81,89 @@ console.log("DOM READY");
   updateParsedUI(false);
 
   /* =======================
-     PDF → CANVAS
+     CONFIDENCE HELPERS
   ======================= */
+  function showConfidenceHelpOnce() {
+    if (localStorage.getItem("hideConfidenceHelp") === "1") return;
 
+    const dontShow = confirm(
+      "Parse Confidence indicates how reliably key fields were extracted after parsing.\n\n" +
+      "Lower confidence means some fields may require manual review.\n\n" +
+      "Press OK to continue.\n\n" +
+      "Press Cancel to not show this again."
+    );
+
+    if (!dontShow) {
+      localStorage.setItem("hideConfidenceHelp", "1");
+    }
+  }
+
+  /* =======================
+     SIDEBAR & NAVIGATION
+  ======================= */
+  el.sidebarToggle?.addEventListener("click", () => {
+    document.body.classList.toggle("sidebar-hidden");
+  });
+
+  const sidebarCloseBtn = document.getElementById("sidebarCloseBtn");
+  sidebarCloseBtn?.addEventListener("click", () => {
+    document.body.classList.add("sidebar-hidden");
+  });
+
+  document.querySelectorAll(".nav-item").forEach(item => {
+    item.addEventListener("click", () => {
+      const page = item.dataset.page;
+
+      document.querySelectorAll(".nav-item").forEach(n =>
+        n.classList.remove("active")
+      );
+      item.classList.add("active");
+
+      document.querySelectorAll(".page").forEach(p =>
+        p.classList.remove("active")
+      );
+      document.querySelector(".page-" + page)?.classList.add("active");
+
+      if (window.innerWidth <= 768) {
+        document.body.classList.add("sidebar-hidden");
+      }
+    });
+  });
+
+  /* =======================
+     THEMES & LAYOUTS
+  ======================= */
+  el.theme?.addEventListener("change", () => {
+    document.body.classList.forEach(c => {
+      if (c.startsWith("theme-")) document.body.classList.remove(c);
+    });
+    document.body.classList.add("theme-" + el.theme.value);
+    localStorage.setItem("anj-theme", el.theme.value);
+  });
+
+  const savedTheme = localStorage.getItem("anj-theme");
+  if (savedTheme && el.theme) {
+    el.theme.value = savedTheme;
+    document.body.classList.add("theme-" + savedTheme);
+  }
+
+  el.layout?.addEventListener("change", () => {
+    document.body.classList.forEach(c => {
+      if (c.startsWith("layout-")) document.body.classList.remove(c);
+    });
+    document.body.classList.add("layout-" + el.layout.value);
+    localStorage.setItem("anj-layout", el.layout.value);
+  });
+
+  const savedLayout = localStorage.getItem("anj-layout");
+  if (savedLayout && el.layout) {
+    el.layout.value = savedLayout;
+    document.body.classList.add("layout-" + savedLayout);
+  }
+
+  /* =======================
+     PDF & OCR
+  ======================= */
   async function pdfToCanvas(file) {
     const buffer = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
@@ -193,10 +179,6 @@ console.log("DOM READY");
     await page.render({ canvasContext: ctx, viewport }).promise;
     return canvas;
   }
-
-  /* =======================
-     OCR
-  ======================= */
 
   async function runOCR(file) {
     setStatus("OCR running...");
@@ -218,7 +200,7 @@ console.log("DOM READY");
   }
 
   async function processFile() {
-    if (!el.file.files[0]) {
+    if (!el.file || !el.file.files[0]) {
       setStatus("No file selected", true);
       return;
     }
@@ -226,99 +208,78 @@ console.log("DOM READY");
     const file = el.file.files[0];
     const text = await runOCR(file);
 
-    el.raw.textContent = text || "--";
-    el.clean.textContent = text || "--";
+    if (el.raw) el.raw.textContent = text || "--";
+    if (el.clean) el.clean.textContent = text || "--";
     setStatus("OCR done ✓");
   }
 
   el.dual?.addEventListener("click", processFile);
   el.ocr?.addEventListener("click", processFile);
 
-/* =======================
-   PARSING & VERIFICATION
-======================= */
+  /* =======================
+     PARSING
+  ======================= */
+  function parseInvoice(text) {
+    const out = { merchant: "", date: "", total: "" };
 
-function parseInvoice(text) {
-  return {
-    merchant: "",
-    date: "",
-    total: ""
-  };
+    const totalMatch = text.match(/total[:\s]*₹?\s*([\d,.]+)/i);
+    const dateMatch = text.match(/\b\d{1,2}[-/]\d{1,2}[-/]\d{2,4}\b/);
 
-  // NOTE: logic below is intentionally simple and safe
-}
+    if (totalMatch) out.total = totalMatch[1];
+    if (dateMatch) out.date = dateMatch[0];
 
-function extractInvoiceData(text) {
-  const data = {
-    merchant: "",
-    date: "",
-    total: ""
-  };
+    out.merchant = text
+      .split(/\n| /)
+      .slice(0, 4)
+      .join(" ")
+      .trim();
 
-  // TOTAL
-  const totalMatch = text.match(/total[:\s]*₹?\s*([\d,.]+)/i);
-  if (totalMatch) {
-    data.total = totalMatch[1];
+    return out;
   }
 
-  // DATE
-  const dateMatch = text.match(/\b\d{1,2}[-/]\d{1,2}[-/]\d{2,4}\b/);
-  if (dateMatch) {
-    data.date = dateMatch[0];
-  }
+  el.parse?.addEventListener("click", () => {
+    if (!el.clean || !el.clean.textContent || el.clean.textContent === "--") {
+      setStatus("Nothing to parse", true);
+      return;
+    }
 
-  // MERCHANT (first non-empty line)
-  const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
-  if (lines.length) {
-    data.merchant = lines[0];
-  }
+    const rawText = el.clean.textContent;
+    const parsed = parseInvoice(rawText);
+    
+    // Fixed: using 'parsed' instead of undefined 'parsedInvoice'
+    const verification = verifyInvoiceTotals(parsed);
 
-  return data;
-}
+    if (verification.status === "Verified") {
+      setStatus("✅ Verified");
+    } else if (verification.status === "Needs Review") {
+      setStatus("⚠ Needs Review", true);
+    } else {
+      setStatus("❌ Unverifiable", true);
+    }
 
-el.parse?.addEventListener("click", () => {
-  if (!el.clean || !el.clean.textContent || el.clean.textContent === "--") {
-    setStatus("Nothing to parse", true);
-    return;
-  }
+    // Update UI with parsed data
+    if (el.editMerchant) el.editMerchant.value = parsed.merchant;
+    if (el.editDate) el.editDate.value = parsed.date;
+    if (el.editTotal) el.editTotal.value = parsed.total;
+    if (el.json) el.json.textContent = JSON.stringify(parsed, null, 2);
+    
+    hasParsedData = true;
+    updateParsedUI(true);
 
-  const rawText = el.clean.textContent;
-  const parsed = extractInvoiceData(rawText);
-
-  // 🔑 THIS IS CRITICAL
-  const verification = verifyInvoiceTotals(parsed);
-
-  if (verification.status === "Verified") {
-    setStatus("✅ Verified");
-  } else if (verification.status === "Needs Review") {
-    setStatus("⚠ Needs Review", true);
-  } else {
-    setStatus("❌ Unverifiable", true);
-  }
-
-  // UI update
-  el.editMerchant.value = parsed.merchant;
-  el.editDate.value = parsed.date;
-  el.editTotal.value = parsed.total;
-  el.json.textContent = JSON.stringify(parsed, null, 2);
-
-  hasParsedData = true;
-  updateParsedUI(true);
-
-  document.querySelector('[data-page="parsed"]')?.click();
-});
-  
+    document.querySelector('[data-page="parsed"]')?.click();
+  });
 
   /* =======================
-     HISTORY
+     HISTORY (IndexedDB)
   ======================= */
-
   function initDB() {
     const req = indexedDB.open("anj-dual-ocr", 1);
 
     req.onupgradeneeded = e => {
       const db = e.target.result;
-      db.createObjectStore("history", { keyPath: "id", autoIncrement: true });
+      if (!db.objectStoreNames.contains("history")) {
+        db.createObjectStore("history", { keyPath: "id", autoIncrement: true });
+      }
     };
 
     req.onsuccess = e => {
@@ -349,10 +310,10 @@ el.parse?.addEventListener("click", () => {
         li.classList.remove("history-active");
       }
 
-      el.editMerchant.value = item.merchant;
-      el.editDate.value = item.date;
-      el.editTotal.value = item.total;
-      el.json.textContent = JSON.stringify(item, null, 2);
+      if (el.editMerchant) el.editMerchant.value = item.merchant;
+      if (el.editDate) el.editDate.value = item.date;
+      if (el.editTotal) el.editTotal.value = item.total;
+      if (el.json) el.json.textContent = JSON.stringify(item, null, 2);
 
       updateParsedUI(true);
       document.querySelector('[data-page="parsed"]')?.click();
@@ -364,8 +325,8 @@ el.parse?.addEventListener("click", () => {
   function loadHistory(filter = "") {
     if (!db) return;
 
-    el.historyList.innerHTML = "";
-    el.historyPageList && (el.historyPageList.innerHTML = "");
+    if (el.historyList) el.historyList.innerHTML = "";
+    if (el.historyPageList) el.historyPageList.innerHTML = "";
 
     const tx = db.transaction("history", "readonly");
     tx.objectStore("history").openCursor(null, "prev").onsuccess = e => {
@@ -375,8 +336,8 @@ el.parse?.addEventListener("click", () => {
       const item = c.value;
       const text = `${item.merchant} ${item.date} ${item.total}`.toLowerCase();
       if (!filter || text.includes(filter)) {
-        renderHistoryItem(item, el.historyList);
-        el.historyPageList && renderHistoryItem(item, el.historyPageList);
+        if (el.historyList) renderHistoryItem(item, el.historyList);
+        if (el.historyPageList) renderHistoryItem(item, el.historyPageList);
       }
       c.continue();
     };
@@ -405,8 +366,6 @@ el.parse?.addEventListener("click", () => {
 
     tx.oncomplete = () => {
       setTimeout(() => {
-        if (el.historyList) el.historyList.innerHTML = "";
-        if (el.historyPageList) el.historyPageList.innerHTML = "";
         loadHistory();
         setStatus("Saved ✓");
       }, 0);
@@ -427,26 +386,4 @@ el.parse?.addEventListener("click", () => {
   initDB();
   setStatus("Ready ✓");
 });
-
-/* =======================
-   PAGE NAVIGATION
-======================= */
-
-document.querySelectorAll(".nav-item").forEach(item => {
-  item.addEventListener("click", () => {
-    const page = item.dataset.page;
-
-    document.querySelectorAll(".nav-item").forEach(n =>
-      n.classList.remove("active")
-    );
-    item.classList.add("active");
-
-    document.querySelectorAll(".page").forEach(p =>
-      p.classList.remove("active")
-    );
-    document.querySelector(".page-" + page)?.classList.add("active");
-
-    if (window.innerWidth <= 768) {
-      document.body.classList.add("sidebar-hidden");
-  });
-                                     
+                          
