@@ -1,26 +1,31 @@
-/**
- * verifyInvoiceTotals
- * -------------------
- * Pure function to verify invoice total against calculated totals.
- */
+        // invoiceVerification.js
 export function verifyInvoiceTotals(invoice) {
-  
-  const TOLERANCE = 2;
-
   const warnings = [];
 
-  if (!invoice || typeof invoice !== "object") {
+  if (!invoice || !Array.isArray(invoice.items) || invoice.items.length === 0) {
     return {
       status: "Unverifiable",
       mismatch_amount: null,
-      warnings: ["Invalid invoice data"]
+      warnings: ["No line items found"]
     };
   }
 
-  const { invoice_total, line_items, taxes } = invoice;
+  const safeNumber = v =>
+    typeof v === "number"
+      ? v
+      : Number(String(v).replace(/[^0-9.-]/g, ""));
 
-  // --- Invoice total must exist ---
-  if (typeof invoice_total !== "number") {
+  const calculatedSubtotal = invoice.items.reduce((sum, item) => {
+    const qty = safeNumber(item.qty || 1);
+    const price = safeNumber(item.price);
+    return sum + qty * price;
+  }, 0);
+
+  const tax = safeNumber(invoice.tax || 0);
+  const calculatedTotal = +(calculatedSubtotal + tax).toFixed(2);
+  const reportedTotal = safeNumber(invoice.total);
+
+  if (Number.isNaN(reportedTotal)) {
     return {
       status: "Unverifiable",
       mismatch_amount: null,
@@ -28,96 +33,19 @@ export function verifyInvoiceTotals(invoice) {
     };
   }
 
-  // --- Calculate line items ---
-  let itemsSum = 0;
-  let validItemCount = 0;
-  let skippedItemCount = 0;
+  const diff = +(reportedTotal - calculatedTotal).toFixed(2);
 
-  if (Array.isArray(line_items)) {
-    for (const item of line_items) {
-      if (!item || typeof item !== "object") {
-        skippedItemCount++;
-        continue;
-      }
-
-      if (typeof item.line_total === "number") {
-        itemsSum += item.line_total;
-        validItemCount++;
-      } else if (
-        typeof item.quantity === "number" &&
-        typeof item.unit_price === "number"
-      ) {
-        itemsSum += item.quantity * item.unit_price;
-        validItemCount++;
-      } else {
-        skippedItemCount++;
-      }
-    }
-  }
-
-  if (validItemCount === 0) {
-    warnings.push("No calculable line items found");
-  }
-
-  if (skippedItemCount > 0) {
-    warnings.push("Some line items could not be calculated");
-  }
-
-  // --- Calculate taxes ---
-  let taxSum = 0;
-  let taxCount = 0;
-  let invalidTaxCount = 0;
-
-  if (Array.isArray(taxes)) {
-    for (const tax of taxes) {
-      if (tax && typeof tax.tax_amount === "number") {
-        taxSum += tax.tax_amount;
-        taxCount++;
-      } else {
-        invalidTaxCount++;
-      }
-    }
-  }
-
-  if (taxCount === 0 && Array.isArray(taxes) && taxes.length > 0) {
-    warnings.push("Tax entries present but not calculable");
-  }
-
-  // --- Can we calculate anything at all? ---
-  if (validItemCount === 0 && taxCount === 0) {
-    return {
-      status: "Unverifiable",
-      mismatch_amount: null,
-      warnings: warnings.length
-        ? warnings
-        : ["Insufficient numeric data to verify invoice"]
-    };
-  }
-
-  const calculatedTotal = itemsSum + taxSum;
-  const diff = Math.abs(invoice_total - calculatedTotal);
-
-  // --- VERIFIED ---
-  if (diff <= TOLERANCE) {
-    if (taxCount === 0) {
-      warnings.push("Invoice verified without tax calculation");
-    }
-
+  if (Math.abs(diff) <= 0.01) {
     return {
       status: "Verified",
-      mismatch_amount: null,
+      mismatch_amount: 0,
       warnings
     };
   }
 
-  // --- NEEDS REVIEW ---
-  warnings.push("Total mismatch detected");
-  warnings.push(
-    `Calculated total differs by ₹${diff.toFixed(2)}`
-  );
-
   return {
     status: "Needs Review",
-    mismatch_amount: Number(diff.toFixed(2)),
-    warnings
+    mismatch_amount: diff,
+    warnings: [`Mismatch detected: ${diff}`]
   };
+}
