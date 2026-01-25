@@ -235,154 +235,79 @@ console.log("DOM READY");
   el.ocr?.addEventListener("click", processFile);
 
 /* =======================
-   PARSE (SINGLE SOURCE)
+   PARSING & VERIFICATION
 ======================= */
 
 function parseInvoice(text) {
-  const out = { merchant: "", date: "", total: "" };
+  return {
+    merchant: "",
+    date: "",
+    total: ""
+  };
 
+  // NOTE: logic below is intentionally simple and safe
+}
+
+function extractInvoiceData(text) {
+  const data = {
+    merchant: "",
+    date: "",
+    total: ""
+  };
+
+  // TOTAL
   const totalMatch = text.match(/total[:\s]*₹?\s*([\d,.]+)/i);
+  if (totalMatch) {
+    data.total = totalMatch[1];
+  }
+
+  // DATE
   const dateMatch = text.match(/\b\d{1,2}[-/]\d{1,2}[-/]\d{2,4}\b/);
-
-  if (totalMatch) out.total = totalMatch[1];
-  if (dateMatch) out.date = dateMatch[0];
-
-  out.merchant = text
-    .split(/\n| /)
-    .slice(0, 4)
-    .join(" ")
-    .trim();
-
-  return out;
-}
-
-function detectDocumentType(text) {
-  const t = text.toLowerCase();
-
-  const invoiceKeywords = ["invoice", "tax invoice", "gst", "amount payable"];
-  const poKeywords = ["purchase order", "po no", "supplier", "buyer"];
-
-  let invoiceScore = 0;
-  let poScore = 0;
-
-  invoiceKeywords.forEach(k => t.includes(k) && invoiceScore++);
-  poKeywords.forEach(k => t.includes(k) && poScore++);
-
-  if (poScore > invoiceScore) return "PO";
-  if (invoiceScore > poScore) return "Invoice";
-  return "Unknown";
-}
-
-function calculateConfidence(parsed, rawText, docType) {
-  let score = 0;
-
-  if (parsed.merchant) score += 30;
-  if (parsed.date) score += 30;
-  if (parsed.total) score += 30;
-  if (rawText.length > 80) score += 10;
-
-  return Math.min(score, 100);
-}
-
-function applyConfidenceUI(confidence) {
-  el.status.classList.remove(
-    "confidence-high",
-    "confidence-medium",
-    "confidence-low"
-  );
-
-  let label = "Low";
-  let cls = "confidence-low";
-
-  if (confidence >= 80) {
-    label = "High";
-    cls = "confidence-high";
-  } else if (confidence >= 50) {
-    label = "Medium";
-    cls = "confidence-medium";
+  if (dateMatch) {
+    data.date = dateMatch[0];
   }
 
-  el.status.classList.add(cls);
-
-  let text = el.status.querySelector(".confidence-text");
-  if (!text) {
-    text = document.createElement("span");
-    text.className = "confidence-text";
-    el.status.appendChild(text);
+  // MERCHANT (first non-empty line)
+  const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
+  if (lines.length) {
+    data.merchant = lines[0];
   }
 
-  text.textContent = `Parsed | Parse Confidence: ${label}`;
+  return data;
 }
 
-function  attachConfidenceTooltipLegacy() {
-
-  if (el.status.querySelector(".confidence-info")) return;
-
-  const info = document.createElement("span");
-  info.className = "confidence-info";
-  info.textContent = " ⓘ";
-
-  const tip = document.createElement("div");
-  tip.className = "confidence-tooltip";
-  tip.textContent =
-    "Parse Confidence shows how reliable the extracted fields are. " +
-    "Low confidence means manual review is recommended.";
-
-  info.appendChild(tip);
-  el.status.appendChild(info);
-}
 el.parse?.addEventListener("click", () => {
-  if (!el.clean || el.clean.textContent === "--") {
+  if (!el.clean || !el.clean.textContent || el.clean.textContent === "--") {
     setStatus("Nothing to parse", true);
     return;
   }
 
-  try {
-    const rawText = el.clean.textContent;
+  const rawText = el.clean.textContent;
+  const parsed = extractInvoiceData(rawText);
 
-    // 1️⃣ Parse invoice (existing parser)
-    const parsed = parseInvoice(rawText);
+  // 🔑 THIS IS CRITICAL
+  const verification = verifyInvoiceTotals(parsed);
 
-    // 2️⃣ Show parsed JSON in UI
-    el.json.textContent = JSON.stringify(parsed, null, 2);
-
-    // 3️⃣ Fill editable fields
-    el.editMerchant.value = parsed.merchant || "";
-    el.editDate.value = parsed.date || "";
-    el.editTotal.value = parsed.total || "";
-
-    // 4️⃣ Verify invoice totals (MODULE-SAFE, NORMALIZED)
-    const verification = verifyInvoiceTotals({
-      invoice_total: Number(parsed.total),
-      line_items: Array.isArray(parsed.line_items) ? parsed.line_items : [],
-      taxes: Array.isArray(parsed.taxes) ? parsed.taxes : []
-    });
-
-    // 5️⃣ Status handling
-    if (verification.status === "Verified") {
-      setStatus("✅ Verified");
-    } else if (verification.status === "Needs Review") {
-      setStatus("⚠ Needs Review", true);
-    } else {
-      setStatus("❌ Unverifiable", true);
-    }
-
-    // 6️⃣ Confidence + UI updates
-    const confidence = calculateConfidence(parsed, rawText);
-    applyConfidenceUI(confidence);
-    attachConfidenceTooltip();
-
-    updateParsedUI(true);
-
-    // 7️⃣ Switch to parsed page
-    document.querySelector('[data-page="parsed"]')?.click();
-
-  } catch (err) {
-    console.error("Parse error:", err);
-    setStatus("Parse failed — check console", true);
+  if (verification.status === "Verified") {
+    setStatus("✅ Verified");
+  } else if (verification.status === "Needs Review") {
+    setStatus("⚠ Needs Review", true);
+  } else {
+    setStatus("❌ Unverifiable", true);
   }
-});
 
+  // UI update
+  el.editMerchant.value = parsed.merchant;
+  el.editDate.value = parsed.date;
+  el.editTotal.value = parsed.total;
+  el.json.textContent = JSON.stringify(parsed, null, 2);
+
+  hasParsedData = true;
+  updateParsedUI(true);
+
+  document.querySelector('[data-page="parsed"]')?.click();
+});
+  
 
   /* =======================
      HISTORY
