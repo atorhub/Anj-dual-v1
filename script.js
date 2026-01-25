@@ -314,7 +314,8 @@ function applyConfidenceUI(confidence) {
   text.textContent = `Parsed | Parse Confidence: ${label}`;
 }
 
-function attachConfidenceTooltip() {
+function  attachConfidenceTooltipLegacy() {
+
   if (el.status.querySelector(".confidence-info")) return;
 
   const info = document.createElement("span");
@@ -338,8 +339,14 @@ el.parse?.addEventListener("click", () => {
   }
 
   const rawText = el.clean.textContent;
-  const parsed = parseInvoice(rawText);
-  const verification = verifyInvoiceTotals(parsedInvoice);
+const parsed = parseInvoice(rawText);
+
+const verification = verifyInvoiceTotals({
+  invoice_total: Number(parsed.total),
+  line_items: [],
+  taxes: []
+});
+  
 
 if (verification.status === "Verified") {
   setStatus("✅ Verified");
