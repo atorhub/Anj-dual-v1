@@ -268,8 +268,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const file = el.file.files[0];
     const text = await runOCR(file);
 
+    // Wiring Point: rawText UI gets original OCR output
     if (el.raw) el.raw.textContent = text || "--";
-    if (el.clean) el.clean.textContent = text || "--";
+    
+    // Wiring Point: cleanedText UI gets normalized OCR output
+    const normalized = normalizeOCRText(text);
+    if (el.clean) el.clean.textContent = normalized || "--";
+    
     setStatus("OCR done ✓");
   }
 
@@ -293,7 +298,8 @@ document.addEventListener("DOMContentLoaded", () => {
   ======================= */
   
   /**
-   * Requirement A: OCR TEXT NORMALIZATION (PRE-PARSE)
+   * Requirement: normalizeOCRText(text)
+   * Merges broken words, normalizes spacing/punctuation, preserves line order.
    */
   function normalizeOCRText(text) {
     if (!text) return "";
@@ -302,7 +308,6 @@ document.addEventListener("DOMContentLoaded", () => {
     
     return lines.map(line => {
       // 1. Fix spaced characters (e.g. "M e r c h a n t" -> "Merchant")
-      // Only fix if there are multiple single characters separated by spaces
       line = line.replace(/(?:^| )([A-Za-z])(?= [A-Za-z](?: |$))/g, '$1').replace(/ ([A-Za-z])( |$)/g, '$1$2');
       
       // 2. Fix broken words caused by stray punctuation inside words
@@ -316,48 +321,54 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   /**
-   * Requirement B: SMART NUMBER HANDLING
+   * Smart number handling helper
    */
   function cleanNumber(str) {
     if (!str) return "";
-    // Normalize common OCR mistakes (O -> 0, l -> 1, , -> .)
     let cleaned = str.replace(/[Oo]/g, '0')
                      .replace(/[lI]/g, '1')
                      .replace(/,/g, '.');
-    
-    // Extract only digits and decimal point
     const match = cleaned.match(/[\d\.]+/);
     return match ? match[0] : "";
   }
 
+  /**
+   * Confidence Calculation
+   * Based ONLY on presence of merchant, date, total, GSTIN
+   */
+  function calculateConfidence(parsed, text) {
+    let score = 0;
+    if (parsed.merchant) score += 25;
+    if (parsed.date) score += 25;
+    if (parsed.total) score += 25;
+    if (text.toLowerCase().includes("gstin") || text.toLowerCase().includes("gst no")) score += 25;
+    
+    console.log(`[CONFIDENCE] Score: ${score}%`);
+    return score;
+  }
+
   function parseInvoice(rawText) {
+    // Wiring Point: Parser uses normalized text only
     const text = normalizeOCRText(rawText);
     const lines = text.split('\n');
     const out = { merchant: "", date: "", total: "" };
 
-    /**
-     * Requirement C: FIELD EXTRACTION INTELLIGENCE - Merchant
-     */
+    // Merchant Extraction
     const genericKeywords = ["invoice", "tax", "receipt", "bill", "gst", "address", "tel", "phone", "email"];
     for (let i = 0; i < Math.min(lines.length, 8); i++) {
       const line = lines[i].trim();
-      // Prefer first non-generic uppercase/titlecase lines, ignore address-only (lines with many numbers)
       const isGeneric = genericKeywords.some(k => line.toLowerCase().includes(k));
       const hasManyNumbers = (line.match(/\d/g) || []).length > 5;
-      
       if (line.length > 2 && !isGeneric && !hasManyNumbers) {
         out.merchant = line;
         break;
       }
     }
 
-    /**
-     * Requirement C: FIELD EXTRACTION INTELLIGENCE - Date
-     */
+    // Date Extraction
     const dateRegex = /\b(\d{1,2}[-\/\. ]\d{1,2}[-\/\. ]\d{2,4})\b|\b(\d{1,2} [A-Za-z]{3,9} \d{2,4})\b/g;
     let dateCandidates = [];
     text.replace(dateRegex, (match) => {
-      // Ignore dates inside GST blocks or long number strings
       const context = text.substring(Math.max(0, text.indexOf(match) - 20), text.indexOf(match) + match.length + 20);
       if (!context.toLowerCase().includes("gst") && !context.match(/\d{10,}/)) {
         dateCandidates.push(match);
@@ -365,51 +376,28 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     if (dateCandidates.length > 0) out.date = dateCandidates[0];
 
-    /**
-     * Requirement C: FIELD EXTRACTION INTELLIGENCE - Total
-     */
+    // Total Extraction
     const totalKeywords = ["total", "payable", "amount", "net", "grand", "sum"];
     const numberRegex = /(?:₹|RS|INR|AMT)?\s*([\d\.,]{2,})/gi;
     let candidates = [];
-
     lines.forEach((line, index) => {
       let match;
       while ((match = numberRegex.exec(line)) !== null) {
         const valStr = cleanNumber(match[1]);
         const val = parseFloat(valStr);
-        
         if (isNaN(val) || val <= 0) continue;
-
         let score = 0;
         const lowerLine = line.toLowerCase();
-        
-        // Scoring logic
         if (totalKeywords.some(k => lowerLine.includes(k))) score += 50;
-        if (valStr.includes('.')) score += 20; // Prefer decimals
-        if (index > lines.length * 0.6) score += 30; // Near bottom
-        
-        // Penalize phone numbers or IDs (long strings of digits without decimals)
+        if (valStr.includes('.')) score += 20;
+        if (index > lines.length * 0.6) score += 30;
         if (valStr.length > 8 && !valStr.includes('.')) score -= 100;
-        if (lowerLine.includes("tel") || lowerLine.includes("phone") || lowerLine.includes("gst")) score -= 80;
-
         candidates.push({ value: valStr, score: score });
       }
     });
-
-    // Pick the most likely candidate
     if (candidates.length > 0) {
       candidates.sort((a, b) => b.score - a.score);
-      if (candidates[0].score > 20) {
-        out.total = candidates[0].value;
-      }
-    }
-
-    /**
-     * Requirement D: SAFETY
-     */
-    // If confidence is low (no keywords found for total), leave empty
-    if (out.total && !candidates.some(c => c.value === out.total && c.score >= 50)) {
-      // Optional: could be more aggressive here
+      if (candidates[0].score > 20) out.total = candidates[0].value;
     }
 
     return out;
@@ -427,13 +415,17 @@ document.addEventListener("DOMContentLoaded", () => {
     
     const verification = verifyInvoiceTotals(parsed);
 
+    // Confidence Calculation and Display
+    const confidence = calculateConfidence(parsed, rawText);
+    const confidenceLabel = `Confidence: ${confidence}%`;
+    
     if (verification.status === "Verified") {
-      setStatus("✅ Verified");
+      setStatus(`✅ Verified | ${confidenceLabel}`);
       trackEvent("invoice_verified");
     } else if (verification.status === "Needs Review") {
-      setStatus("⚠ Needs Review", true);
+      setStatus(`⚠ Needs Review | ${confidenceLabel}`, true);
     } else {
-      setStatus("❌ Unverifiable", true);
+      setStatus(`❌ Unverifiable | ${confidenceLabel}`, true);
     }
 
     // Update UI with parsed data
@@ -451,7 +443,6 @@ document.addEventListener("DOMContentLoaded", () => {
   /* =======================
      EDIT FIELD TRACKING
   ======================= */
-  // Track when merchant, date, or total fields are edited
   [el.editMerchant, el.editDate, el.editTotal].forEach(field => {
     field?.addEventListener("input", (e) => {
       trackEvent("edit_field_changed", { field: e.target.id, value: e.target.value });
@@ -463,14 +454,12 @@ document.addEventListener("DOMContentLoaded", () => {
   ======================= */
   function initDB() {
     const req = indexedDB.open("anj-dual-ocr", 1);
-
     req.onupgradeneeded = e => {
       const db = e.target.result;
       if (!db.objectStoreNames.contains("history")) {
         db.createObjectStore("history", { keyPath: "id", autoIncrement: true });
       }
     };
-
     req.onsuccess = e => {
       db = e.target.result;
       setTimeout(() => loadHistory(), 0);
@@ -479,49 +468,36 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function renderHistoryItem(item, list) {
     const li = document.createElement("li");
-
-    li.textContent =
-      (item.merchant || "Unknown") +
-      " • " +
-      new Date(item.timestamp).toLocaleString();
-
+    li.textContent = (item.merchant || "Unknown") + " • " + new Date(item.timestamp).toLocaleString();
     if (item.id === lastSavedId) {
       li.classList.add("history-active");
       li.scrollIntoView({ block: "nearest" });
     }
-
     li.addEventListener("click", () => {
       hasParsedData = true;
       selectedHistoryItem = item;
-
       if (item.id === lastSavedId) {
         lastSavedId = null;
         li.classList.remove("history-active");
       }
-
       if (el.editMerchant) el.editMerchant.value = item.merchant;
       if (el.editDate) el.editDate.value = item.date;
       if (el.editTotal) el.editTotal.value = item.total;
       if (el.json) el.json.textContent = JSON.stringify(item, null, 2);
-
       updateParsedUI(true);
       document.querySelector('[data-page="parsed"]')?.click();
     });
-
     list.appendChild(li);
   }
 
   function loadHistory(filter = "") {
     if (!db) return;
-
     if (el.historyList) el.historyList.innerHTML = "";
     if (el.historyPageList) el.historyPageList.innerHTML = "";
-
     const tx = db.transaction("history", "readonly");
     tx.objectStore("history").openCursor(null, "prev").onsuccess = e => {
       const c = e.target.result;
       if (!c) return;
-
       const item = c.value;
       const text = `${item.merchant} ${item.date} ${item.total}`.toLowerCase();
       if (!filter || text.includes(filter)) {
@@ -532,27 +508,19 @@ document.addEventListener("DOMContentLoaded", () => {
     };
   }
 
-  el.historySearch?.addEventListener("input", e =>
-    loadHistory(e.target.value.toLowerCase())
-  );
+  el.historySearch?.addEventListener("input", e => loadHistory(e.target.value.toLowerCase()));
 
   el.saveBtn?.addEventListener("click", () => {
     if (!hasParsedData || !db) return;
-
     const tx = db.transaction("history", "readwrite");
     const store = tx.objectStore("history");
-
     const request = store.add({
       merchant: el.editMerchant.value,
       date: el.editDate.value,
       total: el.editTotal.value,
       timestamp: Date.now()
     });
-
-    request.onsuccess = e => {
-      lastSavedId = e.target.result;
-    };
-
+    request.onsuccess = e => { lastSavedId = e.target.result; };
     tx.oncomplete = () => {
       trackEvent("history_saved");
       setTimeout(() => {
@@ -560,10 +528,7 @@ document.addEventListener("DOMContentLoaded", () => {
         setStatus("Saved ✓");
       }, 0);
     };
-
-    tx.onerror = () => {
-      setStatus("Save failed", true);
-    };
+    tx.onerror = () => { setStatus("Save failed", true); };
   });
 
   el.clearHistoryBtn?.addEventListener("click", () => {
@@ -588,3 +553,4 @@ document.addEventListener("DOMContentLoaded", () => {
   initDB();
   setStatus("Ready ✓");
 });
+     
