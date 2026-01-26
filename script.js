@@ -6,6 +6,31 @@ import { verifyInvoiceTotals } from "./invoiceVerification.js";
 const pdfjsLib = window.pdfjsLib;
 const Tesseract = window.Tesseract;
 
+/* =======================
+   ANONYMOUS USER ID
+======================= */
+function generateUUID() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
+function initAnonUserId() {
+  let anonId = localStorage.getItem("anon_user_id");
+  if (!anonId) {
+    anonId = generateUUID();
+    localStorage.setItem("anon_user_id", anonId);
+  }
+  return anonId;
+}
+
+// Expose helper function globally
+window.getAnonUserId = () => localStorage.getItem("anon_user_id");
+
+// Initialize on load
+initAnonUserId();
+
 document.addEventListener("DOMContentLoaded", () => {
   console.log("DOM READY");
 
@@ -386,4 +411,5 @@ document.addEventListener("DOMContentLoaded", () => {
   initDB();
   setStatus("Ready ✓");
 });
-                          
+                                      
+      
