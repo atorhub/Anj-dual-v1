@@ -1,5 +1,3 @@
-console.log("SCRIPT LOADED");
-
 import { verifyInvoiceTotals } from "./invoiceVerification.js";
 
 // Bind legacy globals explicitly (CRITICAL)
@@ -246,28 +244,41 @@ document.addEventListener("DOMContentLoaded", () => {
     const rawText = el.clean.textContent;
     const parsed = parseInvoice(rawText);
     
-    // Fixed: using 'parsed' instead of undefined 'parsedInvoice'
-    const verification = verifyInvoiceTotals(parsed);
+// --- SET CORE STATE (THIS WAS MISSING / BROKEN) ---
+currentParsedData = parsed;
+hasParsedData = true;
+selectedHistoryItem = null;
 
-    if (verification.status === "Verified") {
-      setStatus("✅ Verified");
-    } else if (verification.status === "Needs Review") {
-      setStatus("⚠ Needs Review", true);
-    } else {
-      setStatus("❌ Unverifiable", true);
-    }
+// --- VERIFY TOTALS ---
+const verification = verifyInvoiceTotals({
+  invoice_total: Number(parsed.total),
+  line_items: parsed.line_items || [],
+  taxes: parsed.taxes || []
+});
 
-    // Update UI with parsed data
-    if (el.editMerchant) el.editMerchant.value = parsed.merchant;
-    if (el.editDate) el.editDate.value = parsed.date;
-    if (el.editTotal) el.editTotal.value = parsed.total;
-    if (el.json) el.json.textContent = JSON.stringify(parsed, null, 2);
+// --- STATUS UI ---
+if (verification.status === "Verified") {
+  setStatus("✅ Verified");
+} else if (verification.status === "Needs Review") {
+  setStatus("⚠ Needs Review", true);
+} else {
+  setStatus("❌ Unverifiable", true);
+}
+
+// --- UPDATE UI ---
+el.json.textContent = JSON.stringify(parsed, null, 2);
+el.editMerchant.value = parsed.merchant || "";
+el.editDate.value = parsed.date || "";
+el.editTotal.value = parsed.total || "";
+
+// --- ENABLE EDIT + EXPORT ---
+updateParsedUI(true);
+applyConfidenceUI(confidence);
+attachConfidenceTooltip();
+
+// --- NAVIGATE ---
+document.querySelector('[data-page="parsed"]')?.click();
     
-    hasParsedData = true;
-    updateParsedUI(true);
-
-    document.querySelector('[data-page="parsed"]')?.click();
-  });
 
   /* =======================
      HISTORY (IndexedDB)
