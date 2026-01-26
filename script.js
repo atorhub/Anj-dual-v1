@@ -32,14 +32,35 @@ window.getAnonUserId = () => localStorage.getItem("anon_user_id");
 initAnonUserId();
 
 /* =======================
-   EVENT TRACKING
+   EVENT TRACKING (HARDENED)
 ======================= */
+// Simple debounce state to prevent duplicate logs within 1 second
+const lastTracked = {};
+
 function trackEvent(eventName, meta = {}) {
+  const now = Date.now();
+  
+  // Prevent duplicate logs of the same event within 1 second (1000ms)
+  if (lastTracked[eventName] && (now - lastTracked[eventName] < 1000)) {
+    return;
+  }
+  lastTracked[eventName] = now;
+
   const userId = localStorage.getItem("anon_user_id");
+  
+  // Derive current page name from active .page-* element
+  const activePageEl = document.querySelector(".page.active");
+  let pageName = "unknown";
+  if (activePageEl) {
+    const match = activePageEl.className.match(/page-([^\s]+)/);
+    if (match) pageName = match[1];
+  }
+
   console.log(`[TRACK] ${JSON.stringify({
     event: eventName,
     userId: userId,
-    timestamp: Date.now(),
+    timestamp: now,
+    page: pageName,
     meta: meta
   }, null, 2)}`);
 }
@@ -323,6 +344,16 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   /* =======================
+     EDIT FIELD TRACKING
+  ======================= */
+  // Track when merchant, date, or total fields are edited
+  [el.editMerchant, el.editDate, el.editTotal].forEach(field => {
+    field?.addEventListener("input", (e) => {
+      trackEvent("edit_field_changed", { field: e.target.id, value: e.target.value });
+    });
+  });
+
+  /* =======================
      HISTORY (IndexedDB)
   ======================= */
   function initDB() {
@@ -438,13 +469,22 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   /* =======================
-     EXPORTS
+     EXPORTS (GATED)
   ======================= */
-  el.exportJSON?.addEventListener("click", () => trackEvent("export_clicked", { type: "json" }));
-  el.exportTXT?.addEventListener("click", () => trackEvent("export_clicked", { type: "txt" }));
-  el.exportCSV?.addEventListener("click", () => trackEvent("export_clicked", { type: "csv" }));
+  // Task 2: Export Feature Gating
+  // Modify existing export button handlers to track attempt and show premium message
+  const handleExportAttempt = (type) => {
+    // Track the corresponding export_attempted_* event
+    trackEvent(`export_attempted_${type}`);
+    // Show status message
+    setStatus("Export is a premium feature", true);
+  };
+
+  el.exportJSON?.addEventListener("click", () => handleExportAttempt("json"));
+  el.exportTXT?.addEventListener("click", () => handleExportAttempt("txt"));
+  el.exportCSV?.addEventListener("click", () => handleExportAttempt("csv"));
 
   initDB();
   setStatus("Ready ✓");
 });
-       
+     
