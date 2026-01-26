@@ -31,8 +31,22 @@ window.getAnonUserId = () => localStorage.getItem("anon_user_id");
 // Initialize on load
 initAnonUserId();
 
+/* =======================
+   EVENT TRACKING
+======================= */
+function trackEvent(eventName, meta = {}) {
+  const userId = localStorage.getItem("anon_user_id");
+  console.log(`[TRACK] ${JSON.stringify({
+    event: eventName,
+    userId: userId,
+    timestamp: Date.now(),
+    meta: meta
+  }, null, 2)}`);
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   console.log("DOM READY");
+  trackEvent("app_loaded");
 
   /* =======================
      ELEMENT REFERENCES
@@ -238,8 +252,20 @@ document.addEventListener("DOMContentLoaded", () => {
     setStatus("OCR done ✓");
   }
 
-  el.dual?.addEventListener("click", processFile);
-  el.ocr?.addEventListener("click", processFile);
+  el.file?.addEventListener("change", () => {
+    if (el.file.files[0]) {
+      trackEvent("file_selected");
+    }
+  });
+
+  el.dual?.addEventListener("click", () => {
+    trackEvent("dual_ocr_clicked");
+    processFile();
+  });
+  el.ocr?.addEventListener("click", () => {
+    trackEvent("quick_ocr_clicked");
+    processFile();
+  });
 
   /* =======================
      PARSING
@@ -270,12 +296,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const rawText = el.clean.textContent;
     const parsed = parseInvoice(rawText);
+    trackEvent("invoice_parsed");
     
     // Fixed: using 'parsed' instead of undefined 'parsedInvoice'
     const verification = verifyInvoiceTotals(parsed);
 
     if (verification.status === "Verified") {
       setStatus("✅ Verified");
+      trackEvent("invoice_verified");
     } else if (verification.status === "Needs Review") {
       setStatus("⚠ Needs Review", true);
     } else {
@@ -390,6 +418,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     tx.oncomplete = () => {
+      trackEvent("history_saved");
       setTimeout(() => {
         loadHistory();
         setStatus("Saved ✓");
@@ -408,8 +437,14 @@ document.addEventListener("DOMContentLoaded", () => {
     tx.oncomplete = loadHistory;
   });
 
+  /* =======================
+     EXPORTS
+  ======================= */
+  el.exportJSON?.addEventListener("click", () => trackEvent("export_clicked", { type: "json" }));
+  el.exportTXT?.addEventListener("click", () => trackEvent("export_clicked", { type: "txt" }));
+  el.exportCSV?.addEventListener("click", () => trackEvent("export_clicked", { type: "csv" }));
+
   initDB();
   setStatus("Ready ✓");
 });
-                                      
-      
+       
