@@ -118,6 +118,8 @@ document.addEventListener("DOMContentLoaded", () => {
   ======================= */
   function setStatus(msg, err = false) {
     if (!el.status) return;
+    // Support multi-line messages by using innerHTML or pre-wrap style
+    el.status.style.whiteSpace = "pre-wrap";
     el.status.textContent = msg;
     el.status.style.color = err ? "#ff4d4d" : "#7CFC98";
   }
@@ -477,16 +479,50 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Confidence Calculation and Display
     const confidence = calculateConfidence(parsed, rawText);
-    const confidenceLabel = `Confidence: ${confidence}%`;
     
-    if (verification.status === "Verified") {
-      setStatus(`✅ Verified | ${confidenceLabel}`);
-      trackEvent("invoice_verified");
-    } else if (verification.status === "Needs Review") {
-      setStatus(`⚠ Needs Review | ${confidenceLabel}`, true);
+    // --- VERIFICATION SUMMARY GENERATION ---
+    let summaryHeadline = "";
+    const diff = verification.differenceAmount;
+    
+    if (verification.status === "Unverifiable") {
+      summaryHeadline = "❌ Unverifiable: No line items or total detected";
+    } else if (Math.abs(diff) <= 0.01) {
+      summaryHeadline = "✅ Invoice total matches calculated amount";
+    } else if (diff > 0) {
+      summaryHeadline = `⚠️ Invoice total is ₹${diff.toFixed(2)} less than calculated amount`;
     } else {
-      setStatus(`❌ Unverifiable | ${confidenceLabel}`, true);
+      summaryHeadline = `⚠️ You may have been overcharged ₹${Math.abs(diff).toFixed(2)}`;
     }
+
+    let breakdown = `\n---\nCalculated Total: ₹${verification.computedTotal.toFixed(2)}\nInvoice Total: ₹${verification.declaredTotal.toFixed(2)}\nDifference: ₹${diff.toFixed(2)}`;
+
+    // Tax Clarity
+    const cgstMatch = rawText.match(/CGST\s*[:\-]?\s*([\d\.]+)/i);
+    const sgstMatch = rawText.match(/SGST\s*[:\-]?\s*([\d\.]+)/i);
+    const igstMatch = rawText.match(/IGST\s*[:\-]?\s*([\d\.]+)/i);
+    const gstMatch = rawText.match(/GST\s*[:\-]?\s*([\d\.]+)/i);
+
+    if (cgstMatch || sgstMatch || igstMatch) {
+      breakdown += "\n\nTax Breakdown:";
+      if (cgstMatch) breakdown += `\n- CGST: ₹${cgstMatch[1]}`;
+      if (sgstMatch) breakdown += `\n- SGST: ₹${sgstMatch[1]}`;
+      if (igstMatch) breakdown += `\n- IGST: ₹${igstMatch[1]}`;
+    } else if (gstMatch) {
+      breakdown += `\n\nTax Breakdown:\n- GST: ₹${gstMatch[1]}`;
+    } else if (rawText.toLowerCase().includes("tax") || rawText.toLowerCase().includes("gst")) {
+      breakdown += "\n\n⚠️ Tax exists but structure is unclear.";
+    }
+
+    // Confidence and Reason
+    const confidenceReason = confidence >= 75 ? "High: Key fields and items verified." : 
+                             confidence >= 50 ? "Medium: Some fields missing or items unclear." : 
+                             "Low: Major fields missing or math mismatch.";
+    breakdown += `\n\nConfidence: ${confidence}% (${confidenceReason})`;
+
+    // Final Output to UI
+    setStatus(`${summaryHeadline}${breakdown}`, verification.status !== "Verified");
+    
+    if (verification.status === "Verified") trackEvent("invoice_verified");
 
     // Update UI with parsed data
     if (el.editMerchant) el.editMerchant.value = parsed.merchant || "";
