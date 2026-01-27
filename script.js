@@ -1,3 +1,4 @@
+
 console.log("SCRIPT LOADED");
 
 import { verifyInvoiceTotals } from "./invoiceVerification.js";
@@ -296,28 +297,88 @@ document.addEventListener("DOMContentLoaded", () => {
   /* =======================
      PARSING (IMPROVED)
   ======================= */
-  
+
   /**
    * Requirement: normalizeOCRText(text)
-   * Merges broken words, normalizes spacing/punctuation, preserves line order.
+   * Implements the Cleaned Text Contract through four deterministic layers.
    */
   function normalizeOCRText(text) {
     if (!text) return "";
-    
+
+    // Initial line split
     let lines = text.split('\n');
-    
-    return lines.map(line => {
-      // 1. Fix spaced characters (e.g. "M e r c h a n t" -> "Merchant")
-      line = line.replace(/(?:^| )([A-Za-z])(?= [A-Za-z](?: |$))/g, '$1').replace(/ ([A-Za-z])( |$)/g, '$1$2');
+
+    // Layer 1: Base Normalization (per-line)
+    lines = lines.map(line => {
+      // 1.1: Normalize unicode characters to their canonical form
+      line = line.normalize('NFC');
       
-      // 2. Fix broken words caused by stray punctuation inside words
-      line = line.replace(/([A-Za-z])[\.\,]([A-Za-z])/g, '$1$2');
+      // 1.2: Remove duplicate spaces and trim
+      line = line.replace(/\s+/g, ' ').trim();
       
-      // 3. Clean repeated symbols and stray punctuation
-      line = line.replace(/[\!\@\#\$\%\^\&\*\(\)\_\+\=\[\]\{\}\;\:\'\"\\\|\<\>\?\/]{2,}/g, ' ');
-      
-      return line.trim();
-    }).filter(l => l.length > 0).join('\n');
+      // 1.3: Fix broken single-letter spacing (e.g., "M e r c h a n t" -> "Merchant")
+      line = line.replace(/(?:^|\s)([A-Za-z])(?=\s[A-Za-z](?:\s|$))/g, '$1').replace(/\s([A-Za-z])(\s|$)/g, '$1$2');
+
+      // 1.4: Clean OCR punctuation noise inside words (e.g., "Add.ress" -> "Address")
+      line = line.replace(/([A-Za-z])[.,]([A-Za-z])/g, '$1$2');
+
+      return line;
+    });
+
+    // Layer 2: Rule-Based Word Repair (per-line)
+    lines = lines.map(line => {
+        // Merge alphabetic fragments split by OCR (e.g., "Add re ss" -> "Address")
+        // This is a conservative rule: only merges short, purely alphabetic fragments.
+        return line.replace(/\b([a-zA-Z]{1,5})\s([a-zA-Z]{1,5})\b/g, (match, p1, p2) => {
+            // Avoid merging common English words. This is not exhaustive but covers many cases.
+            const stopWords = new Set(["a", "an", "as", "at", "be", "by", "do", "go", "if", "in", "is", "it", "me", "my", "no", "of", "on", "or", "so", "to", "up", "us", "we"]);
+            if (stopWords.has(p1.toLowerCase())) {
+                return match; // Don't merge if the first part is a common short word
+            }
+            return p1 + p2;
+        });
+    });
+
+    // Layer 3: Multi-line Word Continuation
+    const mergedLines = [];
+    for (let i = 0; i < lines.length; i++) {
+        let currentLine = lines[i];
+        if (i + 1 < lines.length) {
+            const nextLine = lines[i+1];
+            // Check if current line ends with a small, incomplete-looking word
+            // and the next line starts with a word. This is a heuristic.
+            const match = currentLine.match(/\b([a-zA-Z]{1,4})$/);
+            if (match && nextLine.match(/^[a-zA-Z]/)) {
+                // Heuristic: if the fragment is very short, merge it with the first word of the next line.
+                const firstWordNextLine = nextLine.split(' ')[0];
+                currentLine = currentLine.substring(0, currentLine.length - match[1].length) + match[1] + firstWordNextLine;
+                lines[i+1] = nextLine.substring(firstWordNextLine.length).trim();
+            }
+        }
+        mergedLines.push(currentLine);
+    }
+    lines = mergedLines.filter(line => line.length > 0);
+
+    // Layer 4: Label Normalization
+    const labelMap = {
+      'Addre ss': 'Address',
+      'Add re ss': 'Address',
+      'lnvoice': 'Invoice',
+      'lnv0ice': 'Invoice',
+      'T0tal': 'Total',
+      'Am0unt': 'Amount',
+      'GSTlN': 'GSTIN',
+      'GS TIN': 'GSTIN',
+    };
+
+    lines = lines.map(line => {
+        for (const [key, value] of Object.entries(labelMap)) {
+            line = line.replace(new RegExp(`\\b${key}\\b`, 'gi'), value);
+        }
+        return line;
+    });
+
+    return lines.join('\n');
   }
 
   /**
@@ -550,7 +611,5 @@ document.addEventListener("DOMContentLoaded", () => {
   el.exportCSV?.addEventListener("click", () => handleExportAttempt("csv"));
 
   initDB();
-  setStatus("Ready ✓");
+  setStatus ("Ready ✓");
 });
-
-                             
