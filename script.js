@@ -266,14 +266,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const file = el.file.files[0];
-    const text = await runOCR(file);
+    const rawText = await runOCR(file);
 
     // Wiring Point: rawText UI gets original OCR output
-    if (el.raw) el.raw.textContent = text || "--";
+    if (el.raw) el.raw.textContent = rawText || "--";
     
     // Wiring Point: cleanedText UI gets normalized OCR output
-    const normalized = normalizeOCRText(text);
-    if (el.clean) el.clean.textContent = normalized || "--";
+    const cleanedText = normalizeOCRText(rawText);
+    if (el.clean) el.clean.textContent = cleanedText || "--";
     
     setStatus("OCR done ✓");
   }
@@ -347,9 +347,8 @@ document.addEventListener("DOMContentLoaded", () => {
     return score;
   }
 
-  function parseInvoice(rawText) {
-    // Wiring Point: Parser uses normalized text only
-    const text = normalizeOCRText(rawText);
+  function parseInvoice(text) {
+    // Wiring Point: Parser uses normalized text only (already normalized in wiring)
     const lines = text.split('\n');
     const out = { merchant: "", date: "", total: "" };
 
@@ -553,4 +552,5 @@ document.addEventListener("DOMContentLoaded", () => {
   initDB();
   setStatus("Ready ✓");
 });
-     
+
+                             
