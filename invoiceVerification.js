@@ -98,5 +98,6 @@ export function verifyInvoiceTotals(invoice, cleanedText) {
   }
 
   return result;
-  }
+}
+
         
