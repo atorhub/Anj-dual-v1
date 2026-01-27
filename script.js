@@ -473,7 +473,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const parsed = parseInvoice(rawText);
     trackEvent("invoice_parsed");
     
-    const verification = verifyInvoiceTotals(parsed);
+    const verification = verifyInvoiceTotals(parsed, rawText);
 
     // Confidence Calculation and Display
     const confidence = calculateConfidence(parsed, rawText);
@@ -611,5 +611,5 @@ document.addEventListener("DOMContentLoaded", () => {
   el.exportCSV?.addEventListener("click", () => handleExportAttempt("csv"));
 
   initDB();
-  setStatus ("Ready ✓");
+  setStatus("Ready ✓");
 });
