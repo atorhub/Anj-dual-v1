@@ -1,95 +1,113 @@
 // invoiceVerification.js
 
-/**
- * LINE-ITEM MATH VERIFICATION ENGINE
- * Extracts line items from cleanedText and verifies math accuracy.
- */
 export function verifyInvoiceTotals(invoice, cleanedText) {
   const result = {
     status: "Unverifiable",
     differenceAmount: 0,
     computedTotal: 0,
     declaredTotal: 0,
-    mismatchedLines: []
+    mismatchedLines: [],
+    line_items: [],
+    summary: {}
   };
 
   if (!invoice || !cleanedText) return result;
 
-  const declaredTotal = parseFloat(String(invoice.total).replace(/[^0-9.-]/g, ""));
+  const parseNumber = (v) => {
+    if (!v) return NaN;
+    return parseFloat(String(v).replace(/,/g, ""));
+  };
+
+  // ---------- SUMMARY KEYWORDS (HARD BLOCK) ----------
+  const SUMMARY_KEYWORDS = [
+    "subtotal", "sub total",
+    "tax", "gst", "cgst", "sgst", "igst",
+    "total", "grand total", "round off", "balance"
+  ];
+
+  const isSummaryRow = (line) =>
+    SUMMARY_KEYWORDS.some(k => line.toLowerCase().includes(k));
+
+  // ---------- DECLARED TOTAL ----------
+  const declaredTotal = parseNumber(invoice.total);
   if (isNaN(declaredTotal)) return result;
   result.declaredTotal = declaredTotal;
 
-  const lines = cleanedText.split('\n');
-  let computedTotal = 0;
-  let itemsFound = 0;
+  const lines = cleanedText.split("\n");
 
-  // Patterns for line item detection
-  // 1. item name + qty + unit price (e.g., "Item A 2 10.00" or "Item A 2 x 10.00")
-  const qtyPriceRegex = /^(.*?)\s+(\d+)\s*(?:x|\*|\s)\s*([\d,]+\.\d{2})$/i;
-  // 2. item name + amount (e.g., "1 AMUL MILK 30.00" or "Bread 25.00")
-  const itemAmountRegex = /^(.*?)\s+([\d,]+\.\d{2})$/;
+  let calculatedTotal = 0;
 
-  lines.forEach((line, index) => {
-    const trimmed = line.trim();
-    if (!trimmed) return;
+  /**
+   * STRICT LINE ITEM PATTERN
+   * description | qty | rate | amount   (order tolerant, same row)
+   * Example:
+   *  Item A   2   160.00   320.00
+   *  Item B 1 x 50.00 50.00
+   */
+  const lineItemRegex =
+    /(.+?)\s+(\d+)\s*(?:x|\*)?\s*([\d,]+\.\d{2})\s+([\d,]+\.\d{2})$/i;
 
-    let qty = 1;
-    let price = 0;
-    let lineAmount = 0;
-    let matched = false;
+  lines.forEach((rawLine, index) => {
+    const line = rawLine.trim();
+    if (!line) return;
 
-    // Try Qty + Price pattern
-    const qpMatch = trimmed.match(qtyPriceRegex);
-    if (qpMatch) {
-      qty = parseFloat(qpMatch[2]);
-      price = parseFloat(qpMatch[3].replace(/,/g, ''));
-      lineAmount = qty * price;
-      matched = true;
-    } else {
-      // Try Item + Amount pattern
-      const iaMatch = trimmed.match(itemAmountRegex);
-      if (iaMatch) {
-        // Special case: check if the "item name" starts with a quantity
-        const namePart = iaMatch[1].trim();
-        const qtyMatch = namePart.match(/^(\d+)\s+(.*)$/);
-        
-        price = parseFloat(iaMatch[2].replace(/,/g, ''));
-        if (qtyMatch) {
-          qty = parseFloat(qtyMatch[1]);
-          // If it looks like a quantity (small integer), we use it
-          if (qty > 0 && qty < 1000) {
-             lineAmount = qty * price;
-          } else {
-             qty = 1;
-             lineAmount = price;
-          }
-        } else {
-          qty = 1;
-          lineAmount = price;
-        }
-        matched = true;
-      }
+    // 🚫 HARD EXCLUDE SUMMARY ROWS
+    if (isSummaryRow(line)) {
+      // Extract summary values ONLY
+      const numMatch = line.match(/([\d,]+\.\d{2})/);
+      if (!numMatch) return;
+
+      const value = parseNumber(numMatch[1]);
+      if (isNaN(value)) return;
+
+      const lower = line.toLowerCase();
+      if (lower.includes("subtotal")) result.summary.subtotal = value;
+      else if (lower.includes("cgst") || lower.includes("sgst") || lower.includes("igst") || lower.includes("gst"))
+        result.summary.tax = value;
+      else if (lower.includes("total")) result.summary.total = value;
+
+      return;
     }
 
-    if (matched && !isNaN(lineAmount)) {
-      computedTotal += lineAmount;
-      itemsFound++;
-      
-      // Basic sanity check: if line item is suspiciously large compared to total
-      if (lineAmount > declaredTotal * 1.5 && declaredTotal > 0) {
-        result.mismatchedLines.push({
-          index: index,
-          reason: `Line amount ${lineAmount.toFixed(2)} exceeds declared total significantly`
-        });
-      }
-    }
+    // ---------- LINE ITEM DETECTION ----------
+    const match = line.match(lineItemRegex);
+    if (!match) return;
+
+    const qty = parseNumber(match[2]);
+    const rate = parseNumber(match[3]);
+    const amount = parseNumber(match[4]);
+
+    // STRICT VALIDATION
+    if (
+      !Number.isInteger(qty) ||
+      qty <= 0 ||
+      isNaN(rate) ||
+      isNaN(amount)
+    ) return;
+
+    // Amount MUST equal qty × rate (tolerance 0.01)
+    const expected = qty * rate;
+    if (Math.abs(expected - amount) > 0.01) return;
+
+    // ✅ VALID LINE ITEM
+    result.line_items.push({
+      description: match[1].trim(),
+      quantity: qty,
+      rate: rate,
+      amount: amount,
+      lineIndex: index
+    });
+
+    calculatedTotal += amount;
   });
 
-  result.computedTotal = parseFloat(computedTotal.toFixed(2));
-  result.differenceAmount = parseFloat((result.declaredTotal - result.computedTotal).toFixed(2));
+  result.computedTotal = parseFloat(calculatedTotal.toFixed(2));
+  result.differenceAmount = parseFloat(
+    (result.computedTotal - result.declaredTotal).toFixed(2)
+  );
 
-  // Determine status
-  if (itemsFound === 0) {
+  // ---------- STATUS ----------
+  if (result.line_items.length === 0) {
     result.status = "Unverifiable";
   } else if (Math.abs(result.differenceAmount) <= 0.01) {
     result.status = "Verified";
@@ -99,5 +117,3 @@ export function verifyInvoiceTotals(invoice, cleanedText) {
 
   return result;
 }
-
-        
