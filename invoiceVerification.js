@@ -6,108 +6,99 @@ export function verifyInvoiceTotals(invoice, cleanedText) {
     differenceAmount: 0,
     computedTotal: 0,
     declaredTotal: 0,
-    mismatchedLines: [],
-    line_items: [],
-    summary: {}
+    mismatchedLines: []
   };
 
-  if (!invoice || !cleanedText) return result;
+  if (!cleanedText) return result;
 
-  const parseNumber = (v) => {
-    if (!v) return NaN;
-    return parseFloat(String(v).replace(/,/g, ""));
-  };
+  // --- STEP 1: TEXT NORMALIZATION ---
+  const rows = cleanedText.split('\n').map(row => {
+    return row
+      .replace(/[₹]|Rs\.?/gi, '') // Remove currency symbols
+      .replace(/(\d),(\d)/g, '$1$2') // Convert numbers with commas (12,932.00 -> 12932.00)
+      .replace(/\s+/g, ' ') // Normalize spaces
+      .trim();
+  }).filter(row => row.length > 0);
 
-  // ---------- SUMMARY KEYWORDS (HARD BLOCK) ----------
+  // Helper for Step 2 & 5: Keywords for classification
   const SUMMARY_KEYWORDS = [
-    "subtotal", "sub total",
-    "tax", "gst", "cgst", "sgst", "igst",
-    "total", "grand total", "round off", "balance"
+    "subtotal", "sub total", "tax", "gst", "cgst", "sgst", "igst",
+    "total", "net", "payable", "amount due"
   ];
 
-  const isSummaryRow = (line) =>
-    SUMMARY_KEYWORDS.some(k => line.toLowerCase().includes(k));
-
-  // ---------- DECLARED TOTAL ----------
-  const declaredTotal = parseNumber(invoice.total);
-  if (isNaN(declaredTotal)) return result;
-  result.declaredTotal = declaredTotal;
-
-  const lines = cleanedText.split("\n");
-
   let calculatedTotal = 0;
+  let validItemsCount = 0;
+  let extractedInvoiceTotal = null;
 
-  /**
-   * STRICT LINE ITEM PATTERN
-   * description | qty | rate | amount   (order tolerant, same row)
-   * Example:
-   *  Item A   2   160.00   320.00
-   *  Item B 1 x 50.00 50.00
-   */
-  const lineItemRegex =
-    /(.+?)\s+(\d+)\s*(?:x|\*)?\s*([\d,]+\.\d{2})\s+([\d,]+\.\d{2})$/i;
+  rows.forEach((row, index) => {
+    const lowerRow = row.toLowerCase();
 
-  lines.forEach((rawLine, index) => {
-    const line = rawLine.trim();
-    if (!line) return;
+    // --- STEP 2: ROW CLASSIFICATION ---
+    const isSummaryRow = SUMMARY_KEYWORDS.some(kw => lowerRow.includes(kw));
 
-    // 🚫 HARD EXCLUDE SUMMARY ROWS
-    if (isSummaryRow(line)) {
-      // Extract summary values ONLY
-      const numMatch = line.match(/([\d,]+\.\d{2})/);
-      if (!numMatch) return;
-
-      const value = parseNumber(numMatch[1]);
-      if (isNaN(value)) return;
-
-      const lower = line.toLowerCase();
-      if (lower.includes("subtotal")) result.summary.subtotal = value;
-      else if (lower.includes("cgst") || lower.includes("sgst") || lower.includes("igst") || lower.includes("gst"))
-        result.summary.tax = value;
-      else if (lower.includes("total")) result.summary.total = value;
-
-      return;
+    if (isSummaryRow) {
+      // --- STEP 5: INVOICE TOTAL EXTRACTION (Part 1: Extract from summary rows) ---
+      // We look for the last number in the row as it's usually the total/subtotal
+      const numbers = row.match(/\d+\.\d{2}|\d+/g);
+      if (numbers) {
+        const val = parseFloat(numbers[numbers.length - 1]);
+        if (!isNaN(val)) {
+          // Prefer explicit "total" over others
+          if (lowerRow.includes("total") || lowerRow.includes("payable") || lowerRow.includes("amount due") || extractedInvoiceTotal === null) {
+            extractedInvoiceTotal = val;
+          }
+        }
+      }
+      return; // Summary rows contribute ZERO to calculatedTotal
     }
 
-    // ---------- LINE ITEM DETECTION ----------
-    const match = line.match(lineItemRegex);
-    if (!match) return;
+    // POTENTIAL ITEM ROW CHECK
+    const numericTokens = row.match(/\d+\.\d{2}|\d+/g) || [];
+    if (numericTokens.length < 2) return; // Must have at least two numeric tokens
 
-    const qty = parseNumber(match[2]);
-    const rate = parseNumber(match[3]);
-    const amount = parseNumber(match[4]);
+    // --- STEP 3: ITEM ROW VALIDATION ---
+    // Extract qty and rate
+    // Heuristic: Qty is usually a small integer (1-1000), Rate is a number > 0
+    let qty = null;
+    let rate = null;
 
-    // STRICT VALIDATION
-    if (
-      !Number.isInteger(qty) ||
-      qty <= 0 ||
-      isNaN(rate) ||
-      isNaN(amount)
-    ) return;
+    for (let token of numericTokens) {
+      const val = parseFloat(token);
+      if (isNaN(val)) continue;
 
-    // Amount MUST equal qty × rate (tolerance 0.01)
-    const expected = qty * rate;
-    if (Math.abs(expected - amount) > 0.01) return;
+      if (qty === null && Number.isInteger(val) && val >= 1 && val <= 1000) {
+        qty = val;
+      } else if (rate === null && val > 0 && val < 100000) {
+        rate = val;
+      }
+      
+      if (qty !== null && rate !== null) break;
+    }
 
-    // ✅ VALID LINE ITEM
-    result.line_items.push({
-      description: match[1].trim(),
-      quantity: qty,
-      rate: rate,
-      amount: amount,
-      lineIndex: index
-    });
-
-    calculatedTotal += amount;
+    if (qty !== null && rate !== null) {
+      const lineItemTotal = parseFloat((qty * rate).toFixed(2));
+      
+      // --- STEP 4: CALCULATED TOTAL ---
+      calculatedTotal += lineItemTotal;
+      validItemsCount++;
+    }
   });
 
-  result.computedTotal = parseFloat(calculatedTotal.toFixed(2));
-  result.differenceAmount = parseFloat(
-    (result.computedTotal - result.declaredTotal).toFixed(2)
-  );
+  // --- STEP 5: INVOICE TOTAL EXTRACTION (Part 2: Use provided total if extraction failed) ---
+  if (extractedInvoiceTotal === null && invoice && invoice.total) {
+    const fallbackTotal = parseFloat(String(invoice.total).replace(/,/g, ''));
+    if (!isNaN(fallbackTotal)) {
+      extractedInvoiceTotal = fallbackTotal;
+    }
+  }
 
-  // ---------- STATUS ----------
-  if (result.line_items.length === 0) {
+  result.computedTotal = parseFloat(calculatedTotal.toFixed(2));
+  result.declaredTotal = extractedInvoiceTotal !== null ? parseFloat(extractedInvoiceTotal.toFixed(2)) : 0;
+
+  // --- STEP 6: COMPARISON ---
+  result.differenceAmount = parseFloat((result.declaredTotal - result.computedTotal).toFixed(2));
+
+  if (validItemsCount === 0 || extractedInvoiceTotal === null) {
     result.status = "Unverifiable";
   } else if (Math.abs(result.differenceAmount) <= 0.01) {
     result.status = "Verified";
