@@ -412,14 +412,17 @@ document.addEventListener("DOMContentLoaded", () => {
    * Smart number handling helper
    */
   function cleanNumber(str) {
-    if (!str) return "";
-    let cleaned = str.replace(/[Oo]/g, '0')
-                     .replace(/[lI]/g, '1')
-                     .replace(/,/g, '.');
-    const match = cleaned.match(/[\d\.]+/);
-    return match ? match[0] : "";
-  }
+  if (!str) return "";
 
+  let cleaned = str
+    .replace(/[Oo]/g, '0')
+    .replace(/[lI]/g, '1')
+    .replace(/,/g, ''); // 🔥 REMOVE thousand separators
+
+  const match = cleaned.match(/\d+(\.\d+)?/);
+  return match ? match[0] : "";
+  }
+   
   /**
    * Confidence Calculation
    * Based ONLY on presence of merchant, date, total, GSTIN
