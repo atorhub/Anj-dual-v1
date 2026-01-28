@@ -232,7 +232,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
     const page = await pdf.getPage(1);
 
-    const viewport = page.getViewport({ scale: 2 });
+    const viewport = page.getViewport({ scale: 3 });
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
 
@@ -315,8 +315,14 @@ document.addEventListener("DOMContentLoaded", () => {
       // 1.1: Normalize unicode characters to their canonical form
       line = line.normalize('NFC');
       
-      // 1.2: Remove duplicate spaces and trim
-      line = line.replace(/\s+/g, ' ').trim();
+      // 1.2: Remove duplicate spaces and trim (conditional for numeric rows)
+      const numericMatch = line.match(/\d+/g);
+      if (numericMatch && numericMatch.length >= 2) {
+        // Numeric-dense row: preserve structure by avoiding aggressive collapse
+        line = line.replace(/\s{3,}/g, '   ').trim();
+      } else {
+        line = line.replace(/\s+/g, ' ').trim();
+      }
       
       // 1.3: Fix broken single-letter spacing (e.g., "M e r c h a n t" -> "Merchant")
       line = line.replace(/(?:^|\s)([A-Za-z])(?=\s[A-Za-z](?:\s|$))/g, '$1').replace(/\s([A-Za-z])(\s|$)/g, '$1$2');
@@ -384,18 +390,34 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   /**
+   * Requirement: classifyOCRQuality(text)
+   * Observational only classification of OCR signal quality.
+   */
+  function classifyOCRQuality(text) {
+    if (!text || text.length < 50) return "poor";
+    
+    // Check for excessive non-alphanumeric noise
+    const noiseChars = (text.match(/[^a-zA-Z0-9\s.,₹]/g) || []).length;
+    const noiseRatio = noiseChars / text.length;
+    
+    // Check for basic structure indicators (presence of digits and capital letters)
+    const hasDigits = /\d/.test(text);
+    const hasCaps = /[A-Z]/.test(text);
+    
+    if (noiseRatio > 0.15 || !hasDigits || !hasCaps) return "poor";
+    return "good";
+  }
+
+  /**
    * Smart number handling helper
    */
   function cleanNumber(str) {
-  if (!str) return "";
-
-  let cleaned = str
-    .replace(/[Oo]/g, '0')
-    .replace(/[lI]/g, '1')
-    .replace(/,/g, ''); // 🔥 REMOVE thousand separators
-
-  const match = cleaned.match(/\d+(\.\d+)?/);
-  return match ? match[0] : "";
+    if (!str) return "";
+    let cleaned = str.replace(/[Oo]/g, '0')
+                     .replace(/[lI]/g, '1')
+                     .replace(/,/g, '.');
+    const match = cleaned.match(/[\d\.]+/);
+    return match ? match[0] : "";
   }
 
   /**
@@ -521,6 +543,10 @@ document.addEventListener("DOMContentLoaded", () => {
                              confidence >= 50 ? "Medium: Some fields missing or items unclear." : 
                              "Low: Major fields missing or math mismatch.";
     breakdown += `\n\nConfidence: ${confidence}% (${confidenceReason})`;
+
+    // OCR Quality Classification (Read-Only Metadata)
+    const ocrQuality = classifyOCRQuality(rawText);
+    breakdown += `\nOCR Signal Quality: ${ocrQuality.toUpperCase()}`;
 
     // Final Output to UI
     setStatus(`${summaryHeadline}${breakdown}`, verification.status !== "Verified");
