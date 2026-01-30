@@ -225,7 +225,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   /* =======================
-     PDF & OCR
+     PHASE-1 LOCKED: PDF & OCR
+     - Scale 3x for signal integrity
+     - Tesseract eng default
   ======================= */
   async function pdfToCanvas(file) {
     const buffer = await file.arrayBuffer();
@@ -297,7 +299,10 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   /* =======================
-     PARSING (IMPROVED)
+     PHASE-1 LOCKED: PARSING & NORMALIZATION
+     - Strict numeric row preservation
+     - Deterministic label normalization
+     - No inference or guessing
   ======================= */
 
   /**
@@ -483,8 +488,12 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
     if (candidates.length > 0) {
-      candidates.sort((a, b) => b.score - a.score);
-      if (candidates[0].score > 20) out.total = candidates[0].value;
+      // GOAL 1: Filter for valid candidates and select the LARGEST monetary value
+      const validCandidates = candidates.filter(c => c.score > 20);
+      if (validCandidates.length > 0) {
+        validCandidates.sort((a, b) => parseFloat(b.value) - parseFloat(a.value));
+        out.total = validCandidates[0].value;
+      }
     }
 
     return out;
@@ -510,7 +519,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const diff = verification.differenceAmount;
     
     if (verification.status === "Unverifiable") {
-      summaryHeadline = "❌ Unverifiable: No line items or total detected";
+      // GOAL 2: Clarify reason for unverifiable invoices
+      summaryHeadline = "❌ Unverifiable: Verification failed due to missing item structure or total";
     } else if (Math.abs(diff) <= 0.01) {
       summaryHeadline = "✅ Invoice total matches calculated amount";
     } else if (diff > 0) {
@@ -550,6 +560,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Final Output to UI
     setStatus(`${summaryHeadline}${breakdown}`, verification.status !== "Verified");
+
+    /**
+     * PHASE-2 EXTENSION POINTS (FUTURE):
+     * - Multi-format export (Excel/CSV reconstruction)
+     * - UI-driven manual line-item overrides
+     */
     
     if (verification.status === "Verified") trackEvent("invoice_verified");
 
@@ -588,7 +604,7 @@ document.addEventListener("DOMContentLoaded", () => {
     req.onsuccess = e => {
       db = e.target.result;
       setTimeout(() => loadHistory(), 0);
-    };
+       };
   }
 
   function renderHistoryItem(item, list) {
@@ -606,10 +622,10 @@ document.addEventListener("DOMContentLoaded", () => {
         li.classList.remove("history-active");
       }
       if (el.editMerchant) el.editMerchant.value = item.merchant;
-      if (el.editDate) el.editDate.value = item.date;
+       if (el.editDate) el.editDate.value = item.date;
       if (el.editTotal) el.editTotal.value = item.total;
       if (el.json) el.json.textContent = JSON.stringify(item, null, 2);
-       updateParsedUI(true);
+      updateParsedUI(true);
       document.querySelector('[data-page="parsed"]')?.click();
     });
     list.appendChild(li);
@@ -624,9 +640,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const c = e.target.result;
       if (!c) return;
       const item = c.value;
-      const text = `${item.merchant} ${item.date} ${item.total}`.toLowerCase();
+       const text = `${item.merchant} ${item.date} ${item.total}`.toLowerCase();
       if (!filter || text.includes(filter)) {
-      if (el.historyList) renderHistoryItem(item, el.historyList);
+        if (el.historyList) renderHistoryItem(item, el.historyList);
         if (el.historyPageList) renderHistoryItem(item, el.historyPageList);
       }
       c.continue();
@@ -638,7 +654,7 @@ document.addEventListener("DOMContentLoaded", () => {
   el.saveBtn?.addEventListener("click", () => {
     if (!hasParsedData || !db) return;
     const tx = db.transaction("history", "readwrite");
-    const store = tx.objectStore("history");
+     const store = tx.objectStore("history");
     const request = store.add({
       merchant: el.editMerchant.value,
       date: el.editDate.value,
@@ -659,10 +675,11 @@ document.addEventListener("DOMContentLoaded", () => {
   el.clearHistoryBtn?.addEventListener("click", () => {
     if (!confirm("Clear all history?")) return;
     const tx = db.transaction("history", "readwrite");
-    tx.objectStore("history").clear();
+     tx.objectStore("history").clear();
     tx.oncomplete = loadHistory;
   });
-     /* =======================
+
+  /* =======================
      EXPORTS (GATED)
   ======================= */
   const handleExportAttempt = (type) => {
