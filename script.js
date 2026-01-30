@@ -241,13 +241,58 @@ document.addEventListener("DOMContentLoaded", () => {
     canvas.width = viewport.width;
     canvas.height = viewport.height;
 
+    // PHASE-2: Improve contrast and clarity for OCR
+    ctx.filter = 'grayscale(100%) contrast(1.2) brightness(1.1)';
+    
     await page.render({ canvasContext: ctx, viewport }).promise;
     return canvas;
   }
 
-  async function runOCR(file) {
-    setStatus("OCR running...");
+  async function extractTextFromPDF(file) {
+    const buffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+    const page = await pdf.getPage(1);
+    const textContent = await page.getTextContent();
+    
+    // Check if selectable text layer exists
+    if (textContent.items.length === 0) return null;
 
+    // Group items by their vertical position (y-coordinate) to preserve lines
+    const lines = {};
+    textContent.items.forEach(item => {
+      const y = Math.round(item.transform[5]);
+      if (!lines[y]) lines[y] = [];
+      lines[y].push(item);
+    });
+
+    // Sort lines by y (descending) and items within lines by x (ascending)
+    const sortedY = Object.keys(lines).sort((a, b) => b - a);
+    let fullText = "";
+    sortedY.forEach(y => {
+      const lineItems = lines[y].sort((a, b) => a.transform[4] - b.transform[4]);
+      fullText += lineItems.map(item => item.str).join(" ") + "\n";
+    });
+
+    return fullText.trim();
+  }
+
+  async function runOCR(file) {
+    setStatus("Extraction starting...");
+
+    // PHASE-2: Try direct PDF text extraction first
+    if (file.type === "application/pdf") {
+      try {
+        const directText = await extractTextFromPDF(file);
+        if (directText && directText.length > 50) {
+          setStatus("Direct PDF text extracted ✓");
+          return directText;
+        }
+      } catch (e) {
+        console.warn("Direct extraction failed, falling back to OCR", e);
+      }
+    }
+
+    setStatus("OCR running...");
     let source = file;
     if (file.type === "application/pdf") {
       source = await pdfToCanvas(file);
@@ -544,7 +589,8 @@ document.addEventListener("DOMContentLoaded", () => {
       if (igstMatch) breakdown += `\n- IGST: ₹${igstMatch[1]}`;
     } else if (gstMatch) {
       breakdown += `\n\nTax Breakdown:\n- GST: ₹${gstMatch[1]}`;
-    } else if (rawText.toLowerCase().includes("tax") || rawText.toLowerCase().includes("gst")) {
+    } else if (rawText.toLowerCase().includes("tax") || rawText.toLowerCase().includes("gst"))
+       {
       breakdown += "\n\n⚠️ Tax exists but structure is unclear.";
     }
 
@@ -576,7 +622,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (el.json) el.json.textContent = JSON.stringify(parsed, null, 2);
     
     hasParsedData = true;
-    updateParsedUI(true);
+   updateParsedUI(true);
 
     document.querySelector('[data-page="parsed"]')?.click();
   });
@@ -597,14 +643,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const req = indexedDB.open("anj-dual-ocr", 1);
     req.onupgradeneeded = e => {
       const db = e.target.result;
-      if (!db.objectStoreNames.contains("history")) {
+       if (!db.objectStoreNames.contains("history")) {
         db.createObjectStore("history", { keyPath: "id", autoIncrement: true });
       }
     };
     req.onsuccess = e => {
       db = e.target.result;
       setTimeout(() => loadHistory(), 0);
-       };
+    };
   }
 
   function renderHistoryItem(item, list) {
@@ -614,7 +660,7 @@ document.addEventListener("DOMContentLoaded", () => {
       li.classList.add("history-active");
       li.scrollIntoView({ block: "nearest" });
     }
-    li.addEventListener("click", () => {
+     li.addEventListener("click", () => {
       hasParsedData = true;
       selectedHistoryItem = item;
       if (item.id === lastSavedId) {
@@ -622,7 +668,7 @@ document.addEventListener("DOMContentLoaded", () => {
         li.classList.remove("history-active");
       }
       if (el.editMerchant) el.editMerchant.value = item.merchant;
-       if (el.editDate) el.editDate.value = item.date;
+      if (el.editDate) el.editDate.value = item.date;
       if (el.editTotal) el.editTotal.value = item.total;
       if (el.json) el.json.textContent = JSON.stringify(item, null, 2);
       updateParsedUI(true);
@@ -634,13 +680,13 @@ document.addEventListener("DOMContentLoaded", () => {
   function loadHistory(filter = "") {
     if (!db) return;
     if (el.historyList) el.historyList.innerHTML = "";
-    if (el.historyPageList) el.historyPageList.innerHTML = "";
+     if (el.historyPageList) el.historyPageList.innerHTML = "";
     const tx = db.transaction("history", "readonly");
     tx.objectStore("history").openCursor(null, "prev").onsuccess = e => {
       const c = e.target.result;
       if (!c) return;
       const item = c.value;
-       const text = `${item.merchant} ${item.date} ${item.total}`.toLowerCase();
+      const text = `${item.merchant} ${item.date} ${item.total}`.toLowerCase();
       if (!filter || text.includes(filter)) {
         if (el.historyList) renderHistoryItem(item, el.historyList);
         if (el.historyPageList) renderHistoryItem(item, el.historyPageList);
@@ -648,13 +694,12 @@ document.addEventListener("DOMContentLoaded", () => {
       c.continue();
     };
   }
-
-  el.historySearch?.addEventListener("input", e => loadHistory(e.target.value.toLowerCase()));
+   el.historySearch?.addEventListener("input", e => loadHistory(e.target.value.toLowerCase()));
 
   el.saveBtn?.addEventListener("click", () => {
     if (!hasParsedData || !db) return;
     const tx = db.transaction("history", "readwrite");
-     const store = tx.objectStore("history");
+    const store = tx.objectStore("history");
     const request = store.add({
       merchant: el.editMerchant.value,
       date: el.editDate.value,
@@ -669,13 +714,13 @@ document.addEventListener("DOMContentLoaded", () => {
         setStatus("Saved ✓");
       }, 0);
     };
-    tx.onerror = () => { setStatus("Save failed", true); };
+     tx.onerror = () => { setStatus("Save failed", true); };
   });
 
   el.clearHistoryBtn?.addEventListener("click", () => {
     if (!confirm("Clear all history?")) return;
     const tx = db.transaction("history", "readwrite");
-     tx.objectStore("history").clear();
+    tx.objectStore("history").clear();
     tx.oncomplete = loadHistory;
   });
 
@@ -686,11 +731,11 @@ document.addEventListener("DOMContentLoaded", () => {
     trackEvent(`export_attempted_${type}`);
     setStatus("Export is a premium feature", true);
   };
-
-  el.exportJSON?.addEventListener("click", () => handleExportAttempt("json"));
+   el.exportJSON?.addEventListener("click", () => handleExportAttempt("json"));
   el.exportTXT?.addEventListener("click", () => handleExportAttempt("txt"));
   el.exportCSV?.addEventListener("click", () => handleExportAttempt("csv"));
 
   initDB();
   setStatus("Ready ✓");
 });
+   
