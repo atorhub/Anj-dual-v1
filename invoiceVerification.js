@@ -1,8 +1,14 @@
 // invoiceVerification.js
 
 /**
- * STRICT INVOICE VERIFICATION SYSTEM
+ * PHASE-1 LOCKED: STRICT INVOICE VERIFICATION SYSTEM
  * Implements a 7-phase logic order for deterministic verification.
+ * 
+ * GUARANTEES:
+ * - No inference or guessing of missing data.
+ * - Line items require explicit qty + rate.
+ * - Summary rows (tax, totals) are excluded from calculatedTotal.
+ * - Deterministic math: calculatedTotal = sum(qty * rate).
  */
 export function verifyInvoiceTotals(invoice, cleanedText) {
   const result = {
@@ -145,6 +151,13 @@ export function verifyInvoiceTotals(invoice, cleanedText) {
   const rawText = lines.join(' ');
   const noiseChars = (rawText.match(/[^a-zA-Z0-9\s.,₹]/g) || []).length;
   const isPoorOCR = (noiseChars / rawText.length) > 0.15;
+
+  /**
+   * PHASE-2 EXTENSION POINTS (FUTURE):
+   * - File awareness (multi-page PDF support)
+   * - OCR Redundancy (secondary engine validation)
+   * - Table-aware extraction (coordinate-based grouping)
+   */
 
   if (itemTotals.length === 0) {
     result.confidence = "0%";
