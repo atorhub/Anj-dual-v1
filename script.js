@@ -412,17 +412,14 @@ document.addEventListener("DOMContentLoaded", () => {
    * Smart number handling helper
    */
   function cleanNumber(str) {
-  if (!str) return "";
-
-  let cleaned = str
-    .replace(/[Oo]/g, '0')
-    .replace(/[lI]/g, '1')
-    .replace(/,/g, ''); // 🔥 REMOVE thousand separators
-
-  const match = cleaned.match(/\d+(\.\d+)?/);
-  return match ? match[0] : "";
+    if (!str) return "";
+    let cleaned = str.replace(/[Oo]/g, '0')
+                     .replace(/[lI]/g, '1')
+                     .replace(/,/g, '.');
+    const match = cleaned.match(/[\d\.]+/);
+    return match ? match[0] : "";
   }
-   
+
   /**
    * Confidence Calculation
    * Based ONLY on presence of merchant, date, total, GSTIN
@@ -612,7 +609,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (el.editDate) el.editDate.value = item.date;
       if (el.editTotal) el.editTotal.value = item.total;
       if (el.json) el.json.textContent = JSON.stringify(item, null, 2);
-      updateParsedUI(true);
+       updateParsedUI(true);
       document.querySelector('[data-page="parsed"]')?.click();
     });
     list.appendChild(li);
@@ -629,7 +626,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const item = c.value;
       const text = `${item.merchant} ${item.date} ${item.total}`.toLowerCase();
       if (!filter || text.includes(filter)) {
-        if (el.historyList) renderHistoryItem(item, el.historyList);
+      if (el.historyList) renderHistoryItem(item, el.historyList);
         if (el.historyPageList) renderHistoryItem(item, el.historyPageList);
       }
       c.continue();
@@ -665,8 +662,7 @@ document.addEventListener("DOMContentLoaded", () => {
     tx.objectStore("history").clear();
     tx.oncomplete = loadHistory;
   });
-
-  /* =======================
+     /* =======================
      EXPORTS (GATED)
   ======================= */
   const handleExportAttempt = (type) => {
