@@ -196,6 +196,26 @@ document.addEventListener("DOMContentLoaded", () => {
   /* =======================
      THEMES & LAYOUTS
   ======================= */
+  // Initialize theme options dynamically to match the new 10-theme set
+  if (el.theme) {
+    const themeOptions = [
+      { value: "carbon", text: "Carbon Black (Default)" },
+      { value: "aqua-pro", text: "Aqua Pro" },
+      { value: "slate", text: "Slate Grey" },
+      { value: "midnight-blue", text: "Midnight Blue" },
+      { value: "ivory", text: "Ivory Light" },
+      { value: "soft-teal", text: "Soft Teal" },
+      { value: "monochrome", text: "Monochrome" },
+      { value: "high-contrast", text: "High Contrast" },
+      { value: "abstract", text: "Abstract Flow" },
+      { value: "bloom", text: "Quiet Bloom" }
+    ];
+    
+    el.theme.innerHTML = themeOptions.map(opt => 
+      `<option value="${opt.value}">${opt.text}</option>`
+    ).join('');
+  }
+
   el.theme?.addEventListener("change", () => {
     document.body.classList.forEach(c => {
       if (c.startsWith("theme-")) document.body.classList.remove(c);
@@ -571,6 +591,8 @@ document.addEventListener("DOMContentLoaded", () => {
     } else if (diff > 0) {
       summaryHeadline = `⚠️ Invoice total is ₹${diff.toFixed(2)} less than calculated amount`;
     } else {
+      summaryHeadline = `⚠️ You may have been overcharged ₹${Math.abs(diff).toFixed(2)}`;less than calculated amount`;
+    } else {
       summaryHeadline = `⚠️ You may have been overcharged ₹${Math.abs(diff).toFixed(2)}`;
     }
 
@@ -589,12 +611,10 @@ document.addEventListener("DOMContentLoaded", () => {
       if (igstMatch) breakdown += `\n- IGST: ₹${igstMatch[1]}`;
     } else if (gstMatch) {
       breakdown += `\n\nTax Breakdown:\n- GST: ₹${gstMatch[1]}`;
-    } else if (rawText.toLowerCase().includes("tax") || rawText.toLowerCase().includes("gst"))
-       {
+    } else if (rawText.toLowerCase().includes("tax") || rawText.toLowerCase().includes("gst")) {
       breakdown += "\n\n⚠️ Tax exists but structure is unclear.";
     }
-
-    // Confidence and Reason
+       // Confidence and Reason
     const confidenceReason = confidence >= 75 ? "High: Key fields and items verified." : 
                              confidence >= 50 ? "Medium: Some fields missing or items unclear." : 
                              "Low: Major fields missing or math mismatch.";
@@ -603,10 +623,16 @@ document.addEventListener("DOMContentLoaded", () => {
     // OCR Quality Classification (Read-Only Metadata)
     const ocrQuality = classifyOCRQuality(rawText);
     breakdown += `\nOCR Signal Quality: ${ocrQuality.toUpperCase()}`;
-
     // Final Output to UI
     setStatus(`${summaryHeadline}${breakdown}`, verification.status !== "Verified");
 
+    /**
+     * PHASE-2 EXTENSION POINTS (FUTURE):
+     * - Multi-format export (Excel/CSV reconstruction)
+     * - UI-driven manual line-item overrides
+     */
+    
+    if (verification.status === "Verified") trackEvent("invoice_verified");
     /**
      * PHASE-2 EXTENSION POINTS (FUTURE):
      * - Multi-format export (Excel/CSV reconstruction)
@@ -622,8 +648,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (el.json) el.json.textContent = JSON.stringify(parsed, null, 2);
     
     hasParsedData = true;
-   updateParsedUI(true);
-
+    updateParsedUI(true);
     document.querySelector('[data-page="parsed"]')?.click();
   });
 
@@ -635,7 +660,6 @@ document.addEventListener("DOMContentLoaded", () => {
       trackEvent("edit_field_changed", { field: e.target.id, value: e.target.value });
     });
   });
-
   /* =======================
      HISTORY (IndexedDB)
   ======================= */
@@ -643,7 +667,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const req = indexedDB.open("anj-dual-ocr", 1);
     req.onupgradeneeded = e => {
       const db = e.target.result;
-       if (!db.objectStoreNames.contains("history")) {
+      if (!db.objectStoreNames.contains("history")) {
         db.createObjectStore("history", { keyPath: "id", autoIncrement: true });
       }
     };
@@ -652,7 +676,6 @@ document.addEventListener("DOMContentLoaded", () => {
       setTimeout(() => loadHistory(), 0);
     };
   }
-
   function renderHistoryItem(item, list) {
     const li = document.createElement("li");
     li.textContent = (item.merchant || "Unknown") + " • " + new Date(item.timestamp).toLocaleString();
@@ -660,7 +683,7 @@ document.addEventListener("DOMContentLoaded", () => {
       li.classList.add("history-active");
       li.scrollIntoView({ block: "nearest" });
     }
-     li.addEventListener("click", () => {
+    li.addEventListener("click", () => {
       hasParsedData = true;
       selectedHistoryItem = item;
       if (item.id === lastSavedId) {
@@ -680,7 +703,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function loadHistory(filter = "") {
     if (!db) return;
     if (el.historyList) el.historyList.innerHTML = "";
-     if (el.historyPageList) el.historyPageList.innerHTML = "";
+    if (el.historyPageList) el.historyPageList.innerHTML = "";
     const tx = db.transaction("history", "readonly");
     tx.objectStore("history").openCursor(null, "prev").onsuccess = e => {
       const c = e.target.result;
@@ -694,7 +717,7 @@ document.addEventListener("DOMContentLoaded", () => {
       c.continue();
     };
   }
-   el.historySearch?.addEventListener("input", e => loadHistory(e.target.value.toLowerCase()));
+  el.historySearch?.addEventListener("input", e => loadHistory(e.target.value.toLowerCase()));
 
   el.saveBtn?.addEventListener("click", () => {
     if (!hasParsedData || !db) return;
@@ -714,7 +737,7 @@ document.addEventListener("DOMContentLoaded", () => {
         setStatus("Saved ✓");
       }, 0);
     };
-     tx.onerror = () => { setStatus("Save failed", true); };
+    tx.onerror = () => { setStatus("Save failed", true); };
   });
 
   el.clearHistoryBtn?.addEventListener("click", () => {
@@ -731,11 +754,10 @@ document.addEventListener("DOMContentLoaded", () => {
     trackEvent(`export_attempted_${type}`);
     setStatus("Export is a premium feature", true);
   };
-   el.exportJSON?.addEventListener("click", () => handleExportAttempt("json"));
+  el.exportJSON?.addEventListener("click", () => handleExportAttempt("json"));
   el.exportTXT?.addEventListener("click", () => handleExportAttempt("txt"));
   el.exportCSV?.addEventListener("click", () => handleExportAttempt("csv"));
 
   initDB();
   setStatus("Ready ✓");
 });
-   
