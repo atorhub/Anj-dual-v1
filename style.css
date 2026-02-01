@@ -8,135 +8,157 @@
 
 /* =========================================
    ROOT + THEME BRIDGE
+   (abhiii layout vars + cool theme vars)
 ========================================= */
 
-:root {
-  /* Default Theme Variables */
-  --bg: #020617;
-  --panel: rgba(255, 255, 255, 0.08);
-  --panel-hover: rgba(255, 255, 255, 0.12);
-  --text: #e5e7eb;
-  --muted: #9ca3af;
-  --accent: #7c3aed;
-  --sidebar-bg: rgba(0, 0, 0, 0.45);
-  
-  /* Illustration Layer Defaults */
-  --illu-bg: transparent;
-  --illu-opacity: 0;
-}
-
 body {
+  /* PHASE-1 LOCKED: Base Carbon Black (Default) */
+  --bg: #0a0a0a;
+  --card: rgba(255, 255, 255, 0.05);
+  --text: #e5e7eb;
+  --text-muted: #9ca3af;
+  --accent: #3b82f6;
+  --bg-sidebar: rgba(0, 0, 0, 0.6);
+  --bg-panel-hover: rgba(255,255,255,0.12);
+
   background: var(--bg);
   color: var(--text);
   margin: 0;
   padding: 0;
   min-height: 100vh;
-  font-family: system-ui, -apple-system, sans-serif;
-  transition: background 0.5s ease, color 0.5s ease;
-  position: relative;
-  overflow-x: hidden;
+  font-family: system-ui, sans-serif;
+  transition: background .5s ease;
 }
 
-/* Illustration Layer */
-body::before {
+/* =========================================
+   THEMES (UI THEME IMPLEMENTATION)
+========================================= */
+
+/* 1. Carbon Black (Default) */
+body.theme-carbon {
+  --bg: #0a0a0a;
+  --card: rgba(255, 255, 255, 0.05);
+  --text: #e5e7eb;
+  --text-muted: #9ca3af;
+  --accent: #3b82f6;
+  --bg-sidebar: rgba(0, 0, 0, 0.6);
+}
+
+/* 2. Aqua Pro */
+body.theme-aqua-pro {
+  --bg: #0f172a;
+  --card: rgba(30, 41, 59, 0.7);
+  --text: #f1f5f9;
+  --text-muted: #94a3b8;
+  --accent: #0ea5e9;
+  --bg-sidebar: rgba(15, 23, 42, 0.8);
+}
+
+/* 3. Slate Grey */
+body.theme-slate {
+  --bg: #1e293b;
+  --card: rgba(51, 65, 85, 0.7);
+  --text: #f8fafc;
+  --text-muted: #cbd5e1;
+  --accent: #64748b;
+  --bg-sidebar: rgba(30, 41, 59, 0.8);
+}
+
+/* 4. Midnight Blue */
+body.theme-midnight-blue {
+  --bg: #020617;
+  --card: rgba(30, 41, 59, 0.5);
+  --text: #f8fafc;
+  --text-muted: #94a3b8;
+  --accent: #1d4ed8;
+  --bg-sidebar: rgba(2, 6, 23, 0.9);
+}
+
+/* 5. Ivory Light */
+body.theme-ivory {
+  --bg: #f8fafc;
+  --card: rgba(255, 255, 255, 0.9);
+  --text: #0f172a;
+  --text-muted: #475569;
+  --accent: #2563eb;
+  --bg-sidebar: rgba(241, 245, 249, 0.9);
+}
+
+/* 6. Soft Teal */
+body.theme-soft-teal {
+  --bg: #f0fdfa;
+  --card: rgba(255, 255, 255, 0.8);
+  --text: #134e4a;
+  --text-muted: #0d9488;
+  --accent: #14b8a6;
+  --bg-sidebar: rgba(204, 251, 241, 0.9);
+}
+
+/* 7. Monochrome */
+body.theme-monochrome {
+  --bg: #ffffff;
+  --card: rgba(0, 0, 0, 0.03);
+  --text: #000000;
+  --text-muted: #666666;
+  --accent: #000000;
+  --bg-sidebar: rgba(245, 245, 245, 1);
+}
+
+/* 8. High Contrast */
+body.theme-high-contrast {
+  --bg: #000000;
+  --card: #000000;
+  --text: #ffffff;
+  --text-muted: #ffffff;
+  --accent: #ffff00;
+  --bg-sidebar: #000000;
+}
+body.theme-high-contrast .panel {
+  border: 2px solid #ffffff;
+}
+
+/* 9. Abstract Flow (Illustrated) */
+body.theme-abstract {
+  --bg: #0a0a0a;
+  --card: rgba(255, 255, 255, 0.05);
+  --text: #e5e7eb;
+  --text-muted: #9ca3af;
+  --accent: #8b5cf6;
+  --bg-sidebar: rgba(0, 0, 0, 0.6);
+  background-image: url('https://www.transparenttextures.com/patterns/cubes.png');
+  background-blend-mode: overlay;
+}
+body.theme-abstract::before {
   content: "";
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--illu-bg);
-  opacity: var(--illu-opacity);
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: linear-gradient(45deg, #3b82f6, #8b5cf6);
+  opacity: 0.06;
   pointer-events: none;
   z-index: -1;
-  transition: opacity 0.8s ease, background 0.8s ease;
+}
+
+/* 10. Quiet Bloom (Illustrated) */
+body.theme-bloom {
+  --bg: #fdf2f8;
+  --card: rgba(255, 255, 255, 0.7);
+  --text: #831843;
+  --text-muted: #be185d;
+  --accent: #db2777;
+  --bg-sidebar: rgba(252, 231, 243, 0.9);
+}
+body.theme-bloom::before {
+  content: "";
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background-image: url('https://www.transparenttextures.com/patterns/floral-paper.png');
+  opacity: 0.08;
+  pointer-events: none;
+  z-index: -1;
 }
 
 /* =========================================
-   THEMES
-========================================= */
-
-body.theme-default {
-  --bg: radial-gradient(circle at top, #1e1b4b, #020617);
-  --panel: rgba(255, 255, 255, 0.08);
-  --accent: #8b5cf6;
-}
-
-body.theme-galaxy {
-  --bg: radial-gradient(circle at top, #2d1b69, #07000f);
-  --panel: rgba(255, 255, 255, 0.1);
-  --accent: #c084fc;
-}
-
-body.theme-fairy {
-  --bg: linear-gradient(135deg, #2e026d, #a21caf);
-  --panel: rgba(255, 255, 255, 0.12);
-  --accent: #f0abfc;
-}
-
-body.theme-pink {
-  --bg: linear-gradient(135deg, #3b021f, #831843);
-  --panel: rgba(255, 255, 255, 0.14);
-  --accent: #fb7185;
-}
-
-body.theme-dark {
-  --bg: #020617;
-  --panel: rgba(255, 255, 255, 0.06);
-  --accent: #38bdf8;
-}
-
-body.theme-aqua {
-  --bg: radial-gradient(circle at top, #0b2c3d, #020617);
-  --panel: rgba(40, 180, 190, 0.12);
-  --accent: #1ddfd3;
-}
-
-body.theme-mint {
-  --bg: radial-gradient(circle at top, #063b2c, #020617);
-  --panel: rgba(80, 200, 170, 0.12);
-  --accent: #7fffd4;
-}
-
-body.theme-sunset {
-  --bg: radial-gradient(circle at top, #3b1c2a, #020617);
-  --panel: rgba(255, 140, 90, 0.12);
-  --accent: #ff9a3c;
-}
-
-body.theme-neon {
-  --bg: radial-gradient(circle at top, #090a0f, #000000);
-  --panel: rgba(0, 242, 255, 0.08);
-  --accent: #00f2ff;
-}
-
-body.theme-midnight {
-  --bg: radial-gradient(circle at top, #01010f, #000000);
-  --panel: rgba(40, 40, 80, 0.15);
-  --accent: #9aa5ff;
-}
-
-/* =========================================
-   ILLUSTRATION THEMES
-========================================= */
-
-/* Illustration Theme 1: Soft Nebula */
-body.illu-nebula {
-  --illu-bg: radial-gradient(circle at 20% 30%, rgba(124, 58, 237, 0.15), transparent 40%),
-             radial-gradient(circle at 80% 70%, rgba(236, 72, 153, 0.1), transparent 40%);
-  --illu-opacity: 1;
-}
-
-/* Illustration Theme 2: Geometric Mesh */
-body.illu-mesh {
-  --illu-bg: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-             linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-  background-size: 40px 40px;
-  --illu-opacity: 1;
-}
-
-/* =========================================
-   APP SHELL
+   APP SHELL (abhiii — UNCHANGED)
 ========================================= */
 
 .app-shell {
@@ -146,16 +168,14 @@ body.illu-mesh {
 }
 
 /* =========================================
-   SIDEBAR
+   SIDEBAR (STRUCTURE abhiii + VISUAL cool)
 ========================================= */
 
 .sidebar {
   width: 240px;
-  background: var(--sidebar-bg);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-right: 1px solid rgba(255, 255, 255, 0.05);
-  transition: transform 0.3s ease;
+  background: var(--bg-sidebar);
+  backdrop-filter: blur(18px);
+  transition: transform .3s ease;
 }
 
 body.sidebar-hidden .sidebar {
@@ -163,91 +183,103 @@ body.sidebar-hidden .sidebar {
 }
 
 /* =========================================
-   MAIN CONTENT
+   MAIN CONTENT (abhiii)
 ========================================= */
 
 .main {
   min-height: 100vh;
   padding: 24px;
-  transition: padding 0.3s ease;
 }
 
 /* =========================================
-   PANELS
+   GRID
+========================================= */
+
+.grid {
+  display: grid;
+  gap: 20px;
+  width: 100%;
+}
+
+/* =========================================
+   PANELS (MERGED: STRUCTURE + ANIMATION)
 ========================================= */
 
 .panel {
-  background: var(--panel);
+  background: var(--card);
   border-radius: 22px;
   padding: 22px;
   overflow: hidden;
   word-wrap: break-word;
   line-height: 1.5;
   backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3),
-              inset 0 0 0 1px rgba(255, 255, 255, 0.08);
-  transition: background 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
-  animation: fadeUp 0.4s ease both;
+  box-shadow:
+    0 8px 30px rgba(0,0,0,.35),
+    inset 0 0 0 1px rgba(255,255,255,.08);
+  transition:
+    background .25s ease,
+    transform .25s ease,
+    box-shadow .25s ease;
+  animation: fadeUp .4s ease both;
 }
 
 .panel:hover {
-  background: var(--panel-hover);
+  background: var(--bg-panel-hover);
   transform: translateY(-2px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4),
-              inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+.panel p,
+.panel span,
+.panel div {
+  max-width: 100%;
+  overflow-wrap: break-word;
 }
 
 /* =========================================
-   TEXT & BUTTONS
+   TEXT
 ========================================= */
 
 .text-muted {
-  color: var(--muted);
+  color: var(--text-muted);
 }
+
+/* =========================================
+   BUTTONS
+========================================= */
 
 button {
   background: var(--accent);
   color: white;
   border: none;
   border-radius: 10px;
-  padding: 10px 16px;
-  font-weight: 500;
+  padding: 10px 14px;
   cursor: pointer;
-  transition: opacity 0.2s ease, transform 0.1s ease;
-}
-
-button:hover {
-  opacity: 0.9;
-}
-
-button:active {
-  transform: scale(0.98);
-}
-
-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 /* =========================================
-   PRE / OUTPUT BOX
+   PRE / OUTPUT BOX (cool)
 ========================================= */
 
 pre {
   min-height: 120px;
   padding: 16px;
   border-radius: 14px;
-  background: rgba(0, 0, 0, 0.2);
-  color: var(--text);
+  background: rgba(255,255,255,.05);
   white-space: pre-wrap;
   word-break: break-word;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  animation: fadeUp 0.5s ease both;
+  display: block;
+  animation: fadeUp .5s ease both;
+}
+
+pre:empty::before {
+  content: "Waiting for output…";
+  opacity: .35;
+  font-style: italic;
+  animation: pulseText 1.6s ease-in-out infinite;
 }
 
 /* =========================================
-   LAYOUT MODES
+   FOCUS MODE (abhiii)
 ========================================= */
 
 body.sidebar-hidden .app-shell {
@@ -255,36 +287,46 @@ body.sidebar-hidden .app-shell {
 }
 
 body.sidebar-hidden .main {
-  max-width: 1200px;
+  max-width: 1100px;
   margin-left: auto;
   margin-right: auto;
 }
 
 /* =========================================
-   MOBILE
+   MOBILE (abhiii — UNTOUCHED)
 ========================================= */
 
 @media (max-width: 768px) {
-  .app-shell {
-    grid-template-columns: 1fr;
-  }
-  
   .sidebar {
     position: fixed;
     top: 0;
-    left: 0;
     bottom: 0;
     z-index: 1000;
-    box-shadow: 20px 0 50px rgba(0, 0, 0, 0.5);
   }
-  
+
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 1100;
+    background: var(--bg);
+  }
+
+  #sidebarToggle {
+    position: relative;
+    z-index: 1200;
+  }
+
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+
   .main {
     padding: 16px;
   }
 }
 
 /* =========================================
-   ANIMATIONS
+   ANIMATIONS (cool)
 ========================================= */
 
 @keyframes fadeUp {
@@ -297,3 +339,145 @@ body.sidebar-hidden .main {
     transform: none;
   }
 }
+
+@keyframes pulseText {
+  0%   { opacity: 0.25; }
+  50%  { opacity: 0.6; }
+  100% { opacity: 0.25; }
+}
+/* ===== PAGE SYSTEM (HYBRID) ===== */
+.page {
+  display: none !important;
+}
+
+.page.active {
+  display: block !important;
+}
+@media (max-width: 768px) {
+  body:not(.sidebar-hidden) .sidebar {
+    z-index: 1200;
+  }
+}
+/* Sidebar close button */
+.sidebar-close {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  padding: 12px 16px;
+  background: inherit;
+  border: none;
+  color: inherit;
+  font-size: 20px;
+  text-align: right;
+  cursor: pointer;
+  z-index: 1;
+}
+
+/* Mobile only */
+@media (max-width: 768px) {
+  .sidebar-close {
+    display: block;
+  }
+}
+/* =======================
+   History highlight
+======================= */
+.history-active {
+  background: rgba(124, 252, 152, 0.15);
+  border-left: 3px solid #7CFC98;
+     }
+/* =======================
+   Parse confidence warnings
+======================= */
+
+.field-warning {
+  border: 2px solid rgba(255, 99, 99, 0.75);
+  box-shadow: 0 0 0 3px rgba(255, 99, 99, 0.25);
+  background: rgba(255, 99, 99, 0.05);
+   }
+.confidence-label {
+  cursor: help;
+  text-decoration: dotted underline;
+}
+.confidence-info {
+  cursor: pointer;
+  opacity: 0.8;
+  margin-left: 4px;
+   }
+/* Parse confidence status */
+#statusBar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: normal;
+}
+
+.confidence-legend {
+  font-size: 0.85em;
+  opacity: 0.9;
+}
+
+.confidence-info {
+  cursor: pointer;
+  margin-left: 4px;
+  position: relative;
+  font-weight: bold;
+}
+
+
+.confidence-high { color: #7CFC98; }
+.confidence-medium { color: #FFD966; }
+.confidence-low { color: #FF6B6B; }
+
+
+.confidence-tooltip {
+  display: none;
+  position: absolute;
+  bottom: 130%;
+  left: 0;
+  background: rgba(0,0,0,0.85);
+  color: #fff;
+  padding: 8px 10px;
+  border-radius: 6px;
+  width: 220px;
+  font-size: 12px;
+  z-index: 999;
+}
+
+.confidence-info:hover .confidence-tooltip {
+  display: block;
+}
+/* --- FIX STATUS BAR TOOLTIP LAYOUT --- */
+
+#statusBar {
+  position: relative;
+  overflow: visible;
+}
+
+.confidence-info {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.confidence-tooltip {
+  position: absolute;
+  top: 120%;
+  left: 0;
+  transform: translateX(-40%);
+  background: rgba(0,0,0,0.85);
+  color: #fff;
+  padding: 8px 10px;
+  border-radius: 6px;
+  width: 220px;
+  font-size: 12px;
+  z-index: 20;
+  display: none;
+}
+
+.confidence-info:hover .confidence-tooltip {
+  display: block;
+   }
