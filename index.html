@@ -35,16 +35,16 @@
       <label>
         Theme
         <select id="themeSelect">
-          <option value="default">Default</option>
-          <option value="galaxy">Galaxy</option>
-          <option value="fairy">Fairy</option>
-          <option value="pink">Pink</option>
-          <option value="dark">Dark</option>
-          <option value="aqua">Aqua</option>
-          <option value="mint">Mint</option>
-          <option value="sunset">Sunset</option>
-          <option value="neon">Neon</option>
-          <option value="midnight">Midnight</option>
+          <option value="carbon">Carbon Black (Default)</option>
+          <option value="aqua-pro">Aqua Pro</option>
+          <option value="slate">Slate Grey</option>
+          <option value="midnight-blue">Midnight Blue</option>
+          <option value="ivory">Ivory Light</option>
+          <option value="soft-teal">Soft Teal</option>
+          <option value="monochrome">Monochrome</option>
+          <option value="high-contrast">High Contrast</option>
+          <option value="abstract">Abstract Flow</option>
+          <option value="bloom">Quiet Bloom</option>
         </select>
       </label>
 
@@ -85,8 +85,14 @@
           <h2>Upload Invoice</h2>
           <input type="file" id="fileInput" required />
           <div class="upload-silhouette">
-            <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMax meet">
-              <path d="M50 20c-8.3 0-15 6.7-15 15s6.7 15 15 15 15-6.7 15-15-6.7-15-15-15zm0 35c-16.6 0-30 13.4-30 30v15h60v-15c0-16.6-13.4-30-30-30z" fill="currentColor" />
+            <svg viewBox="0 0 200 200" preserveAspectRatio="xMidYMax meet">
+              <defs>
+                <linearGradient id="silhouetteGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" style="stop-color:currentColor;stop-opacity:0.8" />
+                  <stop offset="100%" style="stop-color:currentColor;stop-opacity:0.2" />
+                </linearGradient>
+              </defs>
+              <path d="M100 40c-15 0-28 12-28 28s13 28 28 28 28-12 28-28-13-28-28-28zm0 65c-35 0-65 25-65 60v25h130v-25c0-35-30-60-65-60z" fill="url(#silhouetteGradient)" />
             </svg>
           </div>
           <div class="actions">
