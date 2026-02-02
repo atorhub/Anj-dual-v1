@@ -53,86 +53,70 @@ body::before {
 }
 
 /* =========================================
-   THEMES
+   THEMES (Restored to match script.js)
 ========================================= */
 
-body.theme-default {
-  --bg: radial-gradient(circle at top, #1e1b4b, #020617);
+body.theme-carbon {
+  --bg: #0a0a0a;
+  --panel: rgba(255, 255, 255, 0.05);
+  --accent: #ffffff;
+}
+
+body.theme-aqua-pro {
+  --bg: #001f3f;
+  --panel: rgba(0, 116, 217, 0.1);
+  --accent: #7fdbff;
+}
+
+body.theme-slate {
+  --bg: #1e293b;
   --panel: rgba(255, 255, 255, 0.08);
-  --accent: #8b5cf6;
+  --accent: #94a3b8;
 }
 
-body.theme-galaxy {
-  --bg: radial-gradient(circle at top, #2d1b69, #07000f);
+body.theme-midnight-blue {
+  --bg: #000033;
+  --panel: rgba(0, 0, 255, 0.1);
+  --accent: #007bff;
+}
+
+body.theme-ivory {
+  --bg: #fffff0;
+  --text: #333333;
+  --panel: rgba(0, 0, 0, 0.05);
+  --accent: #fffff0;
+}
+
+body.theme-soft-teal {
+  --bg: #008080;
   --panel: rgba(255, 255, 255, 0.1);
-  --accent: #c084fc;
+  --accent: #40e0d0;
 }
 
-body.theme-fairy {
-  --bg: linear-gradient(135deg, #2e026d, #a21caf);
-  --panel: rgba(255, 255, 255, 0.12);
-  --accent: #f0abfc;
+body.theme-monochrome {
+  --bg: #000000;
+  --panel: rgba(255, 255, 255, 0.1);
+  --accent: #ffffff;
 }
 
-body.theme-pink {
-  --bg: linear-gradient(135deg, #3b021f, #831843);
-  --panel: rgba(255, 255, 255, 0.14);
-  --accent: #fb7185;
+body.theme-high-contrast {
+  --bg: #000000;
+  --text: #ffffff;
+  --panel: rgba(255, 255, 255, 0.2);
+  --accent: #ffff00;
 }
 
-body.theme-dark {
-  --bg: #020617;
-  --panel: rgba(255, 255, 255, 0.06);
-  --accent: #38bdf8;
+body.theme-abstract {
+  --bg: linear-gradient(45deg, #ff00ff, #00ffff);
+  --panel: rgba(255, 255, 255, 0.15);
+  --accent: #ffffff;
 }
 
-body.theme-aqua {
-  --bg: radial-gradient(circle at top, #0b2c3d, #020617);
-  --panel: rgba(40, 180, 190, 0.12);
-  --accent: #1ddfd3;
-}
-
-body.theme-mint {
-  --bg: radial-gradient(circle at top, #063b2c, #020617);
-  --panel: rgba(80, 200, 170, 0.12);
-  --accent: #7fffd4;
-}
-
-body.theme-sunset {
-  --bg: radial-gradient(circle at top, #3b1c2a, #020617);
-  --panel: rgba(255, 140, 90, 0.12);
-  --accent: #ff9a3c;
-}
-
-body.theme-neon {
-  --bg: radial-gradient(circle at top, #090a0f, #000000);
-  --panel: rgba(0, 242, 255, 0.08);
-  --accent: #00f2ff;
-}
-
-body.theme-midnight {
-  --bg: radial-gradient(circle at top, #01010f, #000000);
-  --panel: rgba(40, 40, 80, 0.15);
-  --accent: #9aa5ff;
-}
-
-/* =========================================
-   ILLUSTRATION THEMES
-========================================= */
-
-/* Illustration Theme 1: Soft Nebula */
-body.illu-nebula {
-  --illu-bg: radial-gradient(circle at 20% 30%, rgba(124, 58, 237, 0.15), transparent 40%),
-             radial-gradient(circle at 80% 70%, rgba(236, 72, 153, 0.1), transparent 40%);
-  --illu-opacity: 1;
-}
-
-/* Illustration Theme 2: Geometric Mesh */
-body.illu-mesh {
-  --illu-bg: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-             linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-  background-size: 40px 40px;
-  --illu-opacity: 1;
+body.theme-bloom {
+  --bg: #fff0f5;
+  --text: #4b0082;
+  --panel: rgba(255, 182, 193, 0.2);
+  --accent: #ff69b4;
 }
 
 /* =========================================
@@ -160,6 +144,7 @@ body.illu-mesh {
 
 body.sidebar-hidden .sidebar {
   transform: translateX(-100%);
+  position: absolute;
 }
 
 /* =========================================
@@ -173,6 +158,19 @@ body.sidebar-hidden .sidebar {
 }
 
 /* =========================================
+   PAGES & VISIBILITY
+========================================= */
+
+.page {
+  display: none;
+  animation: fadeUp 0.5s ease both;
+}
+
+.page.active {
+  display: block;
+}
+
+/* =========================================
    PANELS
 ========================================= */
 
@@ -180,6 +178,7 @@ body.sidebar-hidden .sidebar {
   background: var(--panel);
   border-radius: 22px;
   padding: 22px;
+  margin-bottom: 24px;
   overflow: hidden;
   word-wrap: break-word;
   line-height: 1.5;
@@ -188,7 +187,6 @@ body.sidebar-hidden .sidebar {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3),
               inset 0 0 0 1px rgba(255, 255, 255, 0.08);
   transition: background 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
-  animation: fadeUp 0.4s ease both;
 }
 
 .panel:hover {
@@ -308,15 +306,16 @@ body.sidebar-hidden .main {
 
 .upload-silhouette {
   position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 120px;
-  height: 120px;
+  bottom: -10px;
+  right: -10px;
+  width: 180px;
+  height: 180px;
   pointer-events: none;
-  opacity: 0.15;
+  opacity: 0.12;
   color: var(--accent);
-  transition: opacity 0.3s ease;
+  transition: opacity 0.5s ease, transform 0.5s ease;
   z-index: 0;
+  filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3));
 }
 
 .upload-silhouette svg {
@@ -330,5 +329,5 @@ body.sidebar-hidden .main {
 .page-upload.uploading .upload-silhouette,
 .page-upload:has(#rawText:not(:empty)) .upload-silhouette {
   opacity: 0;
-     }
+   }
    
