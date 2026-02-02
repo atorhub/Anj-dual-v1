@@ -329,5 +329,4 @@ body.sidebar-hidden .main {
 .page-upload.uploading .upload-silhouette,
 .page-upload:has(#rawText:not(:empty)) .upload-silhouette {
   opacity: 0;
-   }
-   
+}
