@@ -11,8 +11,7 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 
-<body class="layout-dashboard sidebar-hidden">
-  
+<body class="theme-default layout-dashboard sidebar-hidden">
 
 <div class="app-shell">
 
@@ -36,18 +35,17 @@
       <label>
         Theme
         <select id="themeSelect">
-  <option value="theme-carbon">Carbon</option>
-  <option value="theme-slate">Slate</option>
-  <option value="theme-aqua-pro">Aqua Pro</option>
-  <option value="theme-soft-teal">Soft Teal</option>
-  <option value="theme-midnight-blue">Midnight Blue</option>
-  <option value="theme-ivory">Ivory</option>
-  <option value="theme-monochrome">Monochrome</option>
-  <option value="theme-high-contrast">High Contrast</option>
-  <option value="theme-abstract">Abstract</option>
-  <option value="theme-bloom">Bloom</option>
+          <option value="default">Default</option>
+          <option value="galaxy">Galaxy</option>
+          <option value="fairy">Fairy</option>
+          <option value="pink">Pink</option>
+          <option value="dark">Dark</option>
+          <option value="aqua">Aqua</option>
+          <option value="mint">Mint</option>
+          <option value="sunset">Sunset</option>
+          <option value="neon">Neon</option>
+          <option value="midnight">Midnight</option>
         </select>
-        
       </label>
 
       <label>
@@ -85,7 +83,12 @@
       <section class="page page-upload active">
         <section class="panel">
           <h2>Upload Invoice</h2>
-          <input type="file" id="fileInput" />
+          <input type="file" id="fileInput" required />
+          <div class="upload-silhouette">
+            <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMax meet">
+              <path d="M50 20c-8.3 0-15 6.7-15 15s6.7 15 15 15 15-6.7 15-15-6.7-15-15-15zm0 35c-16.6 0-30 13.4-30 30v15h60v-15c0-16.6-13.4-30-30-30z" fill="currentColor" />
+            </svg>
+          </div>
           <div class="actions">
             <button id="dualOCRBtn">Dual OCR</button>
             <button id="ocrOnlyBtn">Quick OCR</button>
