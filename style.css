@@ -140,8 +140,6 @@ body.illu-mesh {
 ========================================= */
 
 .app-shell {
-  display: grid;
-  grid-template-columns: 240px 1fr;
   min-height: 100vh;
 }
 
@@ -158,8 +156,64 @@ body.illu-mesh {
   transition: transform 0.3s ease;
 }
 
-body.sidebar-hidden .sidebar {
+/* =========================================
+   LAYOUT MODES + SIDEBAR STATE COMBINATIONS
+========================================= */
+
+/* Dashboard Layout - Sidebar toggleable */
+body.layout-dashboard .app-shell {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+}
+
+body.layout-dashboard.sidebar-hidden .app-shell {
+  grid-template-columns: 1fr;
+}
+
+body.layout-dashboard.sidebar-hidden .sidebar {
   transform: translateX(-100%);
+  pointer-events: none;
+}
+
+/* Focus Layout - No sidebar ever */
+body.layout-focus .app-shell {
+  display: block;
+}
+
+body.layout-focus .sidebar {
+  display: none;
+}
+
+body.layout-focus .main {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 40px;
+}
+
+/* Vertical Layout - Sidebar on top, always visible */
+body.layout-vertical .app-shell {
+  display: flex;
+  flex-direction: column;
+}
+
+body.layout-vertical .sidebar {
+  width: 100%;
+  position: relative;
+  border-right: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transform: none;
+}
+
+body.layout-vertical .main {
+  padding: 24px;
+}
+
+/* When sidebar hidden (dashboard only), main content centers */
+body.sidebar-hidden .main {
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  max-width: 1200px;
 }
 
 /* =========================================
@@ -247,74 +301,16 @@ pre {
 }
 
 /* =========================================
-   LAYOUT MODES
-========================================= */
-
-/* Dashboard: Default sidebar + main grid */
-body.layout-dashboard .app-shell {
-  display: grid;
-  grid-template-columns: 240px 1fr;
-}
-
-/* Focus: Hide sidebar, center content */
-body.layout-focus .app-shell {
-  display: block;
-}
-
-body.layout-focus .sidebar {
-  display: none;
-}
-
-body.layout-focus .main {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 40px;
-}
-
-/* Vertical: Stack everything */
-body.layout-vertical .app-shell {
-  display: flex;
-  flex-direction: column;
-}
-
-body.layout-vertical .sidebar {
-  width: 100%;
-  position: relative;
-  border-right: none;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-body.layout-vertical .main {
-  padding: 24px;
-}
-
-/* Sidebar hidden state (applies to all layouts) */
-body.sidebar-hidden .app-shell {
-  grid-template-columns: 1fr;
-}
-
-body.sidebar-hidden .sidebar {
-  transform: translateX(-100%);
-  display: none;
-}
-
-body.sidebar-hidden .main {
-  margin-left: auto;
-  margin-right: auto;
-  width: 100%;
-}
-
-/* =========================================
    PAGE VISIBILITY SYSTEM
 ========================================= */
 
 .page {
   display: none;
-  animation: fadeUp 0.4s ease both;
 }
 
 .page.active {
   display: block;
+  animation: fadeUp 0.4s ease both;
 }
 
 /* Ensure grid inside pages still works */
@@ -329,7 +325,7 @@ body.sidebar-hidden .main {
 ========================================= */
 
 @media (max-width: 768px) {
-  .app-shell {
+  body.layout-dashboard .app-shell {
     grid-template-columns: 1fr;
   }
   
@@ -340,6 +336,10 @@ body.sidebar-hidden .main {
     bottom: 0;
     z-index: 1000;
     box-shadow: 20px 0 50px rgba(0, 0, 0, 0.5);
+  }
+  
+  body.layout-dashboard.sidebar-hidden .sidebar {
+    transform: translateX(-100%);
   }
   
   .main {
