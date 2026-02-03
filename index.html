@@ -11,150 +11,305 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body class="theme-carbon sidebar-hidden">
+
 <div class="app-shell">
 
   <!-- ================= SIDEBAR ================= -->
-  <aside class="sidebar"><button id="sidebarCloseBtn" class="sidebar-close" aria-label="Close sidebar">
-  ✕
-  </button>
-    
-    <div class="logo">ANJ</div>
-
-    <nav>
-      <div class="nav-item active" data-page="upload">📤 Upload</div>
-      <div class="nav-item" data-page="parsed">📄 Parsed</div>
-      <div class="nav-item" data-page="history">🕘 History</div>
-      <div class="nav-item" data-page="settings">⚙️ Settings</div>
-      <div class="nav-item" data-page="about">ℹ️ About</div>
-    </nav>
-
-    <!-- ✅ MOVED AS-IS (NO TRIMMING) -->
-    <div class="sidebar-controls">
-      <label>
-        Theme
-        <select id="themeSelect">
-          <option value="carbon">Carbon Black (Default)</option>
-          <option value="aqua-pro">Aqua Pro</option>
-          <option value="slate">Slate Grey</option>
-          <option value="midnight-blue">Midnight Blue</option>
-          <option value="ivory">Ivory Light</option>
-          <option value="soft-teal">Soft Teal</option>
-          <option value="monochrome">Monochrome</option>
-          <option value="high-contrast">High Contrast</option>
-          <option value="abstract">Abstract Flow</option>
-          <option value="bloom">Quiet Bloom</option>
-        </select>
-      </label>
-
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">ANJ</div>
+      <button id="sidebarCloseBtn" class="sidebar-close" aria-label="Close sidebar">✕</button>
     </div>
 
-    <div class="history-panel">
-      <h3>History</h3>
-      <input id="historySearch" placeholder="Search history..." />
-      <button id="clearHistoryBtn">Clear History</button>
-      <ul id="historyList"></ul>
+    <nav class="sidebar-nav">
+      <div class="nav-item active" data-page="upload">
+        <span class="nav-icon">📤</span>
+        <span class="nav-label">Upload</span>
+      </div>
+      <div class="nav-item" data-page="parsed">
+        <span class="nav-icon">📄</span>
+        <span class="nav-label">Parsed</span>
+      </div>
+      <div class="nav-item" data-page="history">
+        <span class="nav-icon">🕘</span>
+        <span class="nav-label">History</span>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="nav-item" data-page="settings">
+        <span class="nav-icon">⚙️</span>
+        <span class="nav-label">Settings</span>
+      </div>
+      <div class="nav-item" data-page="about">
+        <span class="nav-icon">ℹ️</span>
+        <span class="nav-label">About</span>
+      </div>
+      <div class="nav-item" data-page="privacy">
+        <span class="nav-icon">🔒</span>
+        <span class="nav-label">Privacy</span>
+      </div>
     </div>
   </aside>
 
   <!-- ================= MAIN ================= -->
   <main class="main">
 
-    <!-- TOP BAR (MINIMAL) -->
+    <!-- TOP BAR -->
     <header class="topbar">
-      <button id="sidebarToggle">☰</button>
-      <span class="brand">ANJ Dual OCR</span>
-      <span id="statusBar">Ready ✓</span>
+      <button id="sidebarToggle" class="topbar-menu" aria-label="Toggle menu">☰</button>
+      <nav class="topbar-nav">
+        <div class="nav-pill active" data-page="upload">Upload</div>
+        <div class="nav-pill" data-page="parsed">Parsed</div>
+        <div class="nav-pill" data-page="history">History</div>
+      </nav>
+      <div class="topbar-meta">
+        <span class="user-id" id="userIdDisplay">User: —</span>
+        <span class="status-indicator" id="statusBar">Ready</span>
+      </div>
     </header>
 
     <!-- ================= PAGES ================= -->
-    <section class="grid">
+    <div class="page-container">
 
       <!-- UPLOAD PAGE -->
       <section class="page page-upload active">
-        <section class="panel">
-          <h2>Upload Invoice</h2>
-          <input type="file" id="fileInput" />
-          <div class="actions">
-            <button id="dualOCRBtn">Dual OCR</button>
-            <button id="ocrOnlyBtn">Quick OCR</button>
-            <button id="parseBtn">Parse</button>
+        
+        <!-- Upload Zone -->
+        <div class="upload-section">
+          <div class="upload-zone" id="uploadZone">
+            <input type="file" id="fileInput" class="upload-input" accept="image/*,application/pdf" />
+            <div class="upload-prompt">
+              <span class="upload-icon">📄</span>
+              <p class="upload-text">Upload your invoice to verify it instantly</p>
+            </div>
+            <div class="upload-actions">
+              <button id="dualOCRBtn" class="btn-primary">Dual OCR</button>
+              <button id="ocrOnlyBtn" class="btn-secondary">Quick OCR</button>
+            </div>
           </div>
-        </section>
+        </div>
 
-        <section class="panel">
-          <h2>Raw Text</h2>
-          <pre id="rawText"></pre>
-        </section>
+        <!-- Recent Invoices (shows when empty) -->
+        <div class="recent-section" id="recentSection">
+          <h3 class="section-title">Recent</h3>
+          <div class="recent-grid" id="recentGrid">
+            <!-- Populated by JS -->
+            <div class="recent-empty">No recent invoices</div>
+          </div>
+        </div>
 
-        <section class="panel">
-          <h2>Cleaned Text</h2>
-          <pre id="cleanedText"></pre>
-        </section>
+        <!-- Results Section (hidden until upload) -->
+        <div class="results-section" id="resultsSection" hidden>
+          <div class="results-grid">
+            <section class="panel panel-raw">
+              <h2 class="panel-title">Raw Text</h2>
+              <pre id="rawText" class="panel-content">—</pre>
+            </section>
+            <section class="panel panel-cleaned">
+              <h2 class="panel-title">Cleaned Text</h2>
+              <pre id="cleanedText" class="panel-content">—</pre>
+            </section>
+          </div>
+          <div class="parse-action">
+            <button id="parseBtn" class="btn-accent">Parse Invoice</button>
+          </div>
+        </div>
+
       </section>
 
       <!-- PARSED PAGE -->
       <section class="page page-parsed">
-        <section class="panel">
-          <h2>Parsed JSON</h2>
+        <div class="parsed-layout">
+          <section class="panel panel-invoice">
+            <h2 class="panel-title">Invoice Details</h2>
+            
+            <div class="invoice-card">
+              <div class="invoice-field">
+                <label class="field-label">Merchant</label>
+                <input type="text" id="editMerchant" class="field-input" placeholder="—" />
+              </div>
+              <div class="invoice-field">
+                <label class="field-label">Date</label>
+                <input type="text" id="editDate" class="field-input" placeholder="—" />
+              </div>
+              <div class="invoice-field">
+                <label class="field-label">Total</label>
+                <input type="text" id="editTotal" class="field-input" placeholder="—" />
+              </div>
+            </div>
 
-          <button id="saveBtn">💾 Save to History</button>
+            <div class="verification-badge" id="verificationBadge">
+              <span class="badge-icon">⏳</span>
+              <span class="badge-text">Waiting for verification</span>
+            </div>
 
-          <label>Merchant
-            <input type="text" id="editMerchant" />
-          </label>
+            <div class="invoice-actions">
+              <button id="saveBtn" class="btn-primary">💾 Save to History</button>
+            </div>
+          </section>
 
-          <label>Date
-            <input type="text" id="editDate" />
-          </label>
-
-          <label>Total
-            <input type="text" id="editTotal" />
-          </label>
-
-          <div class="actions">
-            <button id="exportJSON">Export JSON</button>
-            <button id="exportTXT">Export TXT</button>
-            <button id="exportCSV">Export CSV</button>
-          </div>
-
-          <pre id="jsonPreview"></pre>
-        </section>
+          <section class="panel panel-export">
+            <h2 class="panel-title">Export</h2>
+            <div class="export-grid">
+              <button id="exportJSON" class="btn-export">JSON</button>
+              <button id="exportTXT" class="btn-export">TXT</button>
+              <button id="exportCSV" class="btn-export">CSV</button>
+            </div>
+            <pre id="jsonPreview" class="preview-block">// Parsed data will appear here</pre>
+          </section>
+        </div>
       </section>
 
       <!-- HISTORY PAGE -->
       <section class="page page-history">
         <section class="panel">
-          <h2>History</h2>
-          <ul id="historyPageList"></ul>
+          <h2 class="panel-title">History</h2>
+          <div class="history-search">
+            <input type="text" id="historySearch" class="search-input" placeholder="Search invoices..." />
+          </div>
+          <ul class="history-list" id="historyPageList">
+            <li class="history-empty">No saved invoices yet</li>
+          </ul>
+          <button id="clearHistoryBtn" class="btn-danger">Clear All History</button>
         </section>
       </section>
 
       <!-- SETTINGS PAGE -->
       <section class="page page-settings">
-        <section class="panel">
-          <h2>Settings</h2>
-          <p>Theme and layout controls are available in the sidebar.</p>
-        </section>
+        <div class="settings-layout">
+          
+          <section class="panel panel-settings">
+            <h2 class="panel-title">Appearance</h2>
+            <div class="setting-item">
+              <label class="setting-label">Theme</label>
+              <select id="themeSelect" class="setting-select">
+                <!-- JS populates this -->
+              </select>
+            </div>
+            <div class="setting-item">
+              <label class="setting-label">Animation Speed</label>
+              <div class="setting-options">
+                <button class="option-btn active">Normal</button>
+                <button class="option-btn">Fast</button>
+                <button class="option-btn">Reduced</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel panel-settings">
+            <h2 class="panel-title">OCR Engine</h2>
+            <div class="setting-item">
+              <label class="setting-label">Quality vs Speed</label>
+              <input type="range" class="setting-slider" min="1" max="3" value="2" />
+              <div class="slider-labels">
+                <span>Fast</span>
+                <span>Balanced</span>
+                <span>Precise</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel panel-settings">
+            <h2 class="panel-title">Export Defaults</h2>
+            <div class="setting-item">
+              <label class="setting-label">Default Format</label>
+              <select class="setting-select">
+                <option>JSON</option>
+                <option>CSV</option>
+                <option>TXT</option>
+              </select>
+            </div>
+            <div class="setting-item">
+              <label class="setting-toggle">
+                <input type="checkbox" />
+                <span>Auto-download after parse</span>
+              </label>
+            </div>
+          </section>
+
+          <section class="panel panel-settings">
+            <h2 class="panel-title">Privacy</h2>
+            <div class="setting-item">
+              <button class="btn-secondary">Clear All History</button>
+            </div>
+            <div class="setting-item">
+              <button class="btn-secondary">Reset User ID</button>
+            </div>
+            <p class="setting-note">All processing happens locally. No data leaves your device.</p>
+          </section>
+
+        </div>
       </section>
 
       <!-- ABOUT PAGE -->
       <section class="page page-about">
-        <section class="panel">
-          <h2>About</h2>
-          <p>ANJ Dual OCR Parser</p>
-          <p>Offline OCR • Parse • Export • History</p>
+        <section class="panel panel-about">
+          <h2 class="panel-title">ANJ Dual OCR Parser</h2>
+          <div class="about-version">Version 2.1.0</div>
+          
+          <div class="about-description">
+            <p>Built for professionals who demand precision. ANJ combines dual-engine OCR technology with deterministic verification algorithms to ensure every invoice is parsed accurately — <strong>no guesses, no hidden fees detected.</strong></p>
+          </div>
+
+          <div class="about-features">
+            <h3>Capabilities</h3>
+            <ul>
+              <li>Military-grade text extraction</li>
+              <li>Real-time invoice verification</li>
+              <li>Bank-level privacy (all local, zero cloud)</li>
+              <li>50+ currency formats supported</li>
+              <li>Deterministic math verification</li>
+            </ul>
+          </div>
+
+          <div class="about-creator">
+            <p>Created by a solo developer obsessed with receipt accuracy.</p>
+          </div>
+
+          <div class="about-links">
+            <a href="#" class="link-btn">GitHub</a>
+            <a href="#" class="link-btn">Report Issue</a>
+          </div>
         </section>
       </section>
 
-    </section>
+      <!-- PRIVACY PAGE -->
+      <section class="page page-privacy">
+        <section class="panel">
+          <h2 class="panel-title">Privacy Settings</h2>
+          <div class="privacy-content">
+            <p>Your data never leaves this device. All OCR processing happens locally in your browser using Tesseract.js and PDF.js.</p>
+            
+            <div class="privacy-stats">
+              <div class="stat-item">
+                <span class="stat-label">Storage Used</span>
+                <span class="stat-value" id="storageUsed">—</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Invoices Stored</span>
+                <span class="stat-value" id="invoicesStored">—</span>
+              </div>
+            </div>
+
+            <div class="privacy-actions">
+              <button class="btn-danger">Export All Data</button>
+              <button class="btn-secondary">Import Data</button>
+            </div>
+          </div>
+        </section>
+      </section>
+
+    </div>
   </main>
 </div>
- <!-- OCR libs FIRST -->
+
+<!-- OCR libs -->
 <script src="pdf.min.js"></script>
 <script src="tesseract.min.js"></script>
 
-<!-- ONLY AFTER THAT -->
+<!-- App logic -->
 <script type="module" src="./script.js"></script>
 
 </body>
-        </html>
+  </html>
