@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 
-<body class="theme-default layout-dashboard sidebar-hidden">
+<body class="layout-dashboard sidebar-hidden">
 
 <div class="app-shell">
 
@@ -83,18 +83,7 @@
       <section class="page page-upload active">
         <section class="panel">
           <h2>Upload Invoice</h2>
-          <input type="file" id="fileInput" required />
-          <div class="upload-silhouette">
-            <svg viewBox="0 0 200 200" preserveAspectRatio="xMidYMax meet">
-              <defs>
-                <linearGradient id="silhouetteGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" style="stop-color:currentColor;stop-opacity:0.8" />
-                  <stop offset="100%" style="stop-color:currentColor;stop-opacity:0.2" />
-                </linearGradient>
-              </defs>
-              <path d="M100 40c-15 0-28 12-28 28s13 28 28 28 28-12 28-28-13-28-28-28zm0 65c-35 0-65 25-65 60v25h130v-25c0-35-30-60-65-60z" fill="url(#silhouetteGradient)" />
-            </svg>
-          </div>
+          <input type="file" id="fileInput" />
           <div class="actions">
             <button id="dualOCRBtn">Dual OCR</button>
             <button id="ocrOnlyBtn">Quick OCR</button>
@@ -178,4 +167,4 @@
 <script type="module" src="./script.js"></script>
 
 </body>
-</html>
+        </html>
