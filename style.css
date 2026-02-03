@@ -53,7 +53,7 @@ body::before {
 }
 
 /* =========================================
-   THEMES (Synced to JS names)
+   THEMES (Names changed to match JS only)
 ========================================= */
 
 body.theme-carbon {
@@ -63,57 +63,64 @@ body.theme-carbon {
 }
 
 body.theme-aqua-pro {
-  --bg: radial-gradient(circle at top, #2d1b69, #07000f);
-  --panel: rgba(255, 255, 255, 0.1);
-  --accent: #c084fc;
-}
-
-body.theme-slate {
-  --bg: linear-gradient(135deg, #2e026d, #a21caf);
-  --panel: rgba(255, 255, 255, 0.12);
-  --accent: #f0abfc;
-}
-
-body.theme-midnight-blue {
-  --bg: linear-gradient(135deg, #3b021f, #831843);
-  --panel: rgba(255, 255, 255, 0.14);
-  --accent: #fb7185;
-}
-
-body.theme-ivory {
-  --bg: #020617;
-  --panel: rgba(255, 255, 255, 0.06);
-  --accent: #38bdf8;
-}
-
-body.theme-soft-teal {
   --bg: radial-gradient(circle at top, #0b2c3d, #020617);
   --panel: rgba(40, 180, 190, 0.12);
   --accent: #1ddfd3;
 }
 
+body.theme-slate {
+  --bg: linear-gradient(135deg, #1e293b, #0f172a);
+  --panel: rgba(255, 255, 255, 0.1);
+  --accent: #94a3b8;
+}
+
+body.theme-midnight-blue {
+  --bg: linear-gradient(135deg, #172554, #1e1b4b);
+  --panel: rgba(255, 255, 255, 0.12);
+  --accent: #60a5fa;
+}
+
+body.theme-ivory {
+  --bg: #fafaf9;
+  --panel: rgba(0, 0, 0, 0.06);
+  --accent: #78716c;
+  --text: #292524;
+  --muted: #78716c;
+  --sidebar-bg: rgba(255, 255, 255, 0.8);
+}
+
+body.theme-soft-teal {
+  --bg: radial-gradient(circle at top, #115e59, #020617);
+  --panel: rgba(45, 212, 191, 0.12);
+  --accent: #2dd4bf;
+}
+
 body.theme-monochrome {
-  --bg: radial-gradient(circle at top, #063b2c, #020617);
-  --panel: rgba(80, 200, 170, 0.12);
-  --accent: #7fffd4;
+  --bg: #0a0a0a;
+  --panel: rgba(255, 255, 255, 0.08);
+  --accent: #ffffff;
+  --text: #e5e5e5;
+  --muted: #737373;
 }
 
 body.theme-high-contrast {
-  --bg: radial-gradient(circle at top, #3b1c2a, #020617);
-  --panel: rgba(255, 140, 90, 0.12);
-  --accent: #ff9a3c;
+  --bg: #000000;
+  --panel: rgba(255, 255, 255, 0.15);
+  --accent: #ffff00;
+  --text: #ffffff;
+  --muted: #cccccc;
 }
 
 body.theme-abstract {
-  --bg: radial-gradient(circle at top, #090a0f, #000000);
-  --panel: rgba(0, 242, 255, 0.08);
-  --accent: #00f2ff;
+  --bg: radial-gradient(circle at 30% 30%, #4c1d95, #0f172a 60%);
+  --panel: rgba(139, 92, 246, 0.15);
+  --accent: #a78bfa;
 }
 
 body.theme-bloom {
-  --bg: radial-gradient(circle at top, #01010f, #000000);
-  --panel: rgba(40, 40, 80, 0.15);
-  --accent: #9aa5ff;
+  --bg: radial-gradient(circle at 70% 30%, #be185d, #312e81 60%);
+  --panel: rgba(244, 114, 182, 0.12);
+  --accent: #f472b6;
 }
 
 /* =========================================
@@ -140,6 +147,8 @@ body.illu-mesh {
 ========================================= */
 
 .app-shell {
+  display: grid;
+  grid-template-columns: 240px 1fr;
   min-height: 100vh;
 }
 
@@ -156,64 +165,8 @@ body.illu-mesh {
   transition: transform 0.3s ease;
 }
 
-/* =========================================
-   LAYOUT MODES + SIDEBAR STATE COMBINATIONS
-========================================= */
-
-/* Dashboard Layout - Sidebar toggleable */
-body.layout-dashboard .app-shell {
-  display: grid;
-  grid-template-columns: 240px 1fr;
-}
-
-body.layout-dashboard.sidebar-hidden .app-shell {
-  grid-template-columns: 1fr;
-}
-
-body.layout-dashboard.sidebar-hidden .sidebar {
+body.sidebar-hidden .sidebar {
   transform: translateX(-100%);
-  pointer-events: none;
-}
-
-/* Focus Layout - No sidebar ever */
-body.layout-focus .app-shell {
-  display: block;
-}
-
-body.layout-focus .sidebar {
-  display: none;
-}
-
-body.layout-focus .main {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 40px;
-}
-
-/* Vertical Layout - Sidebar on top, always visible */
-body.layout-vertical .app-shell {
-  display: flex;
-  flex-direction: column;
-}
-
-body.layout-vertical .sidebar {
-  width: 100%;
-  position: relative;
-  border-right: none;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  transform: none;
-}
-
-body.layout-vertical .main {
-  padding: 24px;
-}
-
-/* When sidebar hidden (dashboard only), main content centers */
-body.sidebar-hidden .main {
-  margin-left: auto;
-  margin-right: auto;
-  width: 100%;
-  max-width: 1200px;
 }
 
 /* =========================================
@@ -301,7 +254,22 @@ pre {
 }
 
 /* =========================================
-   PAGE VISIBILITY SYSTEM
+   LAYOUT MODES - REMOVED
+   (Original working structure restored)
+========================================= */
+
+body.sidebar-hidden .app-shell {
+  grid-template-columns: 1fr;
+}
+
+body.sidebar-hidden .main {
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* =========================================
+   PAGE VISIBILITY
 ========================================= */
 
 .page {
@@ -313,19 +281,12 @@ pre {
   animation: fadeUp 0.4s ease both;
 }
 
-/* Ensure grid inside pages still works */
-.page.active .grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: 24px;
-}
-
 /* =========================================
    MOBILE
 ========================================= */
 
 @media (max-width: 768px) {
-  body.layout-dashboard .app-shell {
+  .app-shell {
     grid-template-columns: 1fr;
   }
   
@@ -338,7 +299,7 @@ pre {
     box-shadow: 20px 0 50px rgba(0, 0, 0, 0.5);
   }
   
-  body.layout-dashboard.sidebar-hidden .sidebar {
+  body.sidebar-hidden .sidebar {
     transform: translateX(-100%);
   }
   
