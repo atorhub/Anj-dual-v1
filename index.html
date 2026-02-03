@@ -72,51 +72,57 @@
     <!-- ================= PAGES ================= -->
     <div class="page-container">
 
-      <!-- UPLOAD PAGE -->
-      <section class="page page-upload active">
-        
-        <!-- Upload Zone -->
-        <div class="upload-section">
-          <div class="upload-zone" id="uploadZone">
-            <input type="file" id="fileInput" class="upload-input" accept="image/*,application/pdf" />
-            <div class="upload-prompt">
-              <span class="upload-icon">📄</span>
-              <p class="upload-text">Upload your invoice to verify it instantly</p>
-            </div>
-            <div class="upload-actions">
-              <button id="dualOCRBtn" class="btn-primary">Dual OCR</button>
-              <button id="ocrOnlyBtn" class="btn-secondary">Quick OCR</button>
-            </div>
-          </div>
+     <!-- UPLOAD PAGE -->
+<section class="page page-upload active">
+  
+  <!-- Upload Zone -->
+  <div class="upload-section">
+    <div class="upload-zone" id="uploadZone">
+      <div class="upload-prompt-area" id="uploadPromptArea">
+        <input type="file" id="fileInput" class="upload-input" accept="image/*,application/pdf" />
+        <div class="upload-prompt">
+          <span class="upload-icon">📄</span>
+          <p class="upload-text">Upload your invoice to verify it instantly</p>
         </div>
+      </div>
+      
+      <div class="upload-feedback" id="uploadFeedback" hidden>
+        <span class="feedback-filename" id="feedbackFilename"></span>
+      </div>
+      
+      <div class="upload-actions" id="uploadActions" hidden>
+        <button id="dualOCRBtn" class="btn-primary">Dual OCR</button>
+        <button id="ocrOnlyBtn" class="btn-secondary">Quick OCR</button>
+      </div>
+    </div>
+  </div>
 
-        <!-- Recent Invoices (shows when empty) -->
-        <div class="recent-section" id="recentSection">
-          <h3 class="section-title">Recent</h3>
-          <div class="recent-grid" id="recentGrid">
-            <!-- Populated by JS -->
-            <div class="recent-empty">No recent invoices</div>
-          </div>
-        </div>
+  <!-- Recent Invoices -->
+  <div class="recent-section" id="recentSection">
+    <h3 class="section-title">Recent</h3>
+    <div class="recent-grid" id="recentGrid">
+      <div class="recent-empty">No recent invoices</div>
+    </div>
+  </div>
 
-        <!-- Results Section (hidden until upload) -->
-        <div class="results-section" id="resultsSection" hidden>
-          <div class="results-grid">
-            <section class="panel panel-raw">
-              <h2 class="panel-title">Raw Text</h2>
-              <pre id="rawText" class="panel-content">—</pre>
-            </section>
-            <section class="panel panel-cleaned">
-              <h2 class="panel-title">Cleaned Text</h2>
-              <pre id="cleanedText" class="panel-content">—</pre>
-            </section>
-          </div>
-          <div class="parse-action">
-            <button id="parseBtn" class="btn-accent">Parse Invoice</button>
-          </div>
-        </div>
-
+  <!-- Results Section -->
+  <div class="results-section" id="resultsSection" hidden>
+    <div class="results-header">
+      <button id="parseBtn" class="btn-accent" hidden>Parse Invoice</button>
+    </div>
+    <div class="results-grid">
+      <section class="panel panel-raw">
+        <h2 class="panel-title">Raw Text</h2>
+        <pre id="rawText" class="panel-content">—</pre>
       </section>
+      <section class="panel panel-cleaned">
+        <h2 class="panel-title">Cleaned Text</h2>
+        <pre id="cleanedText" class="panel-content">—</pre>
+      </section>
+    </div>
+  </div>
+
+                                              </section> 
 
       <!-- PARSED PAGE -->
       <section class="page page-parsed">
