@@ -508,29 +508,72 @@ document.addEventListener("DOMContentLoaded", () => {
   el.ocr?.addEventListener("click", () => processFile(false));
 
   /* =======================
-     RECENT INVOICES (Visual)
-  ======================= */
-  function addToRecent(filename) {
-    if (!el.recentGrid) return;
-    
-    const emptyMsg = el.recentGrid.querySelector(".recent-empty");
-    if (emptyMsg) emptyMsg.remove();
+   RECENT INVOICES (Persistent)
+======================= */
 
+const MAX_RECENT = 4;
+const RECENT_STORAGE_KEY = 'anj_recent_invoices';
+
+function loadRecentFromStorage() {
+  try {
+    const stored = localStorage.getItem(RECENT_STORAGE_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveRecentToStorage(items) {
+  localStorage.setItem(RECENT_STORAGE_KEY, JSON.stringify(items.slice(0, MAX_RECENT)));
+}
+
+function renderRecentItems() {
+  if (!el.recentGrid) return;
+  
+  const items = loadRecentFromStorage();
+  
+  el.recentGrid.innerHTML = '';
+  
+  if (items.length === 0) {
+    el.recentGrid.innerHTML = '<div class="recent-empty">No recent invoices</div>';
+    return;
+  }
+  
+  items.forEach(item => {
     const recentItem = document.createElement("div");
     recentItem.className = "recent-item";
     recentItem.innerHTML = `
       <div class="recent-icon">📄</div>
-      <div class="recent-name">${filename.slice(0, 20)}${filename.length > 20 ? '...' : ''}</div>
-      <div class="recent-time">Just now</div>
+      <div class="recent-name">${item.name}</div>
+      <div class="recent-time">${item.time}</div>
     `;
-    
-    el.recentGrid.insertBefore(recentItem, el.recentGrid.firstChild);
-    
-    // Keep only last 4
-    while (el.recentGrid.children.length > 4) {
-      el.recentGrid.removeChild(el.recentGrid.lastChild);
-    }
-  }
+    el.recentGrid.appendChild(recentItem);
+  });
+}
+
+function addToRecent(filename) {
+  const items = loadRecentFromStorage();
+  
+  // Add new item at beginning
+  const newItem = {
+    name: filename.length > 25 ? filename.slice(0, 22) + '...' : filename,
+    time: 'Just now',
+    fullName: filename,
+    timestamp: Date.now()
+  };
+  
+  // Remove duplicates
+  const filtered = items.filter(i => i.fullName !== filename);
+  
+  // Add new and limit
+  const updated = [newItem, ...filtered].slice(0, MAX_RECENT);
+  
+  saveRecentToStorage(updated);
+  renderRecentItems();
+}
+
+// Load on startup
+renderRecentItems();
 
   /* =======================
      PHASE-1 LOCKED: PARSING & NORMALIZATION
