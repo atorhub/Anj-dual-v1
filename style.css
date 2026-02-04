@@ -1280,3 +1280,47 @@ body:not(.sidebar-hidden) .sidebar {
     break-inside: avoid;
   }
 }
+/* Prevent horizontal overflow */
+.page-container {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+/* Force text wrapping in pre elements */
+.panel-content,
+pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+/* Recent item text truncation */
+.recent-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* Upload zone containment */
+.upload-zone {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Ensure buttons don't overflow */
+.upload-actions {
+  flex-wrap: wrap;
+}
+
+/* Results section containment */
+.results-grid {
+  grid-template-columns: 1fr; /* Force single column on mobile */
+}
+
+@media (min-width: 1024px) {
+  .results-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
