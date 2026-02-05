@@ -86,14 +86,16 @@ document.addEventListener("DOMContentLoaded", () => {
     ocr: document.getElementById("ocrOnlyBtn"),
     parse: document.getElementById("parseBtn"),
 
-    // NEW: UI Flow elements
-    uploadFeedback: document.getElementById("uploadFeedback"),
-    feedbackFilename: document.getElementById("feedbackFilename"),
-    uploadActions: document.getElementById("uploadActions"),
-    uploadPromptArea: document.getElementById("uploadPromptArea"),
-    resultsSection: document.getElementById("resultsSection"),
-    parseBtn: document.getElementById("parseBtn"), // Results header button
-    recentGrid: document.getElementById("recentGrid"),
+    // NEW: UI Flow elements - MATCHING YOUR NEW HTML
+uploadCard: document.getElementById("uploadCard"),                // ✅ ADD THIS
+filenamePill: document.getElementById("filenamePill"),            // ✅ FIXED ID
+filenameText: document.getElementById("filenameText"),            // ✅ ADD THIS
+ocrActions: document.getElementById("ocrActions"),                // ✅ FIXED ID
+resultsSection: document.getElementById("resultsSection"),        // ✅ KEEP
+parseBar: document.getElementById("parseBar"),                    // ✅ ADD THIS
+parseBtn: document.getElementById("parseBtn"),                    // ✅ KEEP
+recentGrid: document.getElementById("recentGrid"),                // ✅ KEEP
+    
 
     // Parsed page elements
     saveBtn: document.getElementById("saveBtn"),
@@ -287,64 +289,47 @@ document.addEventListener("DOMContentLoaded", () => {
      UPLOAD UI FLOW
   ======================= */
 
-  // File selected - show filename and OCR buttons
-  el.file?.addEventListener("change", () => {
-    const file = el.file.files[0];
-    if (!file) return;
-    
-    currentFile = file;
-    trackEvent("file_selected", { filename: file.name, type: file.type });
+// File selected - show filename and OCR buttons
+el.file?.addEventListener("change", () => {
+  const file = el.file.files[0];
+  if (!file) return;
+  
+  currentFile = file;
+  trackEvent("file_selected", { filename: file.name, type: file.type });
 
-    // Show filename
-    if (el.feedbackFilename) el.feedbackFilename.textContent = file.name;
-    if (el.uploadFeedback) {
-      el.uploadFeedback.hidden = false;
-      el.uploadFeedback.style.animation = "none";
-      el.uploadFeedback.offsetHeight; // Trigger reflow
-      el.uploadFeedback.style.animation = "";
-    }
+  // Show filename in pill
+  if (el.filenameText) el.filenameText.textContent = file.name.length > 25 ? file.name.slice(0, 22) + '...' : file.name;
+  if (el.filenamePill) {
+    el.filenamePill.hidden = false;
+    el.filenamePill.classList.remove('fade-out');
+  }
+  
+  // Visual feedback on card
+  if (el.uploadCard) el.uploadCard.classList.add('has-file');
+  
+  // Show OCR buttons
+  if (el.ocrActions) {
+    el.ocrActions.hidden = false;
+  }
 
-    // Show OCR buttons with animation
-    if (el.uploadActions) {
-      el.uploadActions.hidden = false;
-      el.uploadActions.style.opacity = "0";
-      el.uploadActions.style.transform = "translateY(10px)";
+  // Hide results if they were showing from previous file
+  if (el.resultsSection) {
+    el.resultsSection.hidden = true;
+  }
+  if (el.parseBar) {
+    el.parseBar.hidden = true;
+  }
+
+  // Fade out filename after 3 seconds
+  setTimeout(() => {
+    if (el.filenamePill && !el.filenamePill.hidden) {
+      el.filenamePill.classList.add('fade-out');
       setTimeout(() => {
-        el.uploadActions.style.transition = "all 0.3s ease";
-        el.uploadActions.style.opacity = "1";
-        el.uploadActions.style.transform = "translateY(0)";
-      }, 50);
+        if (el.filenamePill) el.filenamePill.hidden = true;
+      }, 500);
     }
-
-    // Hide results if they were showing from previous file
-    if (el.resultsSection) {
-      el.resultsSection.hidden = true;
-    }
-    if (el.parseBtn) el.parseBtn.hidden = true;
-
-    // Dim the prompt slightly to focus on actions
-    if (el.uploadPromptArea) {
-      el.uploadPromptArea.style.opacity = "0.7";
-    }
-
-    // Fade out filename after 3 seconds
-    setTimeout(() => {
-      if (el.feedbackFilename && el.uploadFeedback && !el.uploadFeedback.hidden) {
-        el.feedbackFilename.style.transition = "opacity 0.5s ease, transform 0.5s ease";
-        el.feedbackFilename.style.opacity = "0";
-        el.feedbackFilename.style.transform = "translateY(-10px)";
-        
-        setTimeout(() => {
-          if (el.uploadFeedback) el.uploadFeedback.hidden = true;
-          if (el.feedbackFilename) {
-            el.feedbackFilename.style.opacity = "1";
-            el.feedbackFilename.style.transform = "translateY(0)";
-            el.feedbackFilename.style.transition = "";
-          }
-        }, 500);
-      }
-    }, 3000);
-  });
+  }, 3000);
+});
 
   // Click on prompt area also triggers file input (if not already selected)
   el.uploadPromptArea?.addEventListener("click", (e) => {
@@ -466,21 +451,19 @@ document.addEventListener("DOMContentLoaded", () => {
       if (el.clean) el.clean.textContent = cleanedText || "--";
       
       // Show results section with animation
-      if (el.resultsSection) {
-        el.resultsSection.hidden = false;
-        // Smooth scroll to results
-        setTimeout(() => {
-          el.resultsSection.scrollIntoView({ behavior: "smooth", block: "start" });
-        }, 100);
-      }
-      
-      // Show parse button
-      if (el.parseBtn) {
-        el.parseBtn.hidden = false;
-        el.parseBtn.classList.add("btn-pulse");
-        setTimeout(() => el.parseBtn.classList.remove("btn-pulse"), 2000);
-      }
+      // Show results section with animation
+if (el.resultsSection) {
+  el.resultsSection.hidden = false;
+  // Smooth scroll to results
+  setTimeout(() => {
+    el.resultsSection.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, 100);
+}
 
+// Show parse bar and button
+if (el.parseBar) {
+  el.parseBar.hidden = false;
+}
       // Add to recent (visual only for now)
       addToRecent(currentFile.name);
 
