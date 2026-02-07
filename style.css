@@ -1,6 +1,6 @@
 /* =========================================
-   PREMIUM DESIGN SYSTEM v2.0
-   10 Themes, Single Aesthetic
+   PREMIUM DESIGN SYSTEM v2.1
+   10 Themes, Single Aesthetic, Fixed Wrapping
 ========================================= */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
@@ -51,87 +51,22 @@
 }
 
 /* =========================================
-   10 THEMES - Premium Color Variants
+   10 THEMES
 ========================================= */
 
-/* Carbon - Indigo (Default) */
-body.theme-carbon {
-  --accent: #6366f1;
-  --accent-glow: rgba(99, 102, 241, 0.4);
-}
-
-/* Aqua Pro - Cyan */
-body.theme-aqua-pro {
-  --accent: #06b6d4;
-  --accent-glow: rgba(6, 182, 212, 0.4);
-  --bg-gradient: radial-gradient(ellipse at 50% 0%, #0c262e 0%, #0a1a1f 50%, #081418 100%);
-}
-
-/* Slate - Blue Grey (Fixed: added blue tint) */
-body.theme-slate {
-  --accent: #60a5fa;
-  --accent-glow: rgba(96, 165, 250, 0.4);
-  --bg-gradient: radial-gradient(ellipse at 50% 0%, #1e293b 0%, #0f172a 50%, #0a0f1a 100%);
-}
-
-/* Midnight Blue - Classic Blue */
-body.theme-midnight-blue {
-  --accent: #3b82f6;
-  --accent-glow: rgba(59, 130, 246, 0.4);
-  --bg-gradient: radial-gradient(ellipse at 50% 0%, #1e3a8a 0%, #0a1628 50%, #080f1a 100%);
-}
-
-/* Ivory - Light Mode */
-body.theme-ivory {
-  --accent: #78716c;
-  --accent-glow: rgba(120, 113, 108, 0.3);
-  --bg-primary: #fafaf9;
-  --bg-gradient: linear-gradient(180deg, #ffffff 0%, #fafaf9 100%);
-  --surface: rgba(0, 0, 0, 0.03);
-  --surface-hover: rgba(0, 0, 0, 0.06);
-  --text-primary: rgba(0, 0, 0, 0.9);
-  --text-secondary: rgba(0, 0, 0, 0.55);
-  --text-tertiary: rgba(0, 0, 0, 0.35);
-}
-
-/* Soft Teal - Distinctive */
-body.theme-soft-teal {
-  --accent: #14b8a6;
-  --accent-glow: rgba(20, 184, 166, 0.4);
-  --bg-gradient: radial-gradient(ellipse at 50% 0%, #134e4a 0%, #0a2e2b 50%, #081f1d 100%);
-}
-
-/* Monochrome - Off-white (Fixed) */
-body.theme-monochrome {
-  --accent: #e5e5e5;
-  --accent-glow: rgba(229, 229, 229, 0.3);
-  --text-primary: rgba(255, 255, 255, 0.88);
-  --text-secondary: rgba(255, 255, 255, 0.5);
-}
-
-/* High Contrast - Gold (Fixed: replaced yellow) */
-body.theme-high-contrast {
-  --accent: #fbbf24;
-  --accent-glow: rgba(251, 191, 36, 0.4);
-  --text-primary: rgba(255, 255, 255, 0.95);
-}
-
-/* Abstract - Lux Purple */
-body.theme-abstract {
-  --accent: #a78bfa;
-  --accent-glow: rgba(167, 139, 250, 0.4);
-  --bg-gradient: radial-gradient(ellipse at 50% 0%, #4c1d95 0%, #2e1065 50%, #1a0a2e 100%);
-}
-
-/* Bloom - Rose (Fixed: desaturated) */
-body.theme-bloom {
-  --accent: #f43f5e;
-  --accent-glow: rgba(244, 63, 94, 0.4);
-  --bg-gradient: radial-gradient(ellipse at 50% 0%, #881337 0%, #4c0519 50%, #2a0a12 100%);
-}
+body.theme-carbon { --accent: #6366f1; --accent-glow: rgba(99, 102, 241, 0.4); }
+body.theme-aqua-pro { --accent: #06b6d4; --accent-glow: rgba(6, 182, 212, 0.4); --bg-gradient: radial-gradient(ellipse at 50% 0%, #0c262e 0%, #0a1a1f 50%, #081418 100%); }
+body.theme-slate { --accent: #60a5fa; --accent-glow: rgba(96, 165, 250, 0.4); --bg-gradient: radial-gradient(ellipse at 50% 0%, #1e293b 0%, #0f172a 50%, #0a0f1a 100%); }
+body.theme-midnight-blue { --accent: #3b82f6; --accent-glow: rgba(59, 130, 246, 0.4); --bg-gradient: radial-gradient(ellipse at 50% 0%, #1e3a8a 0%, #0a1628 50%, #080f1a 100%); }
+body.theme-ivory { --accent: #78716c; --accent-glow: rgba(120, 113, 108, 0.3); --bg-gradient: linear-gradient(180deg, #ffffff 0%, #fafaf9 100%); --surface: rgba(0, 0, 0, 0.03); --text-primary: rgba(0, 0, 0, 0.9); --text-secondary: rgba(0, 0, 0, 0.55); --text-tertiary: rgba(0, 0, 0, 0.35); }
+body.theme-soft-teal { --accent: #14b8a6; --accent-glow: rgba(20, 184, 166, 0.4); --bg-gradient: radial-gradient(ellipse at 50% 0%, #134e4a 0%, #0a2e2b 50%, #081f1d 100%); }
+body.theme-monochrome { --accent: #e5e5e5; --accent-glow: rgba(229, 229, 229, 0.3); --text-primary: rgba(255, 255, 255, 0.88); }
+body.theme-high-contrast { --accent: #fbbf24; --accent-glow: rgba(251, 191, 36, 0.4); }
+body.theme-abstract { --accent: #a78bfa; --accent-glow: rgba(167, 139, 250, 0.4); --bg-gradient: radial-gradient(ellipse at 50% 0%, #4c1d95 0%, #2e1065 50%, #1a0a2e 100%); }
+body.theme-bloom { --accent: #f43f5e; --accent-glow: rgba(244, 63, 94, 0.4); --bg-gradient: radial-gradient(ellipse at 50% 0%, #881337 0%, #4c0519 50%, #2a0a12 100%); }
 
 /* =========================================
-   BASE STYLES
+   BASE
 ========================================= */
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -435,6 +370,7 @@ body:not(.sidebar-hidden) .sidebar {
   max-width: 1200px;
   margin: 0 auto;
   width: 100%;
+  min-width: 0; /* CRITICAL: Prevents flex overflow */
 }
 
 .page {
@@ -557,12 +493,6 @@ body:not(.sidebar-hidden) .sidebar {
   50% { opacity: 0.95; }
 }
 
-.upload-hint {
-  font-size: var(--text-sm);
-  color: var(--text-tertiary);
-  margin-top: var(--space-sm);
-}
-
 /* Filename pill */
 .filename-pill {
   display: inline-flex;
@@ -642,7 +572,7 @@ body:not(.sidebar-hidden) .sidebar {
 }
 
 /* =========================================
-   RESULTS SECTION
+   RESULTS SECTION - FIXED WRAPPING
 ========================================= */
 
 .results-section {
@@ -694,7 +624,7 @@ body:not(.sidebar-hidden) .sidebar {
 
 .btn-parse:hover {
   transform: translateY(-2px);
-  box-shadow: 0 0 40px var(--accent-glow);
+  box-shadow: var(--shadow-glow);
 }
 
 .btn-parse:active {
@@ -717,6 +647,7 @@ body:not(.sidebar-hidden) .sidebar {
   background: var(--surface);
   border-radius: var(--radius-md);
   overflow: hidden;
+  min-width: 0; /* CRITICAL: Prevents flex overflow */
 }
 
 .result-header {
@@ -738,15 +669,22 @@ body:not(.sidebar-hidden) .sidebar {
   min-height: 200px;
   max-height: 400px;
   overflow: auto;
+  min-width: 0; /* CRITICAL: Prevents flex overflow */
 }
 
-.result-content pre {
+/* CRITICAL FIX: Force text wrapping in pre tags */
+.result-content pre,
+#rawText,
+#cleanedText {
   font-family: var(--font);
   font-size: var(--text-sm);
   color: var(--text-secondary);
   line-height: 1.7;
-  white-space: pre-wrap;
-  word-break: break-word;
+  white-space: pre-wrap !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
 }
 
 /* =========================================
@@ -886,6 +824,25 @@ body:not(.sidebar-hidden) .sidebar {
   background: var(--surface-hover);
 }
 
+/* Save button - FIXED */
+#saveBtn {
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: var(--space-md) var(--space-2xl);
+  font-size: var(--text-base);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease);
+  box-shadow: 0 4px 20px var(--accent-glow);
+}
+
+#saveBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px var(--accent-glow);
+}
+
 .export-section {
   background: var(--surface);
   border-radius: var(--radius-md);
@@ -934,6 +891,8 @@ body:not(.sidebar-hidden) .sidebar {
   color: var(--text-secondary);
   max-height: 150px;
   overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 /* =========================================
@@ -976,17 +935,21 @@ body:not(.sidebar-hidden) .sidebar {
   display: flex;
   align-items: center;
   gap: var(--space-md);
-  padding: var(--space-lg);
+   padding: var(--space-lg);
   background: var(--surface);
   border-radius: var(--radius-md);
   cursor: pointer;
   transition: all var(--duration-fast) var(--ease);
 }
+
+.history-item:hover {
+  background: var(--surface-hover);
+}
+
 .history-icon {
   font-size: var(--text-lg);
   opacity: 0.5;
-}
-
+   }
 .history-info {
   flex: 1;
 }
@@ -996,12 +959,12 @@ body:not(.sidebar-hidden) .sidebar {
   font-weight: 500;
   color: var(--text-primary);
 }
+
 .history-date {
   font-size: var(--text-xs);
   color: var(--text-tertiary);
   margin-top: var(--space-xs);
-}
-
+   }
 .history-amount {
   font-size: var(--text-base);
   font-weight: 600;
@@ -1011,7 +974,6 @@ body:not(.sidebar-hidden) .sidebar {
 /* =========================================
    SETTINGS PAGE
 ========================================= */
-
 .settings-layout {
   max-width: 600px;
   margin: 0 auto;
@@ -1028,7 +990,7 @@ body:not(.sidebar-hidden) .sidebar {
 .settings-title {
   font-size: var(--text-xs);
   font-weight: 600;
-  color: var(--text-tertiary);
+   color: var(--text-tertiary);
   text-transform: uppercase;
   letter-spacing: 0.1em;
   margin-bottom: var(--space-lg);
@@ -1044,7 +1006,7 @@ body:not(.sidebar-hidden) .sidebar {
 
 .setting-label {
   font-size: var(--text-sm);
-  font-weight: 500;
+   font-weight: 500;
   color: var(--text-secondary);
   margin-bottom: var(--space-sm);
   display: block;
@@ -1059,7 +1021,6 @@ body:not(.sidebar-hidden) .sidebar {
   color: var(--text-primary);
   font-size: var(--text-base);
 }
-
 .setting-options {
   display: flex;
   gap: var(--space-sm);
@@ -1075,7 +1036,7 @@ body:not(.sidebar-hidden) .sidebar {
   font-size: var(--text-sm);
   cursor: pointer;
   transition: all var(--duration-fast);
-}
+  }
 
 .option-btn:hover {
   background: var(--surface-hover);
@@ -1086,7 +1047,6 @@ body:not(.sidebar-hidden) .sidebar {
   background: var(--accent);
   color: white;
 }
-
 /* =========================================
    ABOUT PAGE
 ========================================= */
@@ -1100,7 +1060,6 @@ body:not(.sidebar-hidden) .sidebar {
 .about-brand {
   margin-bottom: var(--space-2xl);
 }
-
 .about-version {
   font-size: var(--text-xs);
   color: var(--text-tertiary);
@@ -1114,8 +1073,7 @@ body:not(.sidebar-hidden) .sidebar {
   font-weight: 600;
   color: var(--text-primary);
   line-height: 1.4;
-}
-
+   }
 .about-description {
   font-size: var(--text-base);
   color: var(--text-secondary);
@@ -1148,7 +1106,6 @@ body:not(.sidebar-hidden) .sidebar {
   font-size: var(--text-sm);
   color: var(--text-secondary);
 }
-
 .about-creator {
   font-size: var(--text-sm);
   color: var(--text-tertiary);
@@ -1164,9 +1121,22 @@ body:not(.sidebar-hidden) .sidebar {
 
 .btn-link {
   padding: var(--space-md) var(--space-xl);
+   }
+
+.about-links {
+  display: flex;
+  gap: var(--space-md);
+  justify-content: center;
+}
+
+.btn-link {
+  padding: var(--space-md) var(--space-xl);
   background: var(--surface);
   border-radius: var(--radius-sm);
   color: var(--text-secondary);
+  text-decoration: none;
+  font-size: var(--text-sm);
+   color: var(--text-secondary);
   text-decoration: none;
   font-size: var(--text-sm);
   font-weight: 500;
@@ -1176,6 +1146,65 @@ body:not(.sidebar-hidden) .sidebar {
 .btn-link:hover {
   background: var(--surface-hover);
   color: var(--text-primary);
+}
+
+/* =========================================
+   PRIVACY PAGE
+========================================= */
+
+.privacy-layout {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.privacy-content {
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  padding: var(--space-xl);
+}
+.privacy-content > p {
+  font-size: var(--text-base);
+  color: var(--text-secondary);
+  line-height: 1.7;
+  margin-bottom: var(--space-xl);
+}
+
+.privacy-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-lg);
+  margin-bottom: var(--space-xl);
+  padding: var(--space-lg);
+  background: var(--bg-primary);
+  border-radius: var(--radius-md);
+   }
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.stat-label {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.stat-value {
+  font-size: var(--text-xl);
+  font-weight: 600;
+   color: var(--text-primary);
+  font-family: monospace;
+}
+
+.privacy-actions {
+  display: flex;
+  gap: var(--space-md);
+}
+
+.privacy-actions .btn-ocr {
+  flex: 1;
 }
 
 /* =========================================
@@ -1192,8 +1221,33 @@ body:not(.sidebar-hidden) .sidebar {
     transition-duration: 0.01ms !important;
   }
 }
-
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
+
+/* =========================================
+   PRINT STYLES
+========================================= */
+
+@media print {
+  .sidebar,
+  .topbar,
+     .upload-actions,
+  .parse-bar,
+  .export-grid {
+    display: none !important;
+  }
+  
+  .page {
+    display: block !important;
+  }
+  
+  .result-panel,
+  .export-section {
+    border: 1px solid #ccc;
+    break-inside: avoid;
+  }
+}
+
+   
