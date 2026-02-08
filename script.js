@@ -25,30 +25,22 @@ function initAnonUserId() {
   return anonId;
 }
 
-// Expose helper function globally
 window.getAnonUserId = () => localStorage.getItem("anon_user_id");
-
-// Initialize on load
 initAnonUserId();
 
 /* =======================
-   EVENT TRACKING (HARDENED)
+   EVENT TRACKING
 ======================= */
-// Simple debounce state to prevent duplicate logs within 1 second
 const lastTracked = {};
 
 function trackEvent(eventName, meta = {}) {
   const now = Date.now();
-  
-  // Prevent duplicate logs of the same event within 1 second (1000ms)
   if (lastTracked[eventName] && (now - lastTracked[eventName] < 1000)) {
     return;
   }
   lastTracked[eventName] = now;
 
   const userId = localStorage.getItem("anon_user_id");
-  
-  // Derive current page name from active .page-* element
   const activePageEl = document.querySelector(".page.active");
   let pageName = "unknown";
   if (activePageEl) {
@@ -73,7 +65,7 @@ document.addEventListener("DOMContentLoaded", () => {
      ELEMENT REFERENCES
   ======================= */
   const el = {
-    // Core inputs/outputs
+    // Core
     file: document.getElementById("fileInput"),
     raw: document.getElementById("rawText"),
     clean: document.getElementById("cleanedText"),
@@ -81,34 +73,33 @@ document.addEventListener("DOMContentLoaded", () => {
     status: document.getElementById("statusBar"),
     userIdDisplay: document.getElementById("userIdDisplay"),
 
-    // Action buttons
+    // Buttons
     dual: document.getElementById("dualOCRBtn"),
     ocr: document.getElementById("ocrOnlyBtn"),
     parse: document.getElementById("parseBtn"),
-
-    // NEW: UI Flow elements - MATCHING YOUR NEW HTML
-uploadCard: document.getElementById("uploadCard"),                // ✅ ADD THIS
-filenamePill: document.getElementById("filenamePill"),            // ✅ FIXED ID
-filenameText: document.getElementById("filenameText"),            // ✅ ADD THIS
-ocrActions: document.getElementById("ocrActions"),                // ✅ FIXED ID
-resultsSection: document.getElementById("resultsSection"),        // ✅ KEEP
-parseBar: document.getElementById("parseBar"),                    // ✅ ADD THIS
-parseBtn: document.getElementById("parseBtn"),                    // ✅ KEEP
-recentGrid: document.getElementById("recentGrid"),                // ✅ KEEP
-    
-
-    // Parsed page elements
     saveBtn: document.getElementById("saveBtn"),
+
+    // NEW: UI Flow elements
+    uploadCard: document.getElementById("uploadCard"),
+    filenamePill: document.getElementById("filenamePill"),
+    filenameText: document.getElementById("filenameText"),
+    ocrActions: document.getElementById("ocrActions"),
+    resultsSection: document.getElementById("resultsSection"),
+    parseBar: document.getElementById("parseBar"),
+    recentGrid: document.getElementById("recentGrid"),
+
+    // Parsed page
     editMerchant: document.getElementById("editMerchant"),
     editDate: document.getElementById("editDate"),
     editTotal: document.getElementById("editTotal"),
+    verificationBadge: document.getElementById("verificationBadge"),
 
-    // Export buttons
+    // Export
     exportJSON: document.getElementById("exportJSON"),
     exportTXT: document.getElementById("exportTXT"),
     exportCSV: document.getElementById("exportCSV"),
 
-    // Navigation
+    // Nav
     sidebarToggle: document.getElementById("sidebarToggle"),
     sidebarCloseBtn: document.getElementById("sidebarCloseBtn"),
 
@@ -118,12 +109,12 @@ recentGrid: document.getElementById("recentGrid"),                // ✅ KEEP
     historySearch: document.getElementById("historySearch"),
     clearHistoryBtn: document.getElementById("clearHistoryBtn"),
 
-    // Settings (selects populated by JS)
+    // Settings
     theme: document.getElementById("themeSelect"),
     layout: document.getElementById("layoutSelect")
   };
 
-  // Display user ID in top bar
+  // Display user ID
   if (el.userIdDisplay) {
     const anonId = localStorage.getItem("anon_user_id") || "—";
     el.userIdDisplay.textContent = `User: ${anonId.slice(0, 8)}...`;
@@ -180,17 +171,15 @@ recentGrid: document.getElementById("recentGrid"),                // ✅ KEEP
     document.body.classList.add("sidebar-hidden");
   });
 
-  // Sidebar nav items
+  // Sidebar nav
   document.querySelectorAll(".sidebar-nav .nav-item, .sidebar-footer .nav-item").forEach(item => {
     item.addEventListener("click", () => {
       const page = item.dataset.page;
       if (!page) return;
 
-      // Update sidebar active states
       document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
       item.classList.add("active");
 
-      // Update page visibility
       document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
       const targetPage = document.querySelector(".page-" + page);
       if (targetPage) {
@@ -198,12 +187,10 @@ recentGrid: document.getElementById("recentGrid"),                // ✅ KEEP
         trackEvent("page_navigated", { page: page });
       }
 
-      // Update topbar pills
       document.querySelectorAll(".nav-pill").forEach(pill => {
         pill.classList.toggle("active", pill.dataset.page === page);
       });
 
-      // Close sidebar on mobile
       if (window.innerWidth <= 1024) {
         document.body.classList.add("sidebar-hidden");
       }
@@ -223,7 +210,6 @@ recentGrid: document.getElementById("recentGrid"),                // ✅ KEEP
       const targetPage = document.querySelector(".page-" + page);
       if (targetPage) targetPage.classList.add("active");
 
-      // Sync sidebar
       document.querySelectorAll(".nav-item").forEach(item => {
         item.classList.toggle("active", item.dataset.page === page);
       });
@@ -235,7 +221,6 @@ recentGrid: document.getElementById("recentGrid"),                // ✅ KEEP
   /* =======================
      THEMES & LAYOUTS
   ======================= */
-  // Initialize theme options
   if (el.theme) {
     const themeOptions = [
       { value: "carbon", text: "Carbon Black (Default)" },
@@ -270,7 +255,6 @@ recentGrid: document.getElementById("recentGrid"),                // ✅ KEEP
     document.body.classList.add("theme-" + savedTheme);
   }
 
-  // Layout handling (kept for compatibility, CSS ignores layout-* classes)
   el.layout?.addEventListener("change", () => {
     document.body.classList.forEach(c => {
       if (c.startsWith("layout-")) document.body.classList.remove(c);
@@ -289,58 +273,50 @@ recentGrid: document.getElementById("recentGrid"),                // ✅ KEEP
      UPLOAD UI FLOW
   ======================= */
 
-// File selected - show filename and OCR buttons
-el.file?.addEventListener("change", () => {
-  const file = el.file.files[0];
-  if (!file) return;
-  
-  currentFile = file;
-  trackEvent("file_selected", { filename: file.name, type: file.type });
+  // File selected - show filename and OCR buttons
+  el.file?.addEventListener("change", () => {
+    const file = el.file.files[0];
+    if (!file) return;
+    
+    currentFile = file;
+    trackEvent("file_selected", { filename: file.name, type: file.type });
 
-  // Show filename in pill
-  if (el.filenameText) el.filenameText.textContent = file.name.length > 25 ? file.name.slice(0, 22) + '...' : file.name;
-  if (el.filenamePill) {
-    el.filenamePill.hidden = false;
-    el.filenamePill.classList.remove('fade-out');
-  }
-  
-  // Visual feedback on card
-  if (el.uploadCard) el.uploadCard.classList.add('has-file');
-  
-  // Show OCR buttons
-  if (el.ocrActions) {
-    el.ocrActions.hidden = false;
-  }
-
-  // Hide results if they were showing from previous file
-  if (el.resultsSection) {
-    el.resultsSection.hidden = true;
-  }
-  if (el.parseBar) {
-    el.parseBar.hidden = true;
-  }
-
-  // Fade out filename after 3 seconds
-  setTimeout(() => {
-    if (el.filenamePill && !el.filenamePill.hidden) {
-      el.filenamePill.classList.add('fade-out');
-      setTimeout(() => {
-        if (el.filenamePill) el.filenamePill.hidden = true;
-      }, 500);
+    // Show filename pill
+    if (el.filenameText) {
+      el.filenameText.textContent = file.name.length > 25 ? file.name.slice(0, 22) + '...' : file.name;
     }
-  }, 3000);
-});
+    if (el.filenamePill) {
+      el.filenamePill.hidden = false;
+      el.filenamePill.style.opacity = "1";
+      el.filenamePill.style.transform = "translateY(0)";
+    }
+    
+    // Visual feedback on card
+    if (el.uploadCard) el.uploadCard.classList.add("has-file");
+    
+    // Show OCR buttons
+    if (el.ocrActions) el.ocrActions.hidden = false;
+    
+    // Hide results if they were showing from previous file
+    if (el.resultsSection) el.resultsSection.hidden = true;
+    if (el.parseBar) el.parseBar.hidden = true;
 
-  // Click on prompt area also triggers file input (if not already selected)
-  el.uploadPromptArea?.addEventListener("click", (e) => {
-    if (currentFile) return; // Already have file, don't re-trigger
-    // Let the event bubble to file input
+    // Fade out filename after 3 seconds
+    setTimeout(() => {
+      if (el.filenamePill && !el.filenamePill.hidden) {
+        el.filenamePill.classList.add("fade-out");
+        setTimeout(() => {
+          if (el.filenamePill) {
+            el.filenamePill.hidden = true;
+            el.filenamePill.classList.remove("fade-out");
+          }
+        }, 500);
+      }
+    }, 3000);
   });
 
   /* =======================
-     PHASE-1 LOCKED: PDF & OCR
-     - Scale 3x for signal integrity
-     - Tesseract eng default
+     PDF & OCR
   ======================= */
   async function pdfToCanvas(file) {
     const buffer = await file.arrayBuffer();
@@ -354,7 +330,6 @@ el.file?.addEventListener("change", () => {
     canvas.width = viewport.width;
     canvas.height = viewport.height;
 
-    // PHASE-2: Improve contrast and clarity for OCR
     ctx.filter = 'grayscale(100%) contrast(1.2) brightness(1.1)';
     
     await page.render({ canvasContext: ctx, viewport }).promise;
@@ -367,10 +342,8 @@ el.file?.addEventListener("change", () => {
     const page = await pdf.getPage(1);
     const textContent = await page.getTextContent();
     
-    // Check if selectable text layer exists
     if (textContent.items.length === 0) return null;
 
-    // Group items by their vertical position (y-coordinate) to preserve lines
     const lines = {};
     textContent.items.forEach(item => {
       const y = Math.round(item.transform[5]);
@@ -378,7 +351,6 @@ el.file?.addEventListener("change", () => {
       lines[y].push(item);
     });
 
-    // Sort lines by y (descending) and items within lines by x (ascending)
     const sortedY = Object.keys(lines).sort((a, b) => b - a);
     let fullText = "";
     sortedY.forEach(y => {
@@ -392,7 +364,6 @@ el.file?.addEventListener("change", () => {
   async function runOCR(file) {
     setStatus("Extraction starting...");
 
-    // PHASE-2: Try direct PDF text extraction first
     if (file.type === "application/pdf") {
       try {
         const directText = await extractTextFromPDF(file);
@@ -428,7 +399,6 @@ el.file?.addEventListener("change", () => {
       return;
     }
 
-    // Disable buttons during processing
     if (el.dual) {
       el.dual.disabled = true;
       el.dual.textContent = dualMode ? "Processing..." : "Dual OCR";
@@ -443,28 +413,39 @@ el.file?.addEventListener("change", () => {
     try {
       const rawText = await runOCR(currentFile);
 
-      // Wiring Point: rawText UI gets original OCR output
-      if (el.raw) el.raw.textContent = rawText || "--";
+      // Set raw text
+      if (el.raw) {
+        el.raw.textContent = rawText || "--";
+        // Force wrapping styles
+        el.raw.style.whiteSpace = "pre-wrap";
+        el.raw.style.wordBreak = "break-word";
+        el.raw.style.maxWidth = "100%";
+      }
       
-      // Wiring Point: cleanedText UI gets normalized OCR output
+      // Set cleaned text
       const cleanedText = normalizeOCRText(rawText);
-      if (el.clean) el.clean.textContent = cleanedText || "--";
+      if (el.clean) {
+        el.clean.textContent = cleanedText || "--";
+        // Force wrapping styles
+        el.clean.style.whiteSpace = "pre-wrap";
+        el.clean.style.wordBreak = "break-word";
+        el.clean.style.maxWidth = "100%";
+      }
       
-      // Show results section with animation
-      // Show results section with animation
-if (el.resultsSection) {
-  el.resultsSection.hidden = false;
-  // Smooth scroll to results
-  setTimeout(() => {
-    el.resultsSection.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, 100);
-}
+      // Show results section
+      if (el.resultsSection) {
+        el.resultsSection.hidden = false;
+        setTimeout(() => {
+          el.resultsSection.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 100);
+      }
+      
+      // Show parse button
+      if (el.parseBar) {
+        el.parseBar.hidden = false;
+      }
 
-// Show parse bar and button
-if (el.parseBar) {
-  el.parseBar.hidden = false;
-}
-      // Add to recent (visual only for now)
+      // Add to recent
       addToRecent(currentFile.name);
 
       trackEvent(dualMode ? "dual_ocr_completed" : "quick_ocr_completed");
@@ -474,7 +455,6 @@ if (el.parseBar) {
       setStatus("OCR failed: " + error.message, true);
       trackEvent("ocr_failed", { error: error.message });
     } finally {
-      // Re-enable buttons
       if (el.dual) {
         el.dual.disabled = false;
         el.dual.textContent = "Dual OCR";
@@ -486,153 +466,151 @@ if (el.parseBar) {
     }
   }
 
-  // OCR button handlers
   el.dual?.addEventListener("click", () => processFile(true));
   el.ocr?.addEventListener("click", () => processFile(false));
 
   /* =======================
-   RECENT INVOICES (Persistent)
-======================= */
+     RECENT INVOICES
+  ======================= */
+  const MAX_RECENT = 4;
+  const RECENT_STORAGE_KEY = 'anj_recent_invoices';
 
-const MAX_RECENT = 4;
-const RECENT_STORAGE_KEY = 'anj_recent_invoices';
-
-function loadRecentFromStorage() {
-  try {
-    const stored = localStorage.getItem(RECENT_STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch {
-    return [];
+  function loadRecentFromStorage() {
+    try {
+      const stored = localStorage.getItem(RECENT_STORAGE_KEY);
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
   }
-}
 
-function saveRecentToStorage(items) {
-  localStorage.setItem(RECENT_STORAGE_KEY, JSON.stringify(items.slice(0, MAX_RECENT)));
-}
-
-function renderRecentItems() {
-  if (!el.recentGrid) return;
-  
-  const items = loadRecentFromStorage();
-  
-  el.recentGrid.innerHTML = '';
-  
-  if (items.length === 0) {
-    el.recentGrid.innerHTML = '<div class="recent-empty">No recent invoices</div>';
-    return;
+  function saveRecentToStorage(items) {
+    localStorage.setItem(RECENT_STORAGE_KEY, JSON.stringify(items.slice(0, MAX_RECENT)));
   }
-  
-  items.forEach(item => {
-    const recentItem = document.createElement("div");
-    recentItem.className = "recent-item";
-    recentItem.innerHTML = `
-      <div class="recent-icon">📄</div>
-      <div class="recent-name">${item.name}</div>
-      <div class="recent-time">${item.time}</div>
-    `;
-    el.recentGrid.appendChild(recentItem);
-  });
-}
 
-function addToRecent(filename) {
-  const items = loadRecentFromStorage();
-  
-  // Add new item at beginning
-  const newItem = {
-    name: filename.length > 25 ? filename.slice(0, 22) + '...' : filename,
-    time: 'Just now',
-    fullName: filename,
-    timestamp: Date.now()
-  };
-  
-  // Remove duplicates
-  const filtered = items.filter(i => i.fullName !== filename);
-  
-  // Add new and limit
-  const updated = [newItem, ...filtered].slice(0, MAX_RECENT);
-  
-  saveRecentToStorage(updated);
+  function renderRecentItems() {
+    if (!el.recentGrid) return;
+    
+    const items = loadRecentFromStorage();
+    
+    el.recentGrid.innerHTML = '';
+    
+    if (items.length === 0) {
+      el.recentGrid.innerHTML = '<div class="recent-empty">No recent invoices</div>';
+      return;
+    }
+    
+    items.forEach(item => {
+      const recentCard = document.createElement("div");
+      recentCard.className = "recent-card";
+      recentCard.innerHTML = `
+        <div class="recent-icon">📄</div>
+        <div class="recent-name">${item.name}</div>
+        <div class="recent-time">${item.time}</div>
+      `;
+      el.recentGrid.appendChild(recentCard);
+    });
+  }
+
+  function addToRecent(filename) {
+    const items = loadRecentFromStorage();
+    
+    const newItem = {
+      name: filename.length > 25 ? filename.slice(0, 22) + '...' : filename,
+      time: 'Just now',
+      fullName: filename,
+      timestamp: Date.now()
+    };
+    
+    const filtered = items.filter(i => i.fullName !== filename);
+    const updated = [newItem, ...filtered].slice(0, MAX_RECENT);
+    
+    saveRecentToStorage(updated);
+    renderRecentItems();
+  }
+
   renderRecentItems();
-}
-
-// Load on startup
-renderRecentItems();
 
   /* =======================
-     PHASE-1 LOCKED: PARSING & NORMALIZATION
-     - Strict numeric row preservation
-     - Deterministic label normalization
-     - No inference or guessing
+     TEXT NORMALIZATION - IMPROVED
   ======================= */
-
-  /**
-   * Requirement: normalizeOCRText(text)
-   * Implements the Cleaned Text Contract through four deterministic layers.
-   */
   function normalizeOCRText(text) {
     if (!text) return "";
 
-    // Initial line split
     let lines = text.split('\n');
 
-    // Layer 1: Base Normalization (per-line)
+    // Layer 1: Base cleaning
     lines = lines.map(line => {
-      // 1.1: Normalize unicode characters to their canonical form
       line = line.normalize('NFC');
       
-      // 1.2: Remove duplicate spaces and trim (conditional for numeric rows)
+      // Fix multiple spaces but preserve structure for numeric lines
       const numericMatch = line.match(/\d+/g);
       if (numericMatch && numericMatch.length >= 2) {
-        // Numeric-dense row: preserve structure by avoiding aggressive collapse
         line = line.replace(/\s{3,}/g, '   ').trim();
       } else {
         line = line.replace(/\s+/g, ' ').trim();
       }
       
-      // 1.3: Fix broken single-letter spacing (e.g., "M e r c h a n t" -> "Merchant")
+      // Fix broken single letters
       line = line.replace(/(?:^|\s)([A-Za-z])(?=\s[A-Za-z](?:\s|$))/g, '$1').replace(/\s([A-Za-z])(\s|$)/g, '$1$2');
-
-      // 1.4: Clean OCR punctuation noise inside words (e.g., "Add.ress" -> "Address")
+      
+      // Clean punctuation noise
       line = line.replace(/([A-Za-z])[.,]([A-Za-z])/g, '$1$2');
 
       return line;
     });
 
-    // Layer 2: Rule-Based Word Repair (per-line)
+    // NEW: Aggressive cleaning for scanned documents
     lines = lines.map(line => {
-        // Merge alphabetic fragments split by OCR (e.g., "Add re ss" -> "Address")
-        // This is a conservative rule: only merges short, purely alphabetic fragments.
-        return line.replace(/\b([a-zA-Z]{1,5})\s([a-zA-Z]{1,5})\b/g, (match, p1, p2) => {
-            // Avoid merging common English words. This is not exhaustive but covers many cases.
-            const stopWords = new Set(["a", "an", "as", "at", "be", "by", "do", "go", "if", "in", "is", "it", "me", "my", "no", "of", "on", "or", "so", "to", "up", "us", "we"]);
-            if (stopWords.has(p1.toLowerCase())) {
-                return match; // Don't merge if the first part is a common short word
-            }
-            return p1 + p2;
-        });
+      // Fix merged words with capitals (InvNo: → Inv No:)
+      line = line.replace(/([a-z])([A-Z])/g, '$1 $2');
+      
+      // Normalize multiple question marks
+      line = line.replace(/\?{2,}/g, '??');
+      
+      // Fix spaces around colons and other punctuation
+      line = line.replace(/\s*:\s*/g, ': ');
+      line = line.replace(/\s*-\s*/g, ' - ');
+      
+      // Fix numbers stuck to letters (A12→3 → A12-3)
+      line = line.replace(/([A-Za-z])(\d)/g, '$1 $2');
+      line = line.replace(/(\d)([A-Za-z])/g, '$1 $2');
+      
+      // Fix multiple spaces again after all replacements
+      line = line.replace(/\s+/g, ' ').trim();
+      
+      return line;
     });
 
-    // Layer 3: Multi-line Word Continuation
+    // Layer 2: Word repair
+    lines = lines.map(line => {
+      return line.replace(/\b([a-zA-Z]{1,5})\s([a-zA-Z]{1,5})\b/g, (match, p1, p2) => {
+        const stopWords = new Set(["a", "an", "as", "at", "be", "by", "do", "go", "if", "in", "is", "it", "me", "my", "no", "of", "on", "or", "so", "to", "up", "us", "we"]);
+        if (stopWords.has(p1.toLowerCase())) {
+          return match;
+        }
+        return p1 + p2;
+      });
+    });
+
+    // Layer 3: Multi-line continuation
     const mergedLines = [];
     for (let i = 0; i < lines.length; i++) {
-        let currentLine = lines[i];
-        if (i + 1 < lines.length) {
-            const nextLine = lines[i+1];
-            // Check if current line ends with a small, incomplete-looking word
-            // and the next line starts with a word. This is a heuristic.
-            const match = currentLine.match(/\b([a-zA-Z]{1,4})$/);
-            if (match && nextLine.match(/^[a-zA-Z]/)) {
-                // Heuristic: if the fragment is very short, merge it with the first word of the next line.
-                const firstWordNextLine = nextLine.split(' ')[0];
-                currentLine = currentLine.substring(0, currentLine.length - match[1].length) + match[1] + firstWordNextLine;
-                lines[i+1] = nextLine.substring(firstWordNextLine.length).trim();
-            }
+      let currentLine = lines[i];
+      if (i + 1 < lines.length) {
+        const nextLine = lines[i+1];
+        const match = currentLine.match(/\b([a-zA-Z]{1,4})$/);
+        if (match && nextLine.match(/^[a-zA-Z]/)) {
+          const firstWordNextLine = nextLine.split(' ')[0];
+          currentLine = currentLine.substring(0, currentLine.length - match[1].length) + match[1] + firstWordNextLine;
+          lines[i+1] = nextLine.substring(firstWordNextLine.length).trim();
         }
-        mergedLines.push(currentLine);
+      }
+      mergedLines.push(currentLine);
     }
-     lines = mergedLines.filter(line => line.length > 0);
+    lines = mergedLines.filter(line => line.length > 0);
 
-    // Layer 4: Label Normalization
+    // Layer 4: Label normalization
     const labelMap = {
       'Addre ss': 'Address',
       'Add re ss': 'Address',
@@ -642,78 +620,89 @@ renderRecentItems();
       'Am0unt': 'Amount',
       'GSTlN': 'GSTIN',
       'GS TIN': 'GSTIN',
+      'Inv No': 'Invoice No',
+      'InvNo': 'Invoice No',
+      'Da te': 'Date',
+      'To tal': 'Total',
+      'Amo unt': 'Amount'
     };
-     lines = lines.map(line => {
-        for (const [key, value] of Object.entries(labelMap)) {
-            line = line.replace(new RegExp(`\\b${key}\\b`, 'gi'), value);
-        }
-        return line;
+
+    lines = lines.map(line => {
+      for (const [key, value] of Object.entries(labelMap)) {
+        line = line.replace(new RegExp(`\\b${key}\\b`, 'gi'), value);
+      }
+      return line;
     });
 
     return lines.join('\n');
   }
-   /**
-   * Requirement: classifyOCRQuality(text)
-   * Observational only classification of OCR signal quality.
-   */
+
   function classifyOCRQuality(text) {
     if (!text || text.length < 50) return "poor";
-     // Check for excessive non-alphanumeric noise
+    
     const noiseChars = (text.match(/[^a-zA-Z0-9\s.,₹]/g) || []).length;
     const noiseRatio = noiseChars / text.length;
-    
-    // Check for basic structure indicators (presence of digits and capital letters)
     const hasDigits = /\d/.test(text);
     const hasCaps = /[A-Z]/.test(text);
-     if (noiseRatio > 0.15 || !hasDigits || !hasCaps) return "poor";
+    
+    if (noiseRatio > 0.15 || !hasDigits || !hasCaps) return "poor";
     return "good";
   }
 
-  /**
-   * Smart number handling helper
-   */
   function cleanNumber(str) {
     if (!str) return "";
     let cleaned = str.replace(/[Oo]/g, '0')
-      .replace(/[lI]/g, '1')
+                     .replace(/[lI]/g, '1')
                      .replace(/,/g, '.');
     const match = cleaned.match(/[\d\.]+/);
     return match ? match[0] : "";
   }
-
-  /**
-   * Confidence Calculation
-   * Based ONLY on presence of merchant, date, total, GSTIN
-   */
    function calculateConfidence(parsed, text) {
     let score = 0;
     if (parsed.merchant) score += 25;
     if (parsed.date) score += 25;
     if (parsed.total) score += 25;
     if (text.toLowerCase().includes("gstin") || text.toLowerCase().includes("gst no")) score += 25;
+    
     console.log(`[CONFIDENCE] Score: ${score}%`);
-    return score;
+      return score;
   }
 
+  /* =======================
+     PARSER - IMPROVED (Skip headers)
+  ======================= */
   function parseInvoice(text) {
-    // Wiring Point: Parser uses normalized text only (already normalized in wiring)
     const lines = text.split('\n');
     const out = { merchant: "", date: "", total: "" };
-         // Merchant Extraction
-    const genericKeywords = ["invoice", "tax", "receipt", "bill", "gst", "address", "tel", "phone", "email"];
-    for (let i = 0; i < Math.min(lines.length, 8); i++) {
+         // IMPROVED: Skip first 3 lines (header garbage), look deeper
+    for (let i = 3; i < Math.min(lines.length, 15); i++) {
       const line = lines[i].trim();
+      
+      // Skip if too short, too long, or contains garbage words
+      if (line.length < 5 || line.length > 40) continue;
+      
+      // Skip lines with "scanned", "document", "quality", "very poor"
+      if (/scanned|document|quality|very\s*poor|poor\s*quality/i.test(line)) continue;
+      
+      // Skip pure numbers
+      if (/^\d+$/.test(line)) continue;
+      
+      // Skip lines that are all caps (usually headers)
+      if (line === line.toUpperCase() && line.length > 10) continue;
+      
+      const genericKeywords = ["invoice", "tax", "receipt", "bill", "gst", "address", "tel", "phone", "email"];
       const isGeneric = genericKeywords.some(k => line.toLowerCase().includes(k));
-      const hasManyNumbers = (line.match(/\d/g) || []).length > 5;
-       if (line.length > 2 && !isGeneric && !hasManyNumbers) {
+      const hasManyNumbers = (line.match(/\d/g) || []).length > 8;
+      
+      if (!isGeneric && !hasManyNumbers && line.match(/[a-z]/i)) {
         out.merchant = line;
         break;
       }
     }
 
-    // Date Extraction
+    // Date extraction
     const dateRegex = /\b(\d{1,2}[-\/\. ]\d{1,2}[-\/\. ]\d{2,4})\b|\b(\d{1,2} [A-Za-z]{3,9} \d{2,4})\b/g;
-     let dateCandidates = [];
+    let dateCandidates = [];
     text.replace(dateRegex, (match) => {
       const context = text.substring(Math.max(0, text.indexOf(match) - 20), text.indexOf(match) + match.length + 20);
       if (!context.toLowerCase().includes("gst") && !context.match(/\d{10,}/)) {
@@ -722,28 +711,27 @@ renderRecentItems();
     });
     if (dateCandidates.length > 0) out.date = dateCandidates[0];
 
-    // Total Extraction
+    // Total extraction
     const totalKeywords = ["total", "payable", "amount", "net", "grand", "sum"];
     const numberRegex = /(?:₹|RS|INR|AMT)?\s*([\d\.,]{2,})/gi;
     let candidates = [];
     lines.forEach((line, index) => {
       let match;
-      while  ((match = numberRegex.exec(line)) !== null) {
+      while ((match = numberRegex.exec(line)) !== null) {
         const valStr = cleanNumber(match[1]);
         const val = parseFloat(valStr);
         if (isNaN(val) || val <= 0) continue;
         let score = 0;
         const lowerLine = line.toLowerCase();
         if (totalKeywords.some(k => lowerLine.includes(k))) score += 50;
-         if (valStr.includes('.')) score += 20;
+        if (valStr.includes('.')) score += 20;
         if (index > lines.length * 0.6) score += 30;
         if (valStr.length > 8 && !valStr.includes('.')) score -= 100;
         candidates.push({ value: valStr, score: score });
       }
     });
     if (candidates.length > 0) {
-      // GOAL 1: Filter for valid candidates and select the LARGEST monetary value
-     const validCandidates = candidates.filter(c => c.score > 20);
+      const validCandidates = candidates.filter(c => c.score > 20);
       if (validCandidates.length > 0) {
         validCandidates.sort((a, b) => parseFloat(b.value) - parseFloat(a.value));
         out.total = validCandidates[0].value;
@@ -752,37 +740,37 @@ renderRecentItems();
 
     return out;
   }
-   // Parse button handlers (both in results header and old location)
-  [el.parse, el.parseBtn].forEach(btn => {
+
+  // Parse button handlers
+  [el.parse, document.getElementById('parseBtn')].forEach(btn => {
     btn?.addEventListener("click", () => {
       if (!el.clean || !el.clean.textContent || el.clean.textContent === "--") {
         setStatus("Nothing to parse", true);
         return;
       }
-       const rawText = el.clean.textContent;
+
+      const rawText = el.clean.textContent;
       const parsed = parseInvoice(rawText);
       trackEvent("invoice_parsed");
       
       const verification = verifyInvoiceTotals(parsed, rawText);
-
-      // Confidence Calculation and Display
       const confidence = calculateConfidence(parsed, rawText);
-       // --- VERIFICATION SUMMARY GENERATION ---
+      
       let summaryHeadline = "";
       const diff = verification.differenceAmount;
       
       if (verification.status === "Unverifiable") {
-        // GOAL 2: Clarify reason for unverifiable invoices
         summaryHeadline = "❌ Unverifiable: Verification failed due to missing item structure or total";
       } else if (Math.abs(diff) <= 0.01) {
-         summaryHeadline = "✅ Invoice total matches calculated amount";
+        summaryHeadline = "✅ Invoice total matches calculated amount";
       } else if (diff > 0) {
         summaryHeadline = `⚠️ Invoice total is ₹${diff.toFixed(2)} less than calculated amount`;
       } else {
         summaryHeadline = `⚠️ You may have been overcharged ₹${Math.abs(diff).toFixed(2)}`;
       }
-       let breakdown = `\n---\nCalculated Total: ₹${verification.computedTotal.toFixed(2)}\nInvoice Total: ₹${verification.declaredTotal.toFixed(2)}\nDifference: ₹${diff.toFixed(2)}`;
-    // Tax Clarity
+      
+      let breakdown = `\n---\nCalculated Total: ₹${verification.computedTotal.toFixed(2)}\nInvoice Total: ₹${verification.declaredTotal.toFixed(2)}\nDifference: ₹${diff.toFixed(2)}`;
+      
       const cgstMatch = rawText.match(/CGST\s*[:\-]?\s*([\d\.]+)/i);
       const sgstMatch = rawText.match(/SGST\s*[:\-]?\s*([\d\.]+)/i);
       const igstMatch = rawText.match(/IGST\s*[:\-]?\s*([\d\.]+)/i);
@@ -799,36 +787,40 @@ renderRecentItems();
         breakdown += "\n\n⚠️ Tax exists but structure is unclear.";
       }
 
-      // Confidence and Reason
       const confidenceReason = confidence >= 75 ? "High: Key fields and items verified." : 
                                confidence >= 50 ? "Medium: Some fields missing or items unclear." : 
                                "Low: Major fields missing or math mismatch.";
       breakdown += `\n\nConfidence: ${confidence}% (${confidenceReason})`;
-       // OCR Quality Classification (Read-Only Metadata)
+      
       const ocrQuality = classifyOCRQuality(rawText);
       breakdown += `\nOCR Signal Quality: ${ocrQuality.toUpperCase()}`;
 
-      // Final Output to UI
       setStatus(`${summaryHeadline}${breakdown}`, verification.status !== "Verified");
 
-      /**
-       * PHASE-2 EXTENSION POINTS (FUTURE):
-       * - Multi-format export (Excel/CSV reconstruction)
-       * - UI-driven manual line-item overrides
-       */
-      
       if (verification.status === "Verified") trackEvent("invoice_verified");
-          // Update UI with parsed data
+      
       if (el.editMerchant) el.editMerchant.value = parsed.merchant || "";
       if (el.editDate) el.editDate.value = parsed.date || "";
       if (el.editTotal) el.editTotal.value = parsed.total || "";
       if (el.json) el.json.textContent = JSON.stringify(parsed, null, 2);
       
+      // Update verification badge
+      if (el.verificationBadge) {
+        const badgeIcon = el.verificationBadge.querySelector('.badge-icon');
+        const badgeTitle = el.verificationBadge.querySelector('.badge-title');
+        const badgeSubtitle = el.verificationBadge.querySelector('.badge-subtitle');
+        
+        if (badgeIcon) badgeIcon.textContent = verification.status === "Verified" ? "✅" : "⚠️";
+        if (badgeTitle) badgeTitle.textContent = verification.status === "Verified" ? "Verified" : "Verification Issues";
+        if (badgeSubtitle) badgeSubtitle.textContent = summaryHeadline;
+        
+        el.verificationBadge.className = "verification-badge " + (verification.status === "Verified" ? "verified" : "warning");
+      }
+      
       hasParsedData = true;
       updateParsedUI(true);
 
-      // Hide parse buttons after successful parse
-      if (el.parseBtn) el.parseBtn.hidden = true;
+      if (el.parseBar) el.parseBar.hidden = true;
       
       document.querySelector('[data-page="parsed"]')?.click();
     });
@@ -862,25 +854,35 @@ renderRecentItems();
 
   function renderHistoryItem(item, list) {
     const li = document.createElement("li");
-    li.textContent = (item.merchant || "Unknown") + " • " + new Date(item.timestamp).toLocaleString();
+    li.className = "history-item";
+    li.innerHTML = `
+      <span class="history-icon">📄</span>
+      <div class="history-info">
+        <div class="history-name">${item.merchant || "Unknown"}</div>
+        <div class="history-date">${new Date(item.timestamp).toLocaleString()}</div>
+      </div>
+      <div class="history-amount">${item.total || "--"}</div>
+    `;
+    
     if (item.id === lastSavedId) {
-      li.classList.add("history-active");
-      li.scrollIntoView({ block: "nearest" });
+      li.style.borderLeft = "3px solid var(--accent)";
     }
+    
     li.addEventListener("click", () => {
       hasParsedData = true;
       selectedHistoryItem = item;
       if (item.id === lastSavedId) {
         lastSavedId = null;
-        li.classList.remove("history-active");
+        li.style.borderLeft = "";
       }
       if (el.editMerchant) el.editMerchant.value = item.merchant;
       if (el.editDate) el.editDate.value = item.date;
-       if (el.editTotal) el.editTotal.value = item.total;
+      if (el.editTotal) el.editTotal.value = item.total;
       if (el.json) el.json.textContent = JSON.stringify(item, null, 2);
       updateParsedUI(true);
       document.querySelector('[data-page="parsed"]')?.click();
     });
+    
     list.appendChild(li);
   }
 
@@ -888,8 +890,9 @@ renderRecentItems();
     if (!db) return;
     if (el.historyList) el.historyList.innerHTML = "";
     if (el.historyPageList) el.historyPageList.innerHTML = "";
+    
     const tx = db.transaction("history", "readonly");
-     tx.objectStore("history").openCursor(null, "prev").onsuccess = e => {
+    tx.objectStore("history").openCursor(null, "prev").onsuccess = e => {
       const c = e.target.result;
       if (!c) return;
       const item = c.value;
@@ -914,7 +917,8 @@ renderRecentItems();
       total: el.editTotal.value,
       timestamp: Date.now()
     });
-     request.onsuccess = e => { lastSavedId = e.target.result; };
+    
+    request.onsuccess = e => { lastSavedId = e.target.result; };
     tx.oncomplete = () => {
       trackEvent("history_saved");
       setTimeout(() => {
@@ -933,7 +937,7 @@ renderRecentItems();
   });
 
   /* =======================
-     EXPORTS (GATED)
+     EXPORTS
   ======================= */
   const handleExportAttempt = (type) => {
     trackEvent(`export_attempted_${type}`);
