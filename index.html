@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+html_content = '''<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -83,6 +83,14 @@
               <span class="upload-icon">📄</span>
               <p class="upload-text">Upload your invoice to verify it instantly</p>
             </div>
+            <!-- Processing Overlay -->
+            <div class="processing-overlay" id="processingOverlay" hidden>
+              <div class="processing-content">
+                <div class="processing-spinner"></div>
+                <p class="processing-step" id="processingStep">Reading file...</p>
+                <p class="processing-detail" id="processingDetail">This may take a moment</p>
+              </div>
+            </div>
           </div>
           
           <!-- Filename Pill -->
@@ -94,8 +102,14 @@
           <!-- OCR Buttons (hidden initially) -->
           <div class="ocr-actions" id="ocrActions" hidden>
             <div class="ocr-group">
-              <button id="dualOCRBtn" class="btn-ocr">Dual OCR</button>
-              <button id="ocrOnlyBtn" class="btn-ocr">Quick OCR</button>
+              <button id="ocrOnlyBtn" class="btn-ocr btn-ocr-primary">
+                <span class="btn-ocr-title">Quick OCR</span>
+                <span class="btn-ocr-subtitle">Fast, works for most invoices</span>
+              </button>
+              <button id="dualOCRBtn" class="btn-ocr btn-ocr-secondary">
+                <span class="btn-ocr-title">Dual OCR</span>
+                <span class="btn-ocr-subtitle">Slower, higher accuracy for scans</span>
+              </button>
             </div>
           </div>
         </div>
@@ -111,24 +125,31 @@
         <!-- Results (hidden initially) -->
         <div class="results-section" id="resultsSection" hidden>
           <div class="parse-bar" id="parseBar" hidden>
-            <button id="parseBtn" class="btn-parse">Parse Invoice</button>
+            <button id="parseBtn" class="btn-parse">
+              <span class="btn-parse-title">Parse Invoice</span>
+              <span class="btn-parse-subtitle">Extract and verify data</span>
+            </button>
           </div>
           
           <div class="results-grid">
-            <div class="result-panel">
-              <div class="result-header">
-                <p class="result-title">Raw Text</p>
-              </div>
-              <div class="result-content">
-                <pre id="rawText">—</pre>
-              </div>
-            </div>
-            <div class="result-panel">
+            <!-- Cleaned Text First (Dominant) -->
+            <div class="result-panel result-panel-primary">
               <div class="result-header">
                 <p class="result-title">Cleaned Text</p>
+                <span class="result-badge">Used for verification</span>
               </div>
               <div class="result-content">
                 <pre id="cleanedText">—</pre>
+              </div>
+            </div>
+            <!-- Raw Text Second (Collapsible) -->
+            <div class="result-panel result-panel-secondary">
+              <div class="result-header result-header-collapsible" id="rawTextHeader">
+                <p class="result-title">Raw Text</p>
+                <span class="result-toggle">▼</span>
+              </div>
+              <div class="result-content" id="rawTextContent">
+                <pre id="rawText">—</pre>
               </div>
             </div>
           </div>
@@ -142,37 +163,50 @@
           
           <!-- Verification Badge -->
           <div class="verification-badge" id="verificationBadge">
-            <span class="badge-icon">⏳</span>
+            <span class="badge-icon" id="badgeIcon">⏳</span>
             <div class="badge-content">
-              <p class="badge-title">Waiting for verification</p>
-              <p class="badge-subtitle">Upload and parse an invoice first</p>
+              <p class="badge-title" id="badgeTitle">Waiting for verification</p>
+              <p class="badge-subtitle" id="badgeSubtitle">Upload and parse an invoice first</p>
+              <p class="badge-detail" id="badgeDetail"></p>
             </div>
           </div>
 
           <!-- Invoice Form -->
           <div class="invoice-form">
             <div class="form-field">
-              <label class="field-label">Merchant</label>
+              <label class="field-label">Detected Merchant</label>
               <input type="text" id="editMerchant" class="field-input" placeholder="—" />
+              <span class="field-hint">Edit only if OCR is wrong</span>
             </div>
             <div class="form-field">
-              <label class="field-label">Date</label>
+              <label class="field-label">Detected Date</label>
               <input type="text" id="editDate" class="field-input" placeholder="—" />
+              <span class="field-hint">Edit only if OCR is wrong</span>
             </div>
             <div class="form-field">
-              <label class="field-label">Total</label>
+              <label class="field-label">Detected Total</label>
               <input type="text" id="editTotal" class="field-input" placeholder="—" />
+              <span class="field-hint">Edit only if OCR is wrong</span>
             </div>
           </div>
 
           <!-- Save -->
-          <div style="text-align: center; margin-bottom: var(--space-xl);">
+          <div class="save-section" id="saveSection">
             <button id="saveBtn" class="btn-parse">Save to History</button>
+            <div class="save-success" id="saveSuccess" hidden>
+              <span class="save-success-icon">✓</span>
+              <span class="save-success-text">Saved</span>
+            </div>
+            <div class="post-save-actions" id="postSaveActions" hidden>
+              <button class="btn-ocr" id="viewHistoryBtn">View History</button>
+              <button class="btn-ocr" id="exportBtn">Export</button>
+            </div>
           </div>
 
           <!-- Export -->
           <div class="export-section">
             <p class="export-title">Export</p>
+            <p class="export-subtitle">Download your verified invoice data</p>
             <div class="export-grid">
               <button id="exportJSON" class="btn-export">JSON</button>
               <button id="exportTXT" class="btn-export">TXT</button>
@@ -320,5 +354,7 @@
 <!-- App logic -->
 <script type="module" src="./script.js"></script>
 </body>
-</html>
+</html>'''
 
+
+                
