@@ -1,4 +1,4 @@
-// invoiceVerification.js
+verification_content = '''// invoiceVerification.js
 
 /**
  * PHASE-1 LOCKED: STRICT INVOICE VERIFICATION SYSTEM
@@ -17,19 +17,20 @@ export function verifyInvoiceTotals(invoice, cleanedText) {
     differenceAmount: 0,
     computedTotal: 0,
     declaredTotal: 0,
-    confidence: "0%"
+    confidence: "0%",
+    itemCount: 0
   };
 
   if (!cleanedText) return result;
 
   // PHASE 1 — INPUT NORMALIZATION
-  const lines = cleanedText.split('\n')
+  const lines = cleanedText.split('\\n')
     .map(line => line.trim())
     .filter(line => line.length > 0)
     .map(line => {
       // Normalize numbers: remove commas, preserve decimals
       // This regex identifies numbers with commas as thousand separators
-      return line.replace(/(\d),(\d{3})/g, '$1$2');
+      return line.replace(/(\\d),(\\d{3})/g, '$1$2');
     });
 
   // PHASE 2 — GLOBAL LINE CLASSIFICATION
@@ -49,7 +50,7 @@ export function verifyInvoiceTotals(invoice, cleanedText) {
     // 1. Contains alphabetic product word
     const hasAlpha = /[a-zA-Z]{3,}/.test(line);
     // 2. Extract numbers to check qty and rate
-    const numbers = line.match(/\d+\.\d{2}|\d+/g) || [];
+    const numbers = line.match(/\\d+\\.\\d{2}|\\d+/g) || [];
     let qty = null;
     let rate = null;
 
@@ -76,12 +77,13 @@ export function verifyInvoiceTotals(invoice, cleanedText) {
   });
 
   // PHASE 3 — LINE ITEM EXTRACTION
-  const itemTotals = classifiedLines
-    .filter(l => l.type === 'ITEM')
-    .map(l => {
-      // Compute itemTotal = qty × rate
-      return parseFloat((l.qty * l.rate).toFixed(2));
-    });
+  const itemLines = classifiedLines.filter(l => l.type === 'ITEM');
+  const itemTotals = itemLines.map(l => {
+    // Compute itemTotal = qty × rate
+    return parseFloat((l.qty * l.rate).toFixed(2));
+  });
+  
+  result.itemCount = itemLines.length;
 
   if (itemTotals.length === 0) {
     result.computedTotal = 0;
@@ -105,7 +107,7 @@ export function verifyInvoiceTotals(invoice, cleanedText) {
       if (matchingLines.length > 0) {
         // Extract the LAST occurrence in the text for that keyword type
         const targetLine = matchingLines[matchingLines.length - 1];
-        const numbers = targetLine.text.replace(/(\d),(\d{3})/g, '$1$2').match(/\d+\.\d{2}|\d+/g) || [];
+        const numbers = targetLine.text.replace(/(\\d),(\\d{3})/g, '$1$2').match(/\\d+\\.\\d{2}|\\d+/g) || [];
         if (numbers.length > 0) {
           // Prefer the largest numeric value in the line
           const lineNums = numbers.map(n => parseFloat(n)).filter(n => !isNaN(n));
@@ -149,7 +151,7 @@ export function verifyInvoiceTotals(invoice, cleanedText) {
   // - Poor OCR → cap at 75% (We check for poor OCR by noise ratio)
   
   const rawText = lines.join(' ');
-  const noiseChars = (rawText.match(/[^a-zA-Z0-9\s.,₹]/g) || []).length;
+  const noiseChars = (rawText.match(/[^a-zA-Z0-9\\s.,₹]/g) || []).length;
   const isPoorOCR = (noiseChars / rawText.length) > 0.15;
 
   /**
@@ -168,7 +170,7 @@ export function verifyInvoiceTotals(invoice, cleanedText) {
     let score = 75;
     // Check if items are "clear" (simple lines with just qty and rate)
     const clearItems = classifiedLines.filter(l => l.type === 'ITEM').every(l => {
-        const nums = l.text.match(/\d+/g) || [];
+        const nums = l.text.match(/\\d+/g) || [];
         return nums.length <= 3; // description, qty, rate, (maybe amount)
     });
     if (clearItems) score = 90;
@@ -179,3 +181,5 @@ export function verifyInvoiceTotals(invoice, cleanedText) {
 
   return result;
 }
+'''
+
