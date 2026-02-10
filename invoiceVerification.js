@@ -1,5 +1,4 @@
-# Create invoiceVerification.js
-verification_content = '''export function verifyInvoiceTotals(parsed, rawText, items = []) {
+export function verifyInvoiceTotals(parsed, rawText, items = []) {
   const result = {
     status: "Unverifiable",
     computedTotal: 0,
@@ -41,5 +40,5 @@ verification_content = '''export function verifyInvoiceTotals(parsed, rawText, i
   }
 
   return result;
-}'''
+}
 
