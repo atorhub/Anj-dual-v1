@@ -1,4 +1,4 @@
-console.log("SCRIPT LOADED");
+js_content = '''console.log("SCRIPT LOADED");
 
 import { verifyInvoiceTotals } from "./invoiceVerification.js";
 
@@ -34,7 +34,7 @@ function trackEvent(eventName, meta = {}) {
   const activePageEl = document.querySelector(".page.active");
   let pageName = "unknown";
   if (activePageEl) {
-    const match = activePageEl.className.match(/page-([^\s]+)/);
+    const match = activePageEl.className.match(/page-([^\\s]+)/);
     if (match) pageName = match[1];
   }
   console.log(`[TRACK] ${JSON.stringify({ event: eventName, userId, timestamp: now, page: pageName, meta }, null, 2)}`);
@@ -76,7 +76,6 @@ document.addEventListener("DOMContentLoaded", () => {
     exportCSV: document.getElementById("exportCSV"),
     sidebarToggle: document.getElementById("sidebarToggle"),
     sidebarCloseBtn: document.getElementById("sidebarCloseBtn"),
-    historyList: document.getElementById("historyList"),
     historyPageList: document.getElementById("historyPageList"),
     historySearch: document.getElementById("historySearch"),
     clearHistoryBtn: document.getElementById("clearHistoryBtn"),
@@ -231,7 +230,7 @@ document.addEventListener("DOMContentLoaded", () => {
       let fullText = "";
       sortedY.forEach(y => {
         const lineItems = lines[y].sort((a, b) => a.transform[4] - b.transform[4]);
-        fullText += lineItems.map(item => item.str).join(" ") + "\n";
+        fullText += lineItems.map(item => item.str).join(" ") + "\\n";
       });
       return fullText.trim();
     } catch (e) {
@@ -246,7 +245,6 @@ document.addEventListener("DOMContentLoaded", () => {
     return result.data.text || "";
   }
 
-  // Quick OCR: Single fast pass
   async function quickOCR(file) {
     setStatus("Reading file...");
     await new Promise(r => setTimeout(r, 300));
@@ -274,13 +272,11 @@ document.addEventListener("DOMContentLoaded", () => {
     return text;
   }
 
-  // Dual OCR: Two passes with different preprocessing, merge results
   async function dualOCR(file) {
     setStatus("Reading file...");
     await new Promise(r => setTimeout(r, 300));
     setStatus("Pass 1: Standard extraction...");
 
-    // Pass 1: Standard
     let pass1Text = "";
     if (file.type === "application/pdf") {
       const directText = await extractTextFromPDF(file);
@@ -295,29 +291,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
     setStatus("Pass 2: Enhanced extraction...");
     
-    // Pass 2: Higher scale, different preprocessing
     let pass2Text = "";
     if (file.type === "application/pdf") {
       const canvas = await pdfToCanvas(file, 3);
       pass2Text = await runTesseract(canvas);
     } else {
-      // For images, try with different contrast
-      pass2Text = pass1Text; // Fallback for non-PDF
+      pass2Text = pass1Text;
     }
 
     setStatus("Cross-checking results...");
     await new Promise(r => setTimeout(r, 400));
 
-    // Merge: Use longer result, or combine unique lines
     let mergedText = pass1Text;
     if (pass2Text.length > pass1Text.length * 1.2) {
       mergedText = pass2Text;
     } else {
-      // Combine unique lines from both
-      const lines1 = new Set(pass1Text.split('\n'));
-      const lines2 = pass2Text.split('\n');
+      const lines1 = new Set(pass1Text.split('\\n'));
+      const lines2 = pass2Text.split('\\n');
       const uniqueLines2 = lines2.filter(l => !lines1.has(l));
-      mergedText = pass1Text + '\n' + uniqueLines2.join('\n');
+      mergedText = pass1Text + '\\n' + uniqueLines2.join('\\n');
     }
 
     setStatus("Dual OCR complete ✓");
@@ -359,7 +351,6 @@ document.addEventListener("DOMContentLoaded", () => {
         el.clean.style.wordBreak = "break-word";
       }
 
-      // Extract items for verification
       extractedItems = extractItems(cleanedText);
 
       if (el.resultsSection) {
@@ -373,7 +364,6 @@ document.addEventListener("DOMContentLoaded", () => {
           el.parse.disabled = true;
           if (el.parseHint) el.parseHint.textContent = "Verifying extracted text...";
           
-          // Auto-enable after 1 second with pulse
           setTimeout(() => {
             if (el.parse) {
               el.parse.disabled = false;
@@ -405,65 +395,53 @@ document.addEventListener("DOMContentLoaded", () => {
   el.quickOCR?.addEventListener("click", () => processOCR(false));
   el.dualOCR?.addEventListener("click", () => processOCR(true));
 
-  // Text normalization
   function normalizeOCRText(text) {
     if (!text) return "";
-    let lines = text.split('\n');
+    let lines = text.split('\\n');
 
-    // Deep cleaning
     lines = lines.map(line => {
       line = line.normalize('NFC');
       
-      // Fix specific broken words
-      line = line.replace(/A\s*mo\s*unt/gi, 'Amount');
-      line = line.replace(/To\s*tal/gi, 'Total');
-      line = line.replace(/Inv\s*o\s*ice/gi, 'Invoice');
-      line = line.replace(/Inv\s*No/gi, 'Invoice No');
-      line = line.replace(/Add\s*re\s*ss/gi, 'Address');
-      line = line.replace(/G\s*S\s*T\s*I\s*N/gi, 'GSTIN');
-      line = line.replace(/Da\s*te/gi, 'Date');
-      line = line.replace(/Qua\s*li\s*ty/gi, 'Quality');
-      line = line.replace(/Ne\s*ar/gi, 'Near');
-      line = line.replace(/ma\s*rket/gi, 'market');
-      line = line.replace(/bus\s*st/gi, 'bus stand');
-      line = line.replace(/Co\s*ntent/gi, 'Content');
+      line = line.replace(/A\\s*mo\\s*unt/gi, 'Amount');
+      line = line.replace(/To\\s*tal/gi, 'Total');
+      line = line.replace(/Inv\\s*o\\s*ice/gi, 'Invoice');
+      line = line.replace(/Inv\\s*No/gi, 'Invoice No');
+      line = line.replace(/Add\\s*re\\s*ss/gi, 'Address');
+      line = line.replace(/G\\s*S\\s*T\\s*I\\s*N/gi, 'GSTIN');
+      line = line.replace(/Da\\s*te/gi, 'Date');
+      line = line.replace(/Qua\\s*li\\s*ty/gi, 'Quality');
+      line = line.replace(/Ne\\s*ar/gi, 'Near');
+      line = line.replace(/ma\\s*rket/gi, 'market');
+      line = line.replace(/bus\\s*st/gi, 'bus stand');
+      line = line.replace(/Co\\s*ntent/gi, 'Content');
       
-      // Fix spacing around punctuation
-      line = line.replace(/\s*:\s*/g, ': ');
-      line = line.replace(/\s*-\s*/g: ' - ');
+      line = line.replace(/\\s*:\\s*/g, ': ');
+      line = line.replace(/\\s*-\\s*/g, ' - ');
       
-      // Fix numbers stuck to letters
-      line = line.replace(/([A-Za-z])(\d)/g, '$1 $2');
-      line = line.replace(/(\d)([A-Za-z])/g, '$1 $2');
+      line = line.replace(/([A-Za-z])(\\d)/g, '$1 $2');
+      line = line.replace(/(\\d)([A-Za-z])/g, '$1 $2');
       
-      // Normalize multiple spaces
-      line = line.replace(/\s+/g, ' ').trim();
+      line = line.replace(/\\s+/g, ' ').trim();
       
       return line;
     });
 
-    // Remove garbage lines
     lines = lines.filter(line => {
-      if (/scanned\s*document/i.test(line)) return false;
-      if (/very\s*poor\s*quality/i.test(line)) return false;
-      if (/poor\s*quality/i.test(line)) return false;
+      if (/scanned\\s*document/i.test(line)) return false;
+      if (/very\\s*poor\\s*quality/i.test(line)) return false;
+      if (/poor\\s*quality/i.test(line)) return false;
       return line.trim().length > 0;
     });
 
-    return lines.join('\n');
+    return lines.join('\\n');
   }
 
-  // Extract line items from invoice
   function extractItems(text) {
     const items = [];
-    const lines = text.split('\n');
-    
-    // Look for patterns like: "1 N.Veg Starter 1 340.00 340.00"
-    // or "Roti 6 25.00 150.00"
+    const lines = text.split('\\n');
     
     lines.forEach(line => {
-      // Pattern: number name qty rate amount
-      const match = line.match(/^(\d*)\s*([A-Za-z\s\.]+?)\s+(\d+)\s+([\d\.]+)\s+([\d\.]+)$/);
+      const match = line.match(/^(\\d*)\\s*([A-Za-z\\s\\.]+?)\\s+(\\d+)\\s+([\\d\\.]+)\\s+([\\d\\.]+)$/);
       if (match) {
         items.push({
           name: match[2].trim(),
@@ -472,8 +450,7 @@ document.addEventListener("DOMContentLoaded", () => {
           amount: parseFloat(match[5])
         });
       } else {
-        // Alternative: name qty rate amount (no serial number)
-        const match2 = line.match(/^([A-Za-z\s\.]+?)\s+(\d+)\s+([\d\.]+)\s+([\d\.]+)$/);
+        const match2 = line.match(/^([A-Za-z\\s\\.]+?)\\s+(\\d+)\\s+([\\d\\.]+)\\s+([\\d\\.]+)$/);
         if (match2) {
           items.push({
             name: match2[1].trim(),
@@ -488,40 +465,35 @@ document.addEventListener("DOMContentLoaded", () => {
     return items;
   }
 
-  // Parse invoice
   function parseInvoice(text) {
-    const lines = text.split('\n');
+    const lines = text.split('\\n');
     const out = { merchant: "", date: "", total: "" };
 
-    // Merchant: Skip first 3 lines, look for business name
     for (let i = 3; i < Math.min(lines.length, 20); i++) {
       const line = lines[i].trim();
       if (line.length < 5 || line.length > 35) continue;
       if (/scanned|document|quality|very|poor|invoice|bill|receipt|gstin|date|total/i.test(line)) continue;
-      if (/^\d+$/.test(line)) continue;
+      if (/^\\d+$/.test(line)) continue;
       if (line === line.toUpperCase() && line.length > 10) continue;
       
-      // Good candidate
       if (/[a-z]/i.test(line)) {
         out.merchant = line;
         break;
       }
     }
 
-    // Date
-    const dateRegex = /\b(\d{1,2}[-\/\. ]\d{1,2}[-\/\. ]\d{2,4})\b|\b(\d{1,2} [A-Za-z]{3,9} \d{2,4})\b/g;
+    const dateRegex = /\\b(\\d{1,2}[-\\/\\. ]\\d{1,2}[-\\/\\. ]\\d{2,4})\\b|\\b(\\d{1,2} [A-Za-z]{3,9} \\d{2,4})\\b/g;
     let dateCandidates = [];
     text.replace(dateRegex, (match) => {
       const context = text.substring(Math.max(0, text.indexOf(match) - 20), text.indexOf(match) + match.length + 20);
-      if (!context.toLowerCase().includes("gst") && !context.match(/\d{10,}/)) {
+      if (!context.toLowerCase().includes("gst") && !context.match(/\\d{10,}/)) {
         dateCandidates.push(match);
       }
     });
     if (dateCandidates.length > 0) out.date = dateCandidates[0];
 
-    // Total
     const totalKeywords = ["total", "payable", "amount", "net", "grand", "sum"];
-    const numberRegex = /(?:₹|RS|INR|AMT)?\s*([\d,]+\.?\d{0,2})/gi;
+    const numberRegex = /(?:₹|RS|INR|AMT)?\\s*([\\d,]+\\.?\\d{0,2})/gi;
     let candidates = [];
     lines.forEach((line, index) => {
       let match;
@@ -549,7 +521,6 @@ document.addEventListener("DOMContentLoaded", () => {
     return out;
   }
 
-  // Parse button
   el.parse?.addEventListener("click", () => {
     if (!el.clean || !el.clean.textContent || el.clean.textContent === "--") {
       setStatus("Nothing to parse", true);
@@ -562,14 +533,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const verification = verifyInvoiceTotals(parsed, rawText, extractedItems);
     
-    // Update UI
     if (el.editMerchant) el.editMerchant.value = parsed.merchant || "";
     if (el.editDate) el.editDate.value = parsed.date || "";
     if (el.editTotal) el.editTotal.value = parsed.total || "";
 
-    // Show items table
     if (extractedItems.length > 0 && el.itemsSection && el.itemsTableBody) {
-      el.itemsSection.hidden = false;
       el.itemsSection.hidden = false;
       el.itemsTableBody.innerHTML = extractedItems.map(item => `
         <tr>
@@ -580,14 +548,15 @@ document.addEventListener("DOMContentLoaded", () => {
         </tr>
       `).join('');
     }
-     // Update verification badge
+
     if (el.verificationBadge) {
       const diff = verification.differenceAmount;
       let statusClass = "verified";
       let icon = "✅";
       let title = "Verified";
       let subtitle = `Invoice total matches calculated amount from ${extractedItems.length} line items`;
-       if (verification.status === "Unverifiable") {
+
+      if (verification.status === "Unverifiable") {
         statusClass = "error";
         icon = "❌";
         title = "Cannot Verify";
@@ -596,31 +565,30 @@ document.addEventListener("DOMContentLoaded", () => {
         statusClass = "warning";
         icon = "⚠️";
         title = diff > 0 ? "Total Mismatch" : "Possible Overcharge";
-          subtitle = diff > 0 
+        subtitle = diff > 0 
           ? `Invoice total is ₹${diff.toFixed(2)} less than calculated`
           : `You may have been overcharged ₹${Math.abs(diff).toFixed(2)}`;
       }
 
       el.verificationBadge.className = "verification-badge " + statusClass;
       const badgeIcon = el.verificationBadge.querySelector('.badge-icon');
-       const badgeTitle = el.verificationBadge.querySelector('.badge-title');
+      const badgeTitle = el.verificationBadge.querySelector('.badge-title');
       if (badgeIcon) badgeIcon.textContent = icon;
       if (badgeTitle) badgeTitle.textContent = title;
       if (el.badgeSubtitle) el.badgeSubtitle.textContent = subtitle;
     }
 
     if (el.json) el.json.textContent = JSON.stringify({ ...parsed, items: extractedItems }, null, 2);
-     hasParsedData = true;
+    hasParsedData = true;
     updateParsedUI(true);
 
     if (el.parseBar) el.parseBar.hidden = true;
     document.querySelector('[data-page="parsed"]')?.click();
   });
 
-  // Save to history
   el.saveBtn?.addEventListener("click", () => {
     if (!hasParsedData || !db) return;
-     const tx = db.transaction("history", "readwrite");
+    const tx = db.transaction("history", "readwrite");
     const store = tx.objectStore("history");
     store.add({
       merchant: el.editMerchant.value,
@@ -632,7 +600,7 @@ document.addEventListener("DOMContentLoaded", () => {
     
     tx.oncomplete = () => {
       trackEvent("history_saved");
-       if (el.saveHint) el.saveHint.textContent = "✓ Saved to history";
+      if (el.saveHint) el.saveHint.textContent = "✓ Saved to history";
       setTimeout(() => {
         if (el.saveHint) el.saveHint.textContent = "";
         loadHistory();
@@ -640,10 +608,10 @@ document.addEventListener("DOMContentLoaded", () => {
     };
   });
 
-  // Recent items
   const MAX_RECENT = 4;
   const RECENT_KEY = 'anj_recent';
-   function loadRecent() {
+
+  function loadRecent() {
     try {
       return JSON.parse(localStorage.getItem(RECENT_KEY)) || [];
     } catch { return []; }
@@ -652,7 +620,8 @@ document.addEventListener("DOMContentLoaded", () => {
   function saveRecent(items) {
     localStorage.setItem(RECENT_KEY, JSON.stringify(items.slice(0, MAX_RECENT)));
   }
-   function renderRecent() {
+
+  function renderRecent() {
     if (!el.recentGrid) return;
     const items = loadRecent();
     el.recentGrid.innerHTML = items.length === 0 
@@ -663,17 +632,16 @@ document.addEventListener("DOMContentLoaded", () => {
           <div class="recent-name">${item.name}</div>
           <div class="recent-time">${item.time}</div>
         </div>
-        `).join('');
+      `).join('');
     
-    // Click to reload
     el.recentGrid.querySelectorAll('.recent-card').forEach(card => {
       card.addEventListener('click', () => {
-        // In real implementation, would reload file from storage
         trackEvent("recent_clicked");
       });
     });
-   }
-   function addToRecent(filename) {
+  }
+
+  function addToRecent(filename) {
     const items = loadRecent();
     const newItem = {
       name: filename.length > 25 ? filename.slice(0, 22) + '...' : filename,
@@ -683,10 +651,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const filtered = items.filter(i => i.fullName !== filename);
     saveRecent([newItem, ...filtered]);
     renderRecent();
-   }
-   renderRecent();
+  }
 
-  // History (IndexedDB)
+  renderRecent();
+
   function initDB() {
     const req = indexedDB.open("anj-dual-ocr", 1);
     req.onupgradeneeded = e => {
@@ -695,16 +663,22 @@ document.addEventListener("DOMContentLoaded", () => {
         db.createObjectStore("history", { keyPath: "id", autoIncrement: true });
       }
     };
-     req.onsuccess = e => { db = e.target.result; loadHistory(); };
+    req.onsuccess = e => { db = e.target.result; loadHistory(); };
   }
 
   function loadHistory() {
     if (!db || !el.historyPageList) return;
+    el.historyPageList.innerHTML = '';
     const tx = db.transaction("history", "readonly");
     const store = tx.objectStore("history");
     store.openCursor(null, "prev").onsuccess = e => {
       const cursor = e.target.result;
-       if (!cursor) return;
+      if (!cursor) {
+        if (el.historyPageList.children.length === 0) {
+          el.historyPageList.innerHTML = '<li class="history-empty">No saved invoices yet</li>';
+        }
+        return;
+      }
       const item = cursor.value;
       const li = document.createElement("li");
       li.className = "history-item";
@@ -713,23 +687,23 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="history-info">
           <div class="history-name">${item.merchant || "Unknown"}</div>
           <div class="history-date">${new Date(item.timestamp).toLocaleString()}</div>
-          </div>
+        </div>
         <div class="history-amount">₹${item.total || "--"}</div>
       `;
       li.addEventListener("click", () => {
-        el.editMerchant.value = item.merchant;
-        el.editDate.value = item.date;
-        el.editTotal.value = item.total;
-        if (item.items && el.itemsSection) {
+        if (el.editMerchant) el.editMerchant.value = item.merchant || "";
+        if (el.editDate) el.editDate.value = item.date || "";
+        if (el.editTotal) el.editTotal.value = item.total || "";
+        if (item.items && el.itemsSection && el.itemsTableBody) {
           extractedItems = item.items;
-           el.itemsSection.hidden = false;
+          el.itemsSection.hidden = false;
           el.itemsTableBody.innerHTML = item.items.map(i => `
             <tr><td>${i.name}</td><td>${i.qty}</td><td>₹${i.rate.toFixed(2)}</td><td>₹${i.amount.toFixed(2)}</td></tr>
           `).join('');
         }
         document.querySelector('[data-page="parsed"]')?.click();
       });
-       el.historyPageList.appendChild(li);
+      el.historyPageList.appendChild(li);
       cursor.continue();
     };
   }
@@ -737,11 +711,12 @@ document.addEventListener("DOMContentLoaded", () => {
   el.clearHistoryBtn?.addEventListener("click", () => {
     if (!confirm("Clear all history?")) return;
     const tx = db.transaction("history", "readwrite");
-     tx.objectStore("history").clear();
-    tx.oncomplete = () => { el.historyPageList.innerHTML = ""; };
+    tx.objectStore("history").clear();
+    tx.oncomplete = () => { 
+      if (el.historyPageList) el.historyPageList.innerHTML = '<li class="history-empty">No saved invoices yet</li>'; 
+    };
   });
 
-  // Exports
   [el.exportJSON, el.exportTXT, el.exportCSV].forEach(btn => {
     btn?.addEventListener("click", (e) => {
       trackEvent(`export_attempted_${e.target.id.replace('export', '').toLowerCase()}`);
@@ -751,124 +726,5 @@ document.addEventListener("DOMContentLoaded", () => {
 
   initDB();
   setStatus("Ready ✓");
-});
-4. invoiceVerification.js
-JavaScript
-Copy
-export function verifyInvoiceTotals(parsed, rawText, items = []) {
-  const result = {
-    status: "Unverifiable",
-    computedTotal: 0,
-    declaredTotal: parseFloat(parsed.total) || 0,
-    differenceAmount: 0,
-    itemCount: items.length
-  };
+});'''
 
-  // If we have items, calculate from them
-  if (items.length > 0) {
-    result.computedTotal = items.reduce((sum, item) => sum + (item.amount || 0), 0);
-  } else {
-    // Try to extract from text patterns
-    const amountMatches = rawText.match(/(\d+\.\d{2})/g) || [];
-    const amounts = amountMatches.map(a => parseFloat(a)).filter(a => a > 0);
-    
-    // Use largest amount as likely total, or sum of line items if we can identify them
-    if (amounts.length > 0) {
-      // Sort descending
-      amounts.sort((a, b) => b - a);
-      // If declared total matches one of the amounts, use second largest as computed
-      const declaredIndex = amounts.indexOf(result.declaredTotal);
-      if (declaredIndex > -1 && amounts.length > 1) {
-        // Sum all except the declared total (assuming it's the final total)
-        result.computedTotal = amounts.slice(1).reduce((a, b) => a + b, 0);
-      } else {
-        // Can't determine, use largest as computed
-        result.computedTotal = amounts[0];
-      }
-    }
-  }
-
-  result.differenceAmount = result.computedTotal - result.declaredTotal;
-  
-  if (items.length > 0) {
-    result.status = Math.abs(result.differenceAmount) <= 0.01 ? "Verified" : "Mismatch";
-  } else if (result.computedTotal > 0) {
-    result.status = Math.abs(result.differenceAmount) <= 0.01 ? "Verified" : "Partial";
-  }
-
-  return result;
-}
-Git Commit Description
-Copy
-feat(ux): implement guided OCR flow with dual-pass and item extraction
-
-- Add Quick OCR (single fast pass) and Dual OCR (two-pass cross-check)
-- Implement guided UI flow: file → OCR choice → processing → delayed parse enable
-- Add line items extraction with visual table display
-- Improve text normalization for scanned documents (A mo unt → Amount, etc.)
-- Fix merchant extraction to skip header garbage (SCANNED DOCUMENT)
-- Add auto-enable parse button with 1s delay and shimmer animation
-- Make Cleaned Text dominant, Raw Text collapsible
-- Add verification badge states with clear messaging
-- Trim themes to 5: carbon, aqua-pro, midnight-blue, ivory, abstract
-- Darken sidebar background for better contrast
-- Add "Detected" labels to form fields with edit hints
-- Implement recent files persistence and click-to-reload
-
-Fixes: screen overflow, parser accuracy, user guidance, visual hierarchy
-Replace all 4 files. Test and report issues.
-I think you forgot to give me invoice verification js file
-Edit
-Copy
-Share
-Avatar
-Kimi
-I did give it, but it got truncated. Here's the complete invoiceVerification.js:
-JavaScript
-Copy
-export function verifyInvoiceTotals(parsed, rawText, items = []) {
-  const result = {
-    status: "Unverifiable",
-    computedTotal: 0,
-    declaredTotal: parseFloat(parsed.total) || 0,
-    differenceAmount: 0,
-    itemCount: items.length
-  };
-
-  // If we have items, calculate from them
-  if (items.length > 0) {
-    result.computedTotal = items.reduce((sum, item) => sum + (item.amount || 0), 0);
-  } else {
-    // Try to extract from text patterns
-    const amountMatches = rawText.match(/(\d+\.\d{2})/g) || [];
-    const amounts = amountMatches.map(a => parseFloat(a)).filter(a => a > 0);
-    
-    // Use largest amount as likely total, or sum of line items if we can identify them
-    if (amounts.length > 0) {
-      // Sort descending
-      amounts.sort((a, b) => b - a);
-      // If declared total matches one of the amounts, use second largest as computed
-      const declaredIndex = amounts.indexOf(result.declaredTotal);
-      if (declaredIndex > -1 && amounts.length > 1) {
-        // Sum all except the declared total (assuming it's the final total)
-        result.computedTotal = amounts.slice(1).reduce((a, b) => a + b, 0);
-      } else {
-        // Can't determine, use largest as computed
-        result.computedTotal = amounts[0];
-      }
-    }
-  }
-
-  result.differenceAmount = result.computedTotal - result.declaredTotal;
-  
-  if (items.length > 0) {
-    result.status = Math.abs(result.differenceAmount) <= 0.01 ? "Verified" : "Mismatch";
-  } else if (result.computedTotal > 0) {
-    result.status = Math.abs(result.differenceAmount) <= 0.01 ? "Verified" : "Partial";
-  }
-
-  return result;
-}
-
-
-   
