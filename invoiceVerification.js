@@ -1,4 +1,5 @@
-export function verifyInvoiceTotals(parsed, rawText, items = []) {
+# Create invoiceVerification.js
+verification_content = '''export function verifyInvoiceTotals(parsed, rawText, items = []) {
   const result = {
     status: "Unverifiable",
     computedTotal: 0,
@@ -12,7 +13,7 @@ export function verifyInvoiceTotals(parsed, rawText, items = []) {
     result.computedTotal = items.reduce((sum, item) => sum + (item.amount || 0), 0);
   } else {
     // Try to extract from text patterns
-    const amountMatches = rawText.match(/(\d+\.\d{2})/g) || [];
+    const amountMatches = rawText.match(/(\\d+\\.\\d{2})/g) || [];
     const amounts = amountMatches.map(a => parseFloat(a)).filter(a => a > 0);
     
     // Use largest amount as likely total, or sum of line items if we can identify them
@@ -40,4 +41,5 @@ export function verifyInvoiceTotals(parsed, rawText, items = []) {
   }
 
   return result;
-}
+}'''
+
