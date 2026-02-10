@@ -1,4 +1,4 @@
-js_content = '''console.log("SCRIPT LOADED");
+console.log("SCRIPT LOADED");
 
 import { verifyInvoiceTotals } from "./invoiceVerification.js";
 
@@ -726,5 +726,5 @@ document.addEventListener("DOMContentLoaded", () => {
 
   initDB();
   setStatus("Ready ✓");
-});'''
+});
 
