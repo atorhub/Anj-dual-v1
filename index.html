@@ -13,17 +13,56 @@
 <div class="app-shell">
   <aside class="sidebar">
     <div class="sidebar-header">
-      <div class="logo">ANJ</div>
+      <div class="logo">
+        <span class="logo-icon">◆</span>
+        <span class="logo-text">ANJ</span>
+      </div>
       <button id="sidebarCloseBtn" class="sidebar-close">✕</button>
     </div>
+    
+    <div class="sidebar-user" id="sidebarUser">
+      <div class="user-avatar">G</div>
+      <div class="user-info">
+        <span class="user-name">Guest</span>
+        <span class="user-status">Not signed in</span>
+      </div>
+    </div>
+    
     <nav class="sidebar-nav">
-      <div class="nav-item active" data-page="upload"><span class="nav-icon">📤</span><span class="nav-label">Upload</span></div>
-      <div class="nav-item" data-page="parsed"><span class="nav-icon">📄</span><span class="nav-label">Parsed</span></div>
-      <div class="nav-item" data-page="history"><span class="nav-icon">🕘</span><span class="nav-label">History</span></div>
+      <div class="nav-item active" data-page="upload">
+        <span class="nav-icon">📤</span>
+        <span class="nav-label">Upload</span>
+      </div>
+      <div class="nav-item" data-page="parsed">
+        <span class="nav-icon">📄</span>
+        <span class="nav-label">Parsed</span>
+        <span class="nav-badge" id="parsedBadge">0</span>
+      </div>
+      <div class="nav-item" data-page="history">
+        <span class="nav-icon">🕘</span>
+        <span class="nav-label">History</span>
+      </div>
     </nav>
+    
+    <div class="sidebar-divider"></div>
+    
+    <nav class="sidebar-secondary">
+      <div class="nav-item" data-page="settings">
+        <span class="nav-icon">⚙️</span>
+        <span class="nav-label">Settings</span>
+      </div>
+      <div class="nav-item" data-page="about">
+        <span class="nav-icon">ℹ️</span>
+        <span class="nav-label">About</span>
+      </div>
+    </nav>
+    
     <div class="sidebar-footer">
-      <div class="nav-item" data-page="settings"><span class="nav-icon">⚙️</span><span class="nav-label">Settings</span></div>
-      <div class="nav-item" data-page="about"><span class="nav-icon">ℹ️</span><span class="nav-label">About</span></div>
+      <button class="btn-login" id="loginBtn">
+        <span class="btn-icon">→</span>
+        <span>Sign In</span>
+      </button>
+      <p class="footer-text">v2.1.0 • Local Processing</p>
     </div>
   </aside>
 
@@ -42,59 +81,151 @@
     </header>
 
     <div class="page-container">
+      <!-- LOGIN MODAL -->
+      <div class="modal" id="loginModal" hidden>
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+          <button class="modal-close" id="closeLogin">✕</button>
+          <div class="login-header">
+            <div class="login-logo">◆</div>
+            <h2>Welcome to ANJ</h2>
+            <p>Sign in to sync across devices</p>
+          </div>
+          <form class="login-form">
+            <div class="form-group">
+              <label>Email</label>
+              <input type="email" placeholder="you@company.com" />
+            </div>
+            <div class="form-group">
+              <label>Password</label>
+              <input type="password" placeholder="••••••••" />
+            </div>
+            <button type="submit" class="btn-primary btn-full">Sign In</button>
+          </form>
+          <div class="login-divider">
+            <span>or continue with</span>
+          </div>
+          <div class="login-social">
+            <button class="btn-social">
+              <span class="social-icon">G</span>
+              Google
+            </button>
+            <button class="btn-social">
+              <span class="social-icon">⚡</span>
+              Magic Link
+            </button>
+          </div>
+          <p class="login-footer">
+            Don't have an account? <a href="#">Get early access</a>
+          </p>
+        </div>
+      </div>
+
       <!-- UPLOAD PAGE -->
       <section class="page page-upload active">
+        <div class="upload-hero">
+          <div class="hero-badge">
+            <span class="badge-dot"></span>
+            Premium OCR Engine
+          </div>
+          <h1 class="hero-title">Verify any invoice<br>in seconds</h1>
+          <p class="hero-subtitle">Dual-engine extraction with deterministic verification. No data leaves your device.</p>
+        </div>
+
         <div class="upload-section">
           <div class="upload-card" id="uploadCard">
             <input type="file" id="fileInput" class="upload-input" accept="image/*,application/pdf" />
             <div class="upload-content">
-              <span class="upload-icon">📄</span>
-              <p class="upload-text">Upload your invoice to verify it instantly</p>
+              <div class="upload-icon-wrap">
+                <span class="upload-icon">📄</span>
+                <div class="upload-pulse"></div>
+              </div>
+              <p class="upload-text">Drop your invoice here</p>
+              <p class="upload-hint">or click to browse • Supports PDF, JPG, PNG</p>
             </div>
           </div>
           
           <div class="filename-pill" id="filenamePill" hidden>
-            <span>📎</span>
+            <span class="pill-icon">📎</span>
             <span id="filenameText"></span>
+            <button class="pill-clear" id="clearFile">✕</button>
           </div>
           
           <div class="ocr-actions" id="ocrActions" hidden>
             <div class="ocr-primary">
-              <button id="quickOCRBtn" class="btn-primary">Quick OCR</button>
-              <p class="ocr-hint">Fast, works for most invoices</p>
+              <button id="quickOCRBtn" class="btn-primary btn-large">
+                <span class="btn-icon">⚡</span>
+                Quick OCR
+              </button>
+              <div class="ocr-meta">
+                <span class="ocr-tag">Recommended</span>
+                <span class="ocr-desc">Fast extraction for clean documents</span>
+              </div>
+            </div>
+            <div class="ocr-divider">
+              <span>or</span>
             </div>
             <div class="ocr-secondary">
-              <button id="dualOCRBtn" class="btn-secondary">Dual OCR</button>
-              <p class="ocr-hint">Slower, higher accuracy for scans</p>
+              <button id="dualOCRBtn" class="btn-secondary btn-large">
+                <span class="btn-icon">🔍</span>
+                Dual OCR
+              </button>
+              <span class="ocr-desc">Enhanced accuracy for scans & photos</span>
             </div>
           </div>
         </div>
 
         <div class="recent-section" id="recentSection">
-          <p class="section-label">Recent</p>
+          <div class="section-header">
+            <p class="section-label">Recent</p>
+            <button class="btn-text" id="clearRecent">Clear all</button>
+          </div>
           <div class="recent-grid" id="recentGrid">
-            <div class="recent-empty">No recent invoices</div>
+            <div class="recent-empty">
+              <div class="empty-icon">📂</div>
+              <p>No recent invoices</p>
+              <span>Upload your first document to get started</span>
+            </div>
           </div>
         </div>
 
         <div class="results-section" id="resultsSection" hidden>
-          <div class="parse-bar" id="parseBar" hidden>
-            <button id="parseBtn" class="btn-parse" disabled>Parse Invoice</button>
-            <p class="parse-hint">Verifying extracted text...</p>
+          <div class="results-header">
+            <div class="results-title">
+              <span class="title-icon">✓</span>
+              <div>
+                <h3>Extraction Complete</h3>
+                <p>Review and verify the extracted data</p>
+              </div>
+            </div>
+            <button id="parseBtn" class="btn-primary" disabled>
+              <span class="btn-icon">🔍</span>
+              Parse Invoice
+            </button>
           </div>
           
           <div class="results-grid">
             <div class="result-panel panel-cleaned">
               <div class="result-header">
-                <p class="result-title">Cleaned Text <span class="result-badge">Used for verification</span></p>
+                <div class="result-title">
+                  <span class="title-badge">Cleaned</span>
+                  <span class="title-text">Processed Text</span>
+                </div>
+                <span class="result-status">Used for verification</span>
               </div>
               <div class="result-content">
                 <pre id="cleanedText">—</pre>
               </div>
             </div>
-            <div class="result-panel panel-raw collapsible">
-              <div class="result-header" onclick="this.parentElement.classList.toggle('collapsed')">
-                <p class="result-title">Raw Text <span class="collapse-icon">▼</span></p>
+            
+            <div class="result-panel panel-raw collapsible collapsed">
+              <div
+                            <div class="result-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                <div class="result-title">
+                  <span class="title-text">Raw OCR Output</span>
+                </div>
+                <span class="collapse-hint">Click to expand</span>
+                <span class="collapse-icon">▼</span>
               </div>
               <div class="result-content">
                 <pre id="rawText">—</pre>
@@ -108,58 +239,105 @@
       <section class="page page-parsed">
         <div class="parsed-layout">
           <div class="verification-badge" id="verificationBadge">
-            <span class="badge-icon">⏳</span>
+            <div class="badge-visual">
+              <span class="badge-icon">⏳</span>
+            </div>
             <div class="badge-content">
               <p class="badge-title">Waiting for verification</p>
               <p class="badge-subtitle" id="badgeSubtitle">Upload and parse an invoice first</p>
             </div>
-          </div>
-
-          <div class="invoice-form">
-            <div class="form-field">
-              <label class="field-label">Detected Merchant <span class="edit-hint">Edit only if OCR is wrong</span></label>
-              <input type="text" id="editMerchant" class="field-input" placeholder="—" />
-            </div>
-            <div class="form-field">
-              <label class="field-label">Detected Date <span class="edit-hint">Edit only if OCR is wrong</span></label>
-              <input type="text" id="editDate" class="field-input" placeholder="—" />
-            </div>
-            <div class="form-field">
-              <label class="field-label">Detected Total <span class="edit-hint">Edit only if OCR is wrong</span></label>
-              <input type="text" id="editTotal" class="field-input" placeholder="—" />
+            <div class="badge-action">
+              <button class="btn-icon-only" id="badgeHelp">?</button>
             </div>
           </div>
 
-          <!-- Items Table -->
+          <div class="parsed-section">
+            <div class="section-header">
+              <p class="section-label">Extracted Details</p>
+              <span class="edit-hint">Edit only if OCR is incorrect</span>
+            </div>
+            
+            <div class="invoice-form">
+              <div class="form-field">
+                <label class="field-label">
+                  <span class="label-icon">🏢</span>
+                  Merchant
+                </label>
+                <input type="text" id="editMerchant" class="field-input" placeholder="Not detected" />
+              </div>
+              <div class="form-row">
+                <div class="form-field">
+                  <label class="field-label">
+                    <span class="label-icon">📅</span>
+                    Date
+                  </label>
+                  <input type="text" id="editDate" class="field-input" placeholder="Not detected" />
+                </div>
+                <div class="form-field">
+                  <label class="field-label">
+                    <span class="label-icon">💰</span>
+                    Total Amount
+                  </label>
+                  <input type="text" id="editTotal" class="field-input" placeholder="Not detected" />
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="items-section" id="itemsSection" hidden>
-            <p class="section-label">Line Items</p>
-            <table class="items-table" id="itemsTable">
-              <thead>
-                <tr>
-                  <th>Item</th>
-                  <th>Qty</th>
-                  <th>Rate</th>
-                  <th>Amount</th>
-                </tr>
-              </thead>
-              <tbody id="itemsTableBody">
-              </tbody>
-            </table>
+            <div class="section-header">
+              <p class="section-label">Line Items</p>
+              <span class="items-count" id="itemsCount">0 items</span>
+            </div>
+            <div class="items-table-wrap">
+              <table class="items-table" id="itemsTable">
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th class="numeric">Qty</th>
+                    <th class="numeric">Rate</th>
+                    <th class="numeric">Amount</th>
+                  </tr>
+                </thead>
+                <tbody id="itemsTableBody">
+                </tbody>
+              </table>
+            </div>
           </div>
 
-          <div class="save-section">
-            <button id="saveBtn" class="btn-parse">Save to History</button>
+          <div class="parsed-actions">
+            <button id="saveBtn" class="btn-primary btn-full">
+              <span class="btn-icon">💾</span>
+              Save to History
+            </button>
             <p class="save-hint" id="saveHint"></p>
           </div>
 
           <div class="export-section">
-            <p class="export-title">Export</p>
-            <div class="export-grid">
-              <button id="exportJSON" class="btn-export">JSON</button>
-              <button id="exportTXT" class="btn-export">TXT</button>
-              <button id="exportCSV" class="btn-export">CSV</button>
+            <div class="section-header">
+              <p class="section-label">Export Data</p>
             </div>
-            <pre class="export-preview" id="jsonPreview">// Parsed data will appear here</pre>
+            <div class="export-grid">
+              <button id="exportJSON" class="btn-export">
+                <span class="export-icon">{ }</span>
+                <span>JSON</span>
+              </button>
+              <button id="exportTXT" class="btn-export">
+                <span class="export-icon">T</span>
+                <span>TXT</span>
+              </button>
+              <button id="exportCSV" class="btn-export">
+                <span class="export-icon">▦</span>
+                <span>CSV</span>
+              </button>
+            </div>
+            <div class="export-preview-wrap">
+              <div class="export-preview-header">
+                <span>Preview</span>
+                <button class="btn-copy" id="copyPreview">Copy</button>
+              </div>
+              <pre class="export-preview" id="jsonPreview">// Parsed data will appear here</pre>
+            </div>
           </div>
         </div>
       </section>
@@ -167,38 +345,167 @@
       <!-- HISTORY PAGE -->
       <section class="page page-history">
         <div class="history-layout">
-          <p class="section-label">History</p>
-          <div class="history-search">
-            <input type="text" id="historySearch" class="search-input" placeholder="Search invoices..." />
+          <div class="history-header">
+            <div>
+              <h2 class="page-title">History</h2>
+              <p class="page-subtitle">Your saved invoices</p>
+            </div>
+            <div class="history-stats">
+              <div class="stat">
+                <span class="stat-value" id="historyCount">0</span>
+                <span class="stat-label">invoices</span>
+              </div>
+            </div>
           </div>
+          
+          <div class="history-search">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="historySearch" class="search-input" placeholder="Search by merchant, date, or amount..." />
+          </div>
+          
           <ul class="history-list" id="historyPageList">
-            <li class="history-empty">No saved invoices yet</li>
+            <li class="history-empty">
+              <div class="empty-icon">📭</div>
+              <p>No saved invoices yet</p>
+              <span>Parsed invoices will appear here</span>
+            </li>
           </ul>
-          <button id="clearHistoryBtn" class="btn-ocr" style="margin-top: var(--space-xl); width: 100%;">Clear All History</button>
+          
+          <button id="clearHistoryBtn" class="btn-danger btn-full">
+            <span class="btn-icon">🗑</span>
+            Clear All History
+          </button>
         </div>
       </section>
 
       <!-- SETTINGS PAGE -->
       <section class="page page-settings">
         <div class="settings-layout">
+          <div class="settings-header">
+            <h2 class="page-title">Settings</h2>
+            <p class="page-subtitle">Customize your experience</p>
+          </div>
+
           <div class="settings-card">
-            <p class="settings-title">Appearance</p>
-            <div class="setting-row">
-              <label class="setting-label">Theme</label>
-              <select id="themeSelect" class="setting-control">
-                <option value="carbon">Carbon Black</option>
-                <option value="aqua-pro">Aqua Pro</option>
-                <option value="midnight-blue">Midnight Blue</option>
-                <option value="ivory">Ivory</option>
-                <option value="abstract">Abstract</option>
-              </select>
+            <div class="card-header">
+              <span class="card-icon">🎨</span>
+              <div>
+                <p class="card-title">Appearance</p>
+                <p class="card-desc">Choose your preferred theme</p>
+              </div>
+            </div>
+            <div class="theme-grid">
+              <label class="theme-option">
+                <input type="radio" name="theme" value="carbon" checked>
+                <div class="theme-preview">
+                  <div class="theme-swatch" style="background: #1a1a1f;">
+                    <div class="swatch-accent" style="background: #6366f1;"></div>
+                  </div>
+                  <span class="theme-name">Carbon</span>
+                  <span class="theme-desc">Deep charcoal</span>
+                </div>
+              </label>
+              <label class="theme-option">
+                <input type="radio" name="theme" value="midnight">
+                <div class="theme-preview">
+                  <div class="theme-swatch" style="background: #0f172a;">
+                    <div class="swatch-accent" style="background: #3b82f6;"></div>
+                  </div>
+                  <span class="theme-name">Midnight</span>
+                  <span class="theme-desc">Navy blue</span>
+                </div>
+              </label>
+              <label class="theme-option">
+                <input type="radio" name="theme" value="forest">
+                <div class="theme-preview">
+                  <div class="theme-swatch" style="background: #0f1f1a;">
+                    <div class="swatch-accent" style="background: #10b981;"></div>
+                  </div>
+                  <span class="theme-name">Forest</span>
+                  <span class="theme-desc">Deep emerald</span>
+                </div>
+              </label>
+              <label class="theme-option">
+                <input type="radio" name="theme" value="ivory">
+                <div class="theme-preview">
+                  <div class="theme-swatch" style="background: #fafaf9; border: 1px solid #e5e5e5;">
+                    <div class="swatch-accent" style="background: #ea580c;"></div>
+                  </div>
+                  <span class="theme-name">Ivory</span>
+                  <span class="theme-desc">Warm light</span>
+                </div>
+              </label>
+              <label class="theme-option">
+                <input type="radio" name="theme" value="rose">
+                <div class="theme-preview">
+                  <div class="theme-swatch" style="background: #fdf2f8;">
+                    <div class="swatch-accent" style="background: #ec4899;"></div>
+                  </div>
+                  <span class="theme-name">Rose</span>
+                  <span class="theme-desc">Soft pink</span>
+                </div>
+              </label>
+              <label class="theme-option">
+                <input type="radio" name="theme" value="cyber">
+                <div class="theme-preview">
+                  <div class="theme-swatch" style="background: #0a0a0f;">
+                    <div class="swatch-accent" style="background: #00ff88;"></div>
+                  </div>
+                  <span class="theme-name">Cyber</span>
+                  <span class="theme-desc">Neon green</span>
+                </div>
+              </label>
             </div>
           </div>
+
           <div class="settings-card">
-            <p class="settings-title">OCR Engine</p>
-            <div class="setting-row">
-              <label class="setting-label">Quality vs Speed</label>
-              <input type="range" class="setting-control" min="1" max="3" value="2" />
+            <div class="card-header">
+              <span class="card-icon">⚙️</span>
+              <div>
+                <p class="card-title">OCR Engine</p>
+                <p class="card-desc">Balance speed and accuracy</p>
+              </div>
+            </div>
+            <div class="setting-control">
+              <div class="range-labels">
+                <span>Fast</span>
+                <span>Balanced</span>
+                <span>Accurate</span>
+              </div>
+              <input type="range" class="range-slider" min="1" max="3" value="2" />
+            </div>
+          </div>
+
+          <div class="settings-card">
+            <div class="card-header">
+              <span class="card-icon">🔒</span>
+              <div>
+                <p class="card-title">Privacy</p>
+                <p class="card-desc">Your data stays local</p>
+              </div>
+            </div>
+            <div class="privacy-info">
+              <div class="privacy-item">
+                <span class="privacy-check">✓</span>
+                <span>All processing happens in your browser</span>
+              </div>
+              <div class="privacy-item">
+                <span class="privacy-check">✓</span>
+                <span>No data sent to external servers</span>
+              </div>
+              <div class="privacy-item">
+                <span class="privacy-check">✓</span>
+                <span>IndexedDB storage only</span>
+              </div>
+            </div>
+            <div class="storage-info">
+              <div class="storage-bar">
+                <div class="storage-used" style="width: 15%;"></div>
+              </div>
+              <div class="storage-text">
+                <span>~2.4 MB used</span>
+                <span>Unlimited</span>
+              </div>
             </div>
           </div>
         </div>
@@ -207,14 +514,82 @@
       <!-- ABOUT PAGE -->
       <section class="page page-about">
         <div class="about-layout">
-          <div class="about-brand">
-            <p class="about-version">ANJ v2.1.0</p>
-            <p class="about-tagline">Precision invoice verification</p>
+          <div class="about-hero">
+            <div class="hero-logo">
+              <span>◆</span>
+            </div>
+            <h1 class="hero-title">ANJ</h1>
+            <p class="hero-version">Version 2.1.0</p>
+            <p class="hero-tagline">Precision invoice verification for professionals who demand accuracy</p>
           </div>
-          <p class="about-description">ANJ combines dual-engine OCR with deterministic verification.</p>
-          <div class="about-links">
-            <a href="#" class="btn-link">GitHub</a>
-            <a href="#" class="btn-link">Report Issue</a>
+
+          <div class="about-stats">
+            <div class="stat-card">
+              <span class="stat-number">50+</span>
+              <span class="stat-label">Currency formats</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-number">0</span>
+              <span class="stat-label">Data leaves device</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-number">2×</span>
+              <span class="stat-label">OCR engines</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-number">100%</span>
+              <span class="stat-label">Private</span>
+            </div>
+          </div>
+
+          <div class="about-features">
+            <div class="feature-card">
+              <div class="feature-icon">🔍</div>
+              <h3>Dual-Engine OCR</h3>
+              <p>Tesseract.js + PDF.js working together for maximum extraction accuracy on any document type.</p>
+            </div>
+            <div class="feature-card">
+              <div class="feature-icon">✓</div>
+              <h3>Deterministic Verification</h3>
+              <p>No guessing. Line items are explicitly matched against declared totals with mathematical precision.</p>
+            </div>
+            <div class="feature-card">
+              <div class="feature-icon">🔒</div>
+              <h3>Bank-Level Privacy</h3>
+              <p>All processing happens locally in your browser. No cloud, no servers, no data leaks possible.</p>
+            </div>
+            <div class="feature-card">
+              <div class="feature-icon">📱</div>
+              <h3>Works Everywhere</h3>
+              <p>Progressive web app works on any device. Install on mobile or desktop, works offline too.</p>
+            </div>
+          </div>
+
+          <div class="about-tech">
+            <p class="tech-title">Built with modern web technologies</p>
+            <div class="tech-stack">
+              <span class="tech-badge">Tesseract.js</span>
+              <span class="tech-badge">PDF.js</span>
+              <span class="tech-badge">IndexedDB</span>
+              <span class="tech-badge">Web Workers</span>
+              <span class="tech-badge">PWA</span>
+            </div>
+          </div>
+
+          <div class="about-cta">
+            <a href="#" class="btn-primary">
+              <span class="btn-icon">⭐</span>
+              Star on GitHub
+            </a>
+            <a href="#" class="btn-secondary">
+              <span class="btn-icon">🐛</span>
+              Report Issue
+            </a>
+          </div>
+
+          <div class="about-footer">
+            <p>Created by a solo developer obsessed with accuracy.</p>
+            <p class="copyright">© 2024 ANJ. All processing local.</p>
           </div>
         </div>
       </section>
@@ -226,7 +601,4 @@
 <script src="tesseract.min.js"></script>
 <script type="module" src="./script.js"></script>
 </body>
-</html>
-
-
-            
+  </html>  
