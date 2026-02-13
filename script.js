@@ -34,7 +34,7 @@ function trackEvent(eventName, meta = {}) {
   const activePageEl = document.querySelector(".page.active");
   let pageName = "unknown";
   if (activePageEl) {
-    const match = activePageEl.className.match(/page-([^\\s]+)/);
+    const match = activePageEl.className.match(/page-([^\s]+)/);
     if (match) pageName = match[1];
   }
   console.log(`[TRACK] ${JSON.stringify({ event: eventName, userId, timestamp: now, page: pageName, meta }, null, 2)}`);
@@ -45,24 +45,31 @@ document.addEventListener("DOMContentLoaded", () => {
   trackEvent("app_loaded");
 
   const el = {
+    // Core elements
     file: document.getElementById("fileInput"),
     raw: document.getElementById("rawText"),
     clean: document.getElementById("cleanedText"),
     json: document.getElementById("jsonPreview"),
     status: document.getElementById("statusBar"),
     userIdDisplay: document.getElementById("userIdDisplay"),
+    
+    // OCR buttons
     quickOCR: document.getElementById("quickOCRBtn"),
     dualOCR: document.getElementById("dualOCRBtn"),
     parse: document.getElementById("parseBtn"),
+    
+    // UI elements
     saveBtn: document.getElementById("saveBtn"),
     uploadCard: document.getElementById("uploadCard"),
     filenamePill: document.getElementById("filenamePill"),
     filenameText: document.getElementById("filenameText"),
+    clearFile: document.getElementById("clearFile"),
     ocrActions: document.getElementById("ocrActions"),
     resultsSection: document.getElementById("resultsSection"),
-    parseBar: document.getElementById("parseBar"),
-    parseHint: document.querySelector(".parse-hint"),
     recentGrid: document.getElementById("recentGrid"),
+    clearRecent: document.getElementById("clearRecent"),
+    
+    // Parsed page
     editMerchant: document.getElementById("editMerchant"),
     editDate: document.getElementById("editDate"),
     editTotal: document.getElementById("editTotal"),
@@ -71,17 +78,35 @@ document.addEventListener("DOMContentLoaded", () => {
     saveHint: document.getElementById("saveHint"),
     itemsSection: document.getElementById("itemsSection"),
     itemsTableBody: document.getElementById("itemsTableBody"),
+    itemsCount: document.getElementById("itemsCount"),
+    parsedBadge: document.getElementById("parsedBadge"),
+    
+    // Export
     exportJSON: document.getElementById("exportJSON"),
     exportTXT: document.getElementById("exportTXT"),
     exportCSV: document.getElementById("exportCSV"),
+    copyPreview: document.getElementById("copyPreview"),
+    
+    // Navigation
     sidebarToggle: document.getElementById("sidebarToggle"),
     sidebarCloseBtn: document.getElementById("sidebarCloseBtn"),
+    loginBtn: document.getElementById("loginBtn"),
+    
+    // Modal
+    loginModal: document.getElementById("loginModal"),
+    closeLogin: document.getElementById("closeLogin"),
+    
+    // History
     historyPageList: document.getElementById("historyPageList"),
     historySearch: document.getElementById("historySearch"),
     clearHistoryBtn: document.getElementById("clearHistoryBtn"),
+    historyCount: document.getElementById("historyCount"),
+    
+    // Settings
     theme: document.getElementById("themeSelect")
   };
 
+  // Display user ID
   if (el.userIdDisplay) {
     const anonId = localStorage.getItem("anon_user_id") || "—";
     el.userIdDisplay.textContent = `User: ${anonId.slice(0, 8)}...`;
@@ -91,20 +116,21 @@ document.addEventListener("DOMContentLoaded", () => {
   let hasParsedData = false;
   let currentFile = null;
   let extractedItems = [];
+  let parsedData = null;
 
   function setStatus(msg, err = false) {
     if (!el.status) return;
     el.status.style.whiteSpace = "pre-wrap";
     el.status.textContent = msg;
-    el.status.style.color = err ? "#ff4d4d" : "#7CFC98";
+    el.status.style.color = err ? "#ef4444" : "#22c55e";
   }
 
   function updateParsedUI(enabled) {
-    [el.saveBtn, el.exportJSON, el.exportTXT, el.exportCSV, el.editMerchant, el.editDate, el.editTotal].forEach(x => {
+    const elements = [el.saveBtn, el.exportJSON, el.exportTXT, el.exportCSV, el.editMerchant, el.editDate, el.editTotal];
+    elements.forEach(x => {
       if (!x) return;
       x.disabled = !enabled;
       x.style.opacity = enabled ? "1" : "0.5";
-      x.style.pointerEvents = enabled ? "auto" : "none";
     });
   }
 
@@ -124,18 +150,24 @@ document.addEventListener("DOMContentLoaded", () => {
     item.addEventListener("click", () => {
       const page = item.dataset.page;
       if (!page) return;
+      
       document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
       item.classList.add("active");
+      
       document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
       const targetPage = document.querySelector(".page-" + page);
       if (targetPage) {
         targetPage.classList.add("active");
         trackEvent("page_navigated", { page });
       }
+      
       document.querySelectorAll(".nav-pill").forEach(pill => {
         pill.classList.toggle("active", pill.dataset.page === page);
       });
-      if (window.innerWidth <= 1024) document.body.classList.add("sidebar-hidden");
+      
+      if (window.innerWidth <= 1024) {
+        document.body.classList.add("sidebar-hidden");
+      }
     });
   });
 
@@ -143,59 +175,94 @@ document.addEventListener("DOMContentLoaded", () => {
     pill.addEventListener("click", () => {
       const page = pill.dataset.page;
       if (!page) return;
+      
       document.querySelectorAll(".nav-pill").forEach(p => p.classList.remove("active"));
       pill.classList.add("active");
+      
       document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
       const targetPage = document.querySelector(".page-" + page);
       if (targetPage) targetPage.classList.add("active");
+      
       document.querySelectorAll(".nav-item").forEach(item => {
         item.classList.toggle("active", item.dataset.page === page);
       });
+      
       trackEvent("page_navigated", { page });
     });
   });
 
-  // Theme
-  el.theme?.addEventListener("change", () => {
-    document.body.classList.forEach(c => { if (c.startsWith("theme-")) document.body.classList.remove(c); });
-    document.body.classList.add("theme-" + el.theme.value);
-    localStorage.setItem("anj-theme", el.theme.value);
-    trackEvent("theme_changed", { theme: el.theme.value });
+  // Login modal
+  el.loginBtn?.addEventListener("click", () => {
+    if (el.loginModal) el.loginModal.hidden = false;
+    trackEvent("login_modal_opened");
+  });
+
+  el.closeLogin?.addEventListener("click", () => {
+    if (el.loginModal) el.loginModal.hidden = true;
+  });
+
+  el.loginModal?.querySelector(".modal-backdrop")?.addEventListener("click", () => {
+    el.loginModal.hidden = true;
+  });
+
+  // Theme handling - updated for new theme names
+  const themeInputs = document.querySelectorAll('input[name="theme"]');
+  themeInputs.forEach(input => {
+    input.addEventListener("change", () => {
+      const theme = input.value;
+      document.body.classList.forEach(c => {
+        if (c.startsWith("theme-")) document.body.classList.remove(c);
+      });
+      document.body.classList.add("theme-" + theme);
+      localStorage.setItem("anj-theme", theme);
+      trackEvent("theme_changed", { theme });
+    });
   });
 
   const savedTheme = localStorage.getItem("anj-theme");
-  if (savedTheme && el.theme) {
-    el.theme.value = savedTheme;
-    document.body.classList.add("theme-" + savedTheme);
+  if (savedTheme) {
+    const savedInput = document.querySelector(`input[name="theme"][value="${savedTheme}"]`);
+    if (savedInput) {
+      savedInput.checked = true;
+      document.body.classList.add("theme-" + savedTheme);
+    }
   }
 
-  // Upload flow
+  // File upload
   el.file?.addEventListener("change", () => {
     const file = el.file.files[0];
     if (!file) return;
+    
     currentFile = file;
     trackEvent("file_selected", { filename: file.name, type: file.type });
 
-    if (el.filenameText) el.filenameText.textContent = file.name.length > 25 ? file.name.slice(0, 22) + '...' : file.name;
+    if (el.filenameText) {
+      el.filenameText.textContent = file.name.length > 30 ? file.name.slice(0, 27) + '...' : file.name;
+    }
+    
     if (el.filenamePill) {
       el.filenamePill.hidden = false;
-      el.filenamePill.style.opacity = "1";
-      el.filenamePill.style.transform = "translateY(0)";
     }
-    if (el.uploadCard) el.uploadCard.classList.add("has-file");
-    if (el.ocrActions) el.ocrActions.hidden = false;
+    
+    if (el.uploadCard) {
+      el.uploadCard.classList.add("has-file");
+    }
+    
+    if (el.ocrActions) {
+      el.ocrActions.hidden = false;
+    }
+  });
 
-    setTimeout(() => {
-      if (el.filenamePill && !el.filenamePill.hidden) {
-        el.filenamePill.classList.add("fade-out");
-        setTimeout(() => {
-          if (el.filenamePill) {
-            el.filenamePill.hidden = true;
-            el.filenamePill.classList.remove("fade-out");
-          }
-        }, 500);
-      }
-    }, 3000);
+  el.clearFile?.addEventListener("click", () => {
+    if (el.file) el.file.value = "";
+    currentFile = null;
+    
+    if (el.filenamePill) el.filenamePill.hidden = true;
+    if (el.uploadCard) el.uploadCard.classList.remove("has-file");
+    if (el.ocrActions) el.ocrActions.hidden = true;
+    if (el.resultsSection) el.resultsSection.hidden = true;
+    
+    trackEvent("file_cleared");
   });
 
   // OCR Functions
@@ -219,19 +286,23 @@ document.addEventListener("DOMContentLoaded", () => {
       const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
       const page = await pdf.getPage(1);
       const textContent = await page.getTextContent();
+      
       if (textContent.items.length === 0) return null;
+      
       const lines = {};
       textContent.items.forEach(item => {
         const y = Math.round(item.transform[5]);
         if (!lines[y]) lines[y] = [];
         lines[y].push(item);
       });
+      
       const sortedY = Object.keys(lines).sort((a, b) => b - a);
       let fullText = "";
       sortedY.forEach(y => {
         const lineItems = lines[y].sort((a, b) => a.transform[4] - b.transform[4]);
-        fullText += lineItems.map(item => item.str).join(" ") + "\\n";
+        fullText += lineItems.map(item => item.str).join(" ") + "\n";
       });
+      
       return fullText.trim();
     } catch (e) {
       return null;
@@ -240,14 +311,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function runTesseract(source, logger) {
     const result = await Tesseract.recognize(source, "eng", {
-      logger: m => { if (m.status === "recognizing text" && logger) logger(m.progress); }
+      logger: m => {
+        if (m.status === "recognizing text" && logger) {
+          logger(m.progress);
+        }
+      }
     });
     return result.data.text || "";
   }
 
   async function quickOCR(file) {
     setStatus("Reading file...");
-    await new Promise(r => setTimeout(r, 300));
+    await new Promise(r => setTimeout(r, 200));
     setStatus("Extracting text...");
 
     if (file.type === "application/pdf") {
@@ -274,7 +349,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function dualOCR(file) {
     setStatus("Reading file...");
-    await new Promise(r => setTimeout(r, 300));
+    await new Promise(r => setTimeout(r, 200));
     setStatus("Pass 1: Standard extraction...");
 
     let pass1Text = "";
@@ -300,16 +375,16 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     setStatus("Cross-checking results...");
-    await new Promise(r => setTimeout(r, 400));
+    await new Promise(r => setTimeout(r, 300));
 
     let mergedText = pass1Text;
     if (pass2Text.length > pass1Text.length * 1.2) {
       mergedText = pass2Text;
     } else {
-      const lines1 = new Set(pass1Text.split('\\n'));
-      const lines2 = pass2Text.split('\\n');
+      const lines1 = new Set(pass1Text.split('\n'));
+      const lines2 = pass2Text.split('\n');
       const uniqueLines2 = lines2.filter(l => !lines1.has(l));
-      mergedText = pass1Text + '\\n' + uniqueLines2.join('\\n');
+      mergedText = pass1Text + '\n' + uniqueLines2.join('\n');
     }
 
     setStatus("Dual OCR complete ✓");
@@ -324,11 +399,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (el.quickOCR) {
       el.quickOCR.disabled = true;
-      el.quickOCR.textContent = useDual ? "Processing..." : "Quick OCR";
+      el.quickOCR.innerHTML = useDual ? '<span class="btn-icon">⏳</span>Processing...' : '<span class="btn-icon">⚡</span>Quick OCR';
     }
     if (el.dualOCR) {
       el.dualOCR.disabled = true;
-      el.dualOCR.textContent = useDual ? "Dual OCR" : "Processing...";
+      el.dualOCR.innerHTML = useDual ? '<span class="btn-icon">🔍</span>Dual OCR' : '<span class="btn-icon">⏳</span>Processing...';
     }
 
     if (el.uploadCard) el.uploadCard.classList.add("processing");
@@ -340,40 +415,27 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (el.raw) {
         el.raw.textContent = rawText || "--";
-        el.raw.style.whiteSpace = "pre-wrap";
-        el.raw.style.wordBreak = "break-word";
       }
 
       const cleanedText = normalizeOCRText(rawText);
       if (el.clean) {
         el.clean.textContent = cleanedText || "--";
-        el.clean.style.whiteSpace = "pre-wrap";
-        el.clean.style.wordBreak = "break-word";
       }
 
       extractedItems = extractItems(cleanedText);
+      parsedData = parseInvoice(cleanedText);
 
       if (el.resultsSection) {
         el.resultsSection.hidden = false;
         setTimeout(() => el.resultsSection.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
       }
 
-      if (el.parseBar) {
-        el.parseBar.hidden = false;
-        if (el.parse) {
-          el.parse.disabled = true;
-          if (el.parseHint) el.parseHint.textContent = "Verifying extracted text...";
-          
-          setTimeout(() => {
-            if (el.parse) {
-              el.parse.disabled = false;
-              if (el.parseHint) el.parseHint.textContent = "Ready to verify";
-            }
-          }, 1000);
-        }
+      if (el.parse) {
+        el.parse.disabled = false;
       }
 
       addToRecent(currentFile.name);
+      updateParsedBadge();
       trackEvent(useDual ? "dual_ocr_completed" : "quick_ocr_completed");
     } catch (error) {
       console.error("OCR failed:", error);
@@ -382,11 +444,11 @@ document.addEventListener("DOMContentLoaded", () => {
     } finally {
       if (el.quickOCR) {
         el.quickOCR.disabled = false;
-        el.quickOCR.textContent = "Quick OCR";
+        el.quickOCR.innerHTML = '<span class="btn-icon">⚡</span>Quick OCR';
       }
       if (el.dualOCR) {
         el.dualOCR.disabled = false;
-        el.dualOCR.textContent = "Dual OCR";
+        el.dualOCR.innerHTML = '<span class="btn-icon">🔍</span>Dual OCR';
       }
       if (el.uploadCard) el.uploadCard.classList.remove("processing");
     }
@@ -397,51 +459,52 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function normalizeOCRText(text) {
     if (!text) return "";
-    let lines = text.split('\\n');
+    let lines = text.split('\n');
 
     lines = lines.map(line => {
       line = line.normalize('NFC');
       
-      line = line.replace(/A\\s*mo\\s*unt/gi, 'Amount');
-      line = line.replace(/To\\s*tal/gi, 'Total');
-      line = line.replace(/Inv\\s*o\\s*ice/gi, 'Invoice');
-      line = line.replace(/Inv\\s*No/gi, 'Invoice No');
-      line = line.replace(/Add\\s*re\\s*ss/gi, 'Address');
-      line = line.replace(/G\\s*S\\s*T\\s*I\\s*N/gi, 'GSTIN');
-      line = line.replace(/Da\\s*te/gi, 'Date');
-      line = line.replace(/Qua\\s*li\\s*ty/gi, 'Quality');
-      line = line.replace(/Ne\\s*ar/gi, 'Near');
-      line = line.replace(/ma\\s*rket/gi, 'market');
-      line = line.replace(/bus\\s*st/gi, 'bus stand');
-      line = line.replace(/Co\\s*ntent/gi, 'Content');
+      // Fix common OCR spacing issues
+      line = line.replace(/A\s*mo\s*unt/gi, 'Amount');
+      line = line.replace(/To\s*tal/gi, 'Total');
+      line = line.replace(/Inv\s*o\s*ice/gi, 'Invoice');
+      line = line.replace(/Inv\s*No/gi, 'Invoice No');
+      line = line.replace(/Add\s*re\s*ss/gi, 'Address');
+      line = line.replace(/G\s*S\s*T\s*I\s*N/gi, 'GSTIN');
+      line = line.replace(/Da\s*te/gi, 'Date');
       
-      line = line.replace(/\\s*:\\s*/g, ': ');
-      line = line.replace(/\\s*-\\s*/g, ' - ');
+      // Clean up spacing around punctuation
+      line = line.replace(/\s*:\s*/g, ': ');
+      line = line.replace(/\s*-\s*/g, ' - ');
       
-      line = line.replace(/([A-Za-z])(\\d)/g, '$1 $2');
-      line = line.replace(/(\\d)([A-Za-z])/g, '$1 $2');
+      // Add space between letters and numbers
+      line = line.replace(/([A-Za-z])(\d)/g, '$1 $2');
+      line = line.replace(/(\d)([A-Za-z])/g, '$1 $2');
       
-      line = line.replace(/\\s+/g, ' ').trim();
+      // Normalize whitespace
+      line = line.replace(/\s+/g, ' ').trim();
       
       return line;
     });
 
+    // Filter out noise
     lines = lines.filter(line => {
-      if (/scanned\\s*document/i.test(line)) return false;
-      if (/very\\s*poor\\s*quality/i.test(line)) return false;
-      if (/poor\\s*quality/i.test(line)) return false;
+      if (/scanned\s*document/i.test(line)) return false;
+      if (/very\s*poor\s*quality/i.test(line)) return false;
       return line.trim().length > 0;
     });
 
-    return lines.join('\\n');
+    return lines.join('\n');
   }
 
   function extractItems(text) {
     const items = [];
-    const lines = text.split('\\n');
+    const lines = text.split('\n');
     
+    // Pattern: ItemName Qty Rate Amount
     lines.forEach(line => {
-      const match = line.match(/^(\\d*)\\s*([A-Za-z\\s\\.]+?)\\s+(\\d+)\\s+([\\d\\.]+)\\s+([\\d\\.]+)$/);
+      // Try pattern: Name Qty Rate Amount
+      let match = line.match(/^(\d*)\s*([A-Za-z\s\.]+?)\s+(\d+)\s+([\d\.]+)\s+([\d\.]+)$/);
       if (match) {
         items.push({
           name: match[2].trim(),
@@ -450,13 +513,14 @@ document.addEventListener("DOMContentLoaded", () => {
           amount: parseFloat(match[5])
         });
       } else {
-        const match2 = line.match(/^([A-Za-z\\s\\.]+?)\\s+(\\d+)\\s+([\\d\\.]+)\\s+([\\d\\.]+)$/);
-        if (match2) {
+        // Try alternative: Name Qty x Rate = Amount
+        match = line.match(/^([A-Za-z\s\.]+?)\s+x\s*(\d+)\s+([\d\.]+)\s+([\d\.]+)$/);
+        if (match) {
           items.push({
-            name: match2[1].trim(),
-            qty: parseInt(match2[2]),
-            rate: parseFloat(match2[3]),
-            amount: parseFloat(match2[4])
+            name: match[1].trim(),
+            qty: parseInt(match[2]),
+            rate: parseFloat(match[3]),
+            amount: parseFloat(match[4])
           });
         }
       }
@@ -466,56 +530,56 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function parseInvoice(text) {
-    const lines = text.split('\\n');
+    const lines = text.split('\n');
     const out = { merchant: "", date: "", total: "" };
 
-    for (let i = 3; i < Math.min(lines.length, 20); i++) {
+    // Find merchant (first substantial line that's not a keyword)
+    for (let i = 0; i < Math.min(lines.length, 15); i++) {
       const line = lines[i].trim();
-      if (line.length < 5 || line.length > 35) continue;
-      if (/scanned|document|quality|very|poor|invoice|bill|receipt|gstin|date|total/i.test(line)) continue;
-      if (/^\\d+$/.test(line)) continue;
-      if (line === line.toUpperCase() && line.length > 10) continue;
+      if (line.length < 3 || line.length > 40) continue;
+      if (/invoice|bill|receipt|gst|tax|date|total|address|phone|email/i.test(line)) continue;
+      if (/^\d+$/.test(line)) continue;
+      if (/^[=\-]+$/.test(line)) continue;
       
-      if (/[a-z]/i.test(line)) {
-        out.merchant = line;
-        break;
-      }
+      out.merchant = line;
+      break;
     }
 
-    const dateRegex = /\\b(\\d{1,2}[-\\/\\. ]\\d{1,2}[-\\/\\. ]\\d{2,4})\\b|\\b(\\d{1,2} [A-Za-z]{3,9} \\d{2,4})\\b/g;
-    let dateCandidates = [];
-    text.replace(dateRegex, (match) => {
-      const context = text.substring(Math.max(0, text.indexOf(match) - 20), text.indexOf(match) + match.length + 20);
-      if (!context.toLowerCase().includes("gst") && !context.match(/\\d{10,}/)) {
-        dateCandidates.push(match);
-      }
-    });
-    if (dateCandidates.length > 0) out.date = dateCandidates[0];
+    // Find date
+    const dateRegex = /\b(\d{1,2}[-\/\. ]\d{1,2}[-\/\. ]\d{2,4})\b|\b(\d{1,2}\s+[A-Za-z]{3,9}\s+\d{2,4})\b/g;
+    const dates = text.match(dateRegex);
+    if (dates && dates.length > 0) {
+      out.date = dates[0];
+    }
 
-    const totalKeywords = ["total", "payable", "amount", "net", "grand", "sum"];
-    const numberRegex = /(?:₹|RS|INR|AMT)?\\s*([\\d,]+\\.?\\d{0,2})/gi;
+    // Find total
+    const totalKeywords = ["total", "grand total", "net amount", "payable", "amount due"];
+    const numberRegex = /(?:₹|RS\.?|INR)?\s*([\d,]+(?:\.\d{2})?)/gi;
     let candidates = [];
-    lines.forEach((line, index) => {
+    
+    lines.forEach((line, idx) => {
+      const lowerLine = line.toLowerCase();
+      let hasKeyword = totalKeywords.some(kw => lowerLine.includes(kw));
+      
       let match;
       while ((match = numberRegex.exec(line)) !== null) {
         const valStr = match[1].replace(/,/g, '');
         const val = parseFloat(valStr);
         if (isNaN(val) || val <= 0) continue;
+        
         let score = 0;
-        const lowerLine = line.toLowerCase();
-        if (totalKeywords.some(k => lowerLine.includes(k))) score += 50;
-        if (valStr.includes('.')) score += 20;
-        if (index > lines.length * 0.6) score += 30;
-        if (valStr.length > 8 && !valStr.includes('.')) score -= 100;
-        candidates.push({ value: valStr, score: score });
+        if (hasKeyword) score += 50;
+        if (val < 100000) score += 10;
+        if (idx > lines.length * 0.5) score += 20;
+        if (line.includes('.')) score += 10;
+        
+        candidates.push({ value: val, score, str: valStr });
       }
     });
+
     if (candidates.length > 0) {
-      const validCandidates = candidates.filter(c => c.score > 20);
-      if (validCandidates.length > 0) {
-        validCandidates.sort((a, b) => parseFloat(b.value) - parseFloat(a.value));
-        out.total = validCandidates[0].value;
-      }
+      candidates.sort((a, b) => b.score - a.score);
+      out.total = candidates[0].str;
     }
 
     return out;
@@ -528,88 +592,134 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const rawText = el.clean.textContent;
-    const parsed = parseInvoice(rawText);
+    parsedData = parseInvoice(rawText);
     trackEvent("invoice_parsed");
 
-    const verification = verifyInvoiceTotals(parsed, rawText, extractedItems);
-    
-    if (el.editMerchant) el.editMerchant.value = parsed.merchant || "";
-    if (el.editDate) el.editDate.value = parsed.date || "";
-    if (el.editTotal) el.editTotal.value = parsed.total || "";
+    const verification = verifyInvoiceTotals(parsedData, rawText, extractedItems);
 
+      // Update items table
     if (extractedItems.length > 0 && el.itemsSection && el.itemsTableBody) {
       el.itemsSection.hidden = false;
+      if (el.itemsCount) el.itemsCount.textContent = `${extractedItems.length} item${extractedItems.length > 1 ? 's' : ''}`;
+      
       el.itemsTableBody.innerHTML = extractedItems.map(item => `
         <tr>
-          <td>${item.name}</td>
-          <td>${item.qty}</td>
-          <td>₹${item.rate.toFixed(2)}</td>
-          <td>₹${item.amount.toFixed(2)}</td>
+          <td>${escapeHtml(item.name)}</td>
+          <td class="numeric">${item.qty}</td>
+          <td class="numeric">₹${item.rate.toFixed(2)}</td>
+          <td class="numeric">₹${item.amount.toFixed(2)}</td>
         </tr>
       `).join('');
+    } else {
+      if (el.itemsSection) el.itemsSection.hidden = true;
     }
 
+    // Update verification badge
     if (el.verificationBadge) {
       const diff = verification.differenceAmount;
-      let statusClass = "verified";
-      let icon = "✅";
-      let title = "Verified";
-      let subtitle = `Invoice total matches calculated amount from ${extractedItems.length} line items`;
+      let statusClass = "";
+      let icon = "";
+      let title = "";
+      let subtitle = "";
 
       if (verification.status === "Unverifiable") {
         statusClass = "error";
         icon = "❌";
         title = "Cannot Verify";
         subtitle = "Missing item structure or unclear total";
-      } else if (Math.abs(diff) > 0.01) {
+      } else if (Math.abs(diff) <= 0.01) {
+        statusClass = "verified";
+        icon = "✓";
+        title = "Verified";
+        subtitle = `Invoice total matches calculated amount from ${extractedItems.length} line items`;
+      } else if (diff > 0) {
         statusClass = "warning";
-        icon = "⚠️";
-        title = diff > 0 ? "Total Mismatch" : "Possible Overcharge";
-        subtitle = diff > 0 
-          ? `Invoice total is ₹${diff.toFixed(2)} less than calculated`
-          : `You may have been overcharged ₹${Math.abs(diff).toFixed(2)}`;
+        icon = "⚠";
+        title = "Total Mismatch";
+        subtitle = `Invoice total is ₹${diff.toFixed(2)} less than calculated`;
+      } else {
+        statusClass = "warning";
+        icon = "⚠";
+        title = "Possible Overcharge";
+        subtitle = `You may have been overcharged ₹${Math.abs(diff).toFixed(2)}`;
       }
 
       el.verificationBadge.className = "verification-badge " + statusClass;
       const badgeIcon = el.verificationBadge.querySelector('.badge-icon');
       const badgeTitle = el.verificationBadge.querySelector('.badge-title');
+      
       if (badgeIcon) badgeIcon.textContent = icon;
       if (badgeTitle) badgeTitle.textContent = title;
       if (el.badgeSubtitle) el.badgeSubtitle.textContent = subtitle;
     }
 
-    if (el.json) el.json.textContent = JSON.stringify({ ...parsed, items: extractedItems }, null, 2);
+    // Update JSON preview
+    if (el.json) {
+      el.json.textContent = JSON.stringify({ 
+        ...parsedData, 
+        items: extractedItems,
+        verification: {
+          status: verification.status,
+          computedTotal: verification.computedTotal,
+          declaredTotal: verification.declaredTotal,
+          difference: verification.differenceAmount
+        }
+      }, null, 2);
+    }
+    
     hasParsedData = true;
     updateParsedUI(true);
 
-    if (el.parseBar) el.parseBar.hidden = true;
+    // Navigate to parsed page
     document.querySelector('[data-page="parsed"]')?.click();
   });
 
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  // Save to history
   el.saveBtn?.addEventListener("click", () => {
     if (!hasParsedData || !db) return;
+    
     const tx = db.transaction("history", "readwrite");
     const store = tx.objectStore("history");
+    
     store.add({
-      merchant: el.editMerchant.value,
-      date: el.editDate.value,
-      total: el.editTotal.value,
+      merchant: el.editMerchant?.value || "",
+      date: el.editDate?.value || "",
+      total: el.editTotal?.value || "",
       items: extractedItems,
       timestamp: Date.now()
     });
     
     tx.oncomplete = () => {
       trackEvent("history_saved");
-      if (el.saveHint) el.saveHint.textContent = "✓ Saved to history";
-      setTimeout(() => {
-        if (el.saveHint) el.saveHint.textContent = "";
-        loadHistory();
-      }, 1500);
+      if (el.saveHint) {
+        el.saveHint.textContent = "✓ Saved successfully";
+        setTimeout(() => el.saveHint.textContent = "", 2000);
+      }
+      loadHistory();
+      updateParsedBadge();
     };
   });
 
+  // Copy preview
+  el.copyPreview?.addEventListener("click", () => {
+    if (el.json) {
+      navigator.clipboard.writeText(el.json.textContent).then(() => {
+        const originalText = el.copyPreview.textContent;
+        el.copyPreview.textContent = "Copied!";
+        setTimeout(() => el.copyPreview.textContent = originalText, 1500);
+      });
+    }
+  });
+
+  // Recent files
   const MAX_RECENT = 4;
-  const RECENT_KEY = 'anj_recent';
+  const RECENT_KEY = 'anj_recent_v2';
 
   function loadRecent() {
     try {
@@ -624,21 +734,25 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderRecent() {
     if (!el.recentGrid) return;
     const items = loadRecent();
-    el.recentGrid.innerHTML = items.length === 0 
-      ? '<div class="recent-empty">No recent invoices</div>'
-      : items.map(item => `
-        <div class="recent-card" data-file="${item.fullName}">
-          <div class="recent-icon">📄</div>
-          <div class="recent-name">${item.name}</div>
-          <div class="recent-time">${item.time}</div>
-        </div>
-      `).join('');
     
-    el.recentGrid.querySelectorAll('.recent-card').forEach(card => {
-      card.addEventListener('click', () => {
-        trackEvent("recent_clicked");
-      });
-    });
+    if (items.length === 0) {
+      el.recentGrid.innerHTML = `
+        <div class="recent-empty">
+          <div class="empty-icon">📂</div>
+          <p>No recent invoices</p>
+          <span>Upload your first document to get started</span>
+        </div>
+      `;
+      return;
+    }
+    
+    el.recentGrid.innerHTML = items.map(item => `
+      <div class="recent-card" data-file="${escapeHtml(item.fullName)}">
+        <div class="recent-icon">📄</div>
+        <div class="recent-name">${escapeHtml(item.name)}</div>
+        <div class="recent-time">${escapeHtml(item.time)}</div>
+      </div>
+    `).join('');
   }
 
   function addToRecent(filename) {
@@ -646,80 +760,146 @@ document.addEventListener("DOMContentLoaded", () => {
     const newItem = {
       name: filename.length > 25 ? filename.slice(0, 22) + '...' : filename,
       fullName: filename,
-      time: 'Just now'
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
+    
     const filtered = items.filter(i => i.fullName !== filename);
     saveRecent([newItem, ...filtered]);
     renderRecent();
   }
 
+  el.clearRecent?.addEventListener("click", () => {
+    localStorage.removeItem(RECENT_KEY);
+    renderRecent();
+    trackEvent("recent_cleared");
+  });
+
   renderRecent();
 
+  // IndexedDB History
   function initDB() {
-    const req = indexedDB.open("anj-dual-ocr", 1);
+    const req = indexedDB.open("anj-dual-ocr-v2", 1);
     req.onupgradeneeded = e => {
       const db = e.target.result;
       if (!db.objectStoreNames.contains("history")) {
         db.createObjectStore("history", { keyPath: "id", autoIncrement: true });
       }
     };
-    req.onsuccess = e => { db = e.target.result; loadHistory(); };
+    req.onsuccess = e => {
+      db = e.target.result;
+      loadHistory();
+    };
   }
 
   function loadHistory() {
     if (!db || !el.historyPageList) return;
+    
     el.historyPageList.innerHTML = '';
+    let count = 0;
+    
     const tx = db.transaction("history", "readonly");
     const store = tx.objectStore("history");
+    
     store.openCursor(null, "prev").onsuccess = e => {
       const cursor = e.target.result;
       if (!cursor) {
-        if (el.historyPageList.children.length === 0) {
-          el.historyPageList.innerHTML = '<li class="history-empty">No saved invoices yet</li>';
+        if (el.historyCount) el.historyCount.textContent = count;
+        if (count === 0) {
+          el.historyPageList.innerHTML = `
+            <li class="history-empty">
+              <div class="empty-icon">📭</div>
+              <p>No saved invoices yet</p>
+              <span>Parsed invoices will appear here</span>
+            </li>
+          `;
         }
         return;
       }
+      
+      count++;
       const item = cursor.value;
       const li = document.createElement("li");
       li.className = "history-item";
       li.innerHTML = `
-        <span class="history-icon">📄</span>
+        <div class="history-icon">📄</div>
         <div class="history-info">
-          <div class="history-name">${item.merchant || "Unknown"}</div>
+          <div class="history-name">${escapeHtml(item.merchant || "Unknown")}</div>
           <div class="history-date">${new Date(item.timestamp).toLocaleString()}</div>
         </div>
-        <div class="history-amount">₹${item.total || "--"}</div>
+        <div class="history-amount">₹${escapeHtml(item.total || "--")}</div>
       `;
+      
       li.addEventListener("click", () => {
         if (el.editMerchant) el.editMerchant.value = item.merchant || "";
         if (el.editDate) el.editDate.value = item.date || "";
         if (el.editTotal) el.editTotal.value = item.total || "";
+        
         if (item.items && el.itemsSection && el.itemsTableBody) {
           extractedItems = item.items;
           el.itemsSection.hidden = false;
+          if (el.itemsCount) el.itemsCount.textContent = `${item.items.length} item${item.items.length > 1 ? 's' : ''}`;
           el.itemsTableBody.innerHTML = item.items.map(i => `
-            <tr><td>${i.name}</td><td>${i.qty}</td><td>₹${i.rate.toFixed(2)}</td><td>₹${i.amount.toFixed(2)}</td></tr>
+            <tr>
+              <td>${escapeHtml(i.name)}</td>
+              <td class="numeric">${i.qty}</td>
+              <td class="numeric">₹${i.rate.toFixed(2)}</td>
+              <td class="numeric">₹${i.amount.toFixed(2)}</td>
+            </tr>
           `).join('');
         }
+        
+        hasParsedData = true;
+        updateParsedUI(true);
         document.querySelector('[data-page="parsed"]')?.click();
       });
+      
       el.historyPageList.appendChild(li);
       cursor.continue();
     };
   }
 
+  function updateParsedBadge() {
+    if (!db || !el.parsedBadge) return;
+    
+    const tx = db.transaction("history", "readonly");
+    const store = tx.objectStore("history");
+    const countReq = store.count();
+    
+    countReq.onsuccess = () => {
+      const count = countReq.result;
+      el.parsedBadge.textContent = count;
+      el.parsedBadge.style.display = count > 0 ? 'block' : 'none';
+    };
+  }
+
   el.clearHistoryBtn?.addEventListener("click", () => {
-    if (!confirm("Clear all history?")) return;
+    if (!confirm("Clear all saved history? This cannot be undone.")) return;
+    
     const tx = db.transaction("history", "readwrite");
     tx.objectStore("history").clear();
-    tx.oncomplete = () => { 
-      if (el.historyPageList) el.historyPageList.innerHTML = '<li class="history-empty">No saved invoices yet</li>'; 
+    
+    tx.oncomplete = () => {
+      loadHistory();
+      updateParsedBadge();
+      trackEvent("history_cleared");
     };
   });
 
+  el.historySearch?.addEventListener("input", e => {
+    const term = e.target.value.toLowerCase();
+    const items = el.historyPageList?.querySelectorAll('.history-item');
+    
+    items?.forEach(item => {
+      const text = item.textContent.toLowerCase();
+      item.style.display = text.includes(term) ? '' : 'none';
+    });
+  });
+
+  // Export handlers
   [el.exportJSON, el.exportTXT, el.exportCSV].forEach(btn => {
     btn?.addEventListener("click", (e) => {
-      trackEvent(`export_attempted_${e.target.id.replace('export', '').toLowerCase()}`);
+      const type = e.currentTarget.id.replace('export', '').toLowerCase();
+      trackEvent(`export_attempted_${type}`);
       setStatus("Export is a premium feature", true);
     });
   });
@@ -727,4 +907,49 @@ document.addEventListener("DOMContentLoaded", () => {
   initDB();
   setStatus("Ready ✓");
 });
+And finally the invoiceVerification.js (unchanged but included for completeness):
+JavaScript
+Copy
+export function verifyInvoiceTotals(parsed, rawText, items = []) {
+  const result = {
+    status: "Unverifiable",
+    computedTotal: 0,
+    declaredTotal: parseFloat(parsed.total) || 0,
+    differenceAmount: 0,
+    itemCount: items.length
+  };
 
+  // If we have items, calculate from them
+  if (items.length > 0) {
+    result.computedTotal = items.reduce((sum, item) => sum + (item.amount || 0), 0);
+  } else {
+    // Try to extract from text patterns
+    const amountMatches = rawText.match(/(\d+\.\d{2})/g) || [];
+    const amounts = amountMatches.map(a => parseFloat(a)).filter(a => a > 0);
+    
+    // Use largest amount as likely total, or sum of line items if we can identify them
+    if (amounts.length > 0) {
+      // Sort descending
+      amounts.sort((a, b) => b - a);
+      // If declared total matches one of the amounts, use second largest as computed
+      const declaredIndex = amounts.indexOf(result.declaredTotal);
+      if (declaredIndex > -1 && amounts.length > 1) {
+        // Sum all except the declared total (assuming it's the final total)
+        result.computedTotal = amounts.slice(1).reduce((a, b) => a + b, 0);
+      } else {
+        // Can't determine, use largest as computed
+        result.computedTotal = amounts[0];
+      }
+    }
+  }
+
+  result.differenceAmount = result.computedTotal - result.declaredTotal;
+  
+  if (items.length > 0) {
+    result.status = Math.abs(result.differenceAmount) <= 0.01 ? "Verified" : "Mismatch";
+  } else if (result.computedTotal > 0) {
+    result.status = Math.abs(result.differenceAmount) <= 0.01 ? "Verified" : "Partial";
+  }
+
+  return result;
+}
