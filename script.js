@@ -5,6 +5,8 @@ import { verifyInvoiceTotals } from "./invoiceVerification.js";
 const pdfjsLib = window.pdfjsLib;
 const Tesseract = window.Tesseract;
 
+// ==================== UTILITIES ====================
+
 function generateUUID() {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
     const r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
@@ -22,7 +24,6 @@ function initAnonUserId() {
 }
 
 window.getAnonUserId = () => localStorage.getItem("anon_user_id");
-initAnonUserId();
 
 const lastTracked = {};
 
@@ -40,41 +41,64 @@ function trackEvent(eventName, meta = {}) {
   console.log(`[TRACK] ${JSON.stringify({ event: eventName, userId, timestamp: now, page: pageName, meta }, null, 2)}`);
 }
 
+function escapeHtml(text) {
+  if (!text) return "";
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// ==================== STATE ====================
+
+let db = null;
+let hasParsedData = false;
+let currentFile = null;
+let extractedItems = [];
+let parsedData = null;
+
+// ==================== DOM READY ====================
+
 document.addEventListener("DOMContentLoaded", () => {
   console.log("DOM READY");
+  
+  initAnonUserId();
   trackEvent("app_loaded");
 
+  // ==================== ELEMENT REFERENCES ====================
+  
   const el = {
-    // Core elements
-    file: document.getElementById("fileInput"),
-    raw: document.getElementById("rawText"),
-    clean: document.getElementById("cleanedText"),
-    json: document.getElementById("jsonPreview"),
-    status: document.getElementById("statusBar"),
+    // Core inputs/outputs
+    fileInput: document.getElementById("fileInput"),
+    rawText: document.getElementById("rawText"),
+    cleanedText: document.getElementById("cleanedText"),
+    jsonPreview: document.getElementById("jsonPreview"),
+    statusBar: document.getElementById("statusBar"),
     userIdDisplay: document.getElementById("userIdDisplay"),
     
     // OCR buttons
-    quickOCR: document.getElementById("quickOCRBtn"),
-    dualOCR: document.getElementById("dualOCRBtn"),
-    parse: document.getElementById("parseBtn"),
+    quickOCRBtn: document.getElementById("quickOCRBtn"),
+    dualOCRBtn: document.getElementById("dualOCRBtn"),
+    parseBtn: document.getElementById("parseBtn"),
     
-    // UI elements
-    saveBtn: document.getElementById("saveBtn"),
+    // Upload UI
     uploadCard: document.getElementById("uploadCard"),
     filenamePill: document.getElementById("filenamePill"),
     filenameText: document.getElementById("filenameText"),
-    clearFile: document.getElementById("clearFile"),
+    clearFileBtn: document.getElementById("clearFile"),
     ocrActions: document.getElementById("ocrActions"),
     resultsSection: document.getElementById("resultsSection"),
-    recentGrid: document.getElementById("recentGrid"),
-    clearRecent: document.getElementById("clearRecent"),
     
-    // Parsed page
+    // Recent section
+    recentGrid: document.getElementById("recentGrid"),
+    clearRecentBtn: document.getElementById("clearRecent"),
+    
+    // Parsed page fields
     editMerchant: document.getElementById("editMerchant"),
     editDate: document.getElementById("editDate"),
     editTotal: document.getElementById("editTotal"),
     verificationBadge: document.getElementById("verificationBadge"),
     badgeSubtitle: document.getElementById("badgeSubtitle"),
+    saveBtn: document.getElementById("saveBtn"),
     saveHint: document.getElementById("saveHint"),
     itemsSection: document.getElementById("itemsSection"),
     itemsTableBody: document.getElementById("itemsTableBody"),
@@ -85,7 +109,7 @@ document.addEventListener("DOMContentLoaded", () => {
     exportJSON: document.getElementById("exportJSON"),
     exportTXT: document.getElementById("exportTXT"),
     exportCSV: document.getElementById("exportCSV"),
-    copyPreview: document.getElementById("copyPreview"),
+    copyPreviewBtn: document.getElementById("copyPreview"),
     
     // Navigation
     sidebarToggle: document.getElementById("sidebarToggle"),
@@ -94,148 +118,210 @@ document.addEventListener("DOMContentLoaded", () => {
     
     // Modal
     loginModal: document.getElementById("loginModal"),
-    closeLogin: document.getElementById("closeLogin"),
+    closeLoginBtn: document.getElementById("closeLogin"),
     
-    // History
+    // History page
     historyPageList: document.getElementById("historyPageList"),
     historySearch: document.getElementById("historySearch"),
     clearHistoryBtn: document.getElementById("clearHistoryBtn"),
     historyCount: document.getElementById("historyCount"),
     
-    // Settings
-    theme: document.getElementById("themeSelect")
+    // Theme inputs (radio buttons)
+    themeInputs: document.querySelectorAll('input[name="theme"]')
   };
 
-  // Display user ID
+  // ==================== INITIAL UI SETUP ====================
+  
   if (el.userIdDisplay) {
     const anonId = localStorage.getItem("anon_user_id") || "—";
     el.userIdDisplay.textContent = `User: ${anonId.slice(0, 8)}...`;
   }
 
-  let db = null;
-  let hasParsedData = false;
-  let currentFile = null;
-  let extractedItems = [];
-  let parsedData = null;
-
-  function setStatus(msg, err = false) {
-    if (!el.status) return;
-    el.status.style.whiteSpace = "pre-wrap";
-    el.status.textContent = msg;
-    el.status.style.color = err ? "#ef4444" : "#22c55e";
+  function setStatus(msg, isError = false) {
+    if (!el.statusBar) return;
+    el.statusBar.textContent = msg;
+    el.statusBar.style.color = isError ? "#ef4444" : "#22c55e";
   }
 
   function updateParsedUI(enabled) {
-    const elements = [el.saveBtn, el.exportJSON, el.exportTXT, el.exportCSV, el.editMerchant, el.editDate, el.editTotal];
-    elements.forEach(x => {
-      if (!x) return;
-      x.disabled = !enabled;
-      x.style.opacity = enabled ? "1" : "0.5";
+    const elements = [
+      el.saveBtn, 
+      el.exportJSON, 
+      el.exportTXT, 
+      el.exportCSV,
+      el.editMerchant, 
+      el.editDate, 
+      el.editTotal
+    ];
+    
+    elements.forEach(elem => {
+      if (!elem) return;
+      elem.disabled = !enabled;
+      if (elem.tagName === 'INPUT') {
+        elem.style.opacity = enabled ? "1" : "0.6";
+      } else {
+        elem.style.opacity = enabled ? "1" : "0.5";
+        elem.style.cursor = enabled ? "pointer" : "not-allowed";
+      }
     });
   }
 
   updateParsedUI(false);
+  setStatus("Ready ✓");
 
-  // Navigation
-  el.sidebarToggle?.addEventListener("click", () => {
+  // ==================== SIDEBAR TOGGLE ====================
+  
+  // Toggle sidebar open/closed
+  el.sidebarToggle?.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     document.body.classList.toggle("sidebar-hidden");
-    trackEvent("sidebar_toggled");
+    const isHidden = document.body.classList.contains("sidebar-hidden");
+    trackEvent("sidebar_toggled", { state: isHidden ? "closed" : "open" });
+    console.log("Sidebar toggled:", isHidden ? "hidden" : "visible");
   });
 
-  el.sidebarCloseBtn?.addEventListener("click", () => {
+  // Close sidebar button (mobile)
+  el.sidebarCloseBtn?.addEventListener("click", (e) => {
+    e.preventDefault();
     document.body.classList.add("sidebar-hidden");
+    trackEvent("sidebar_closed");
   });
 
-  document.querySelectorAll(".nav-item").forEach(item => {
-    item.addEventListener("click", () => {
+  // ==================== NAVIGATION ====================
+  
+  // Sidebar nav items
+  document.querySelectorAll(".sidebar .nav-item").forEach(item => {
+    item.addEventListener("click", (e) => {
+      e.preventDefault();
       const page = item.dataset.page;
       if (!page) return;
-      
-      document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
+
+      console.log("Navigating to:", page);
+
+      // Update active states in sidebar
+      document.querySelectorAll(".sidebar .nav-item").forEach(n => n.classList.remove("active"));
       item.classList.add("active");
-      
+
+      // Switch pages
       document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
-      const targetPage = document.querySelector(".page-" + page);
+      const targetPage = document.querySelector(`.page-${page}`);
       if (targetPage) {
         targetPage.classList.add("active");
-        trackEvent("page_navigated", { page });
+        trackEvent("page_navigated", { page, source: "sidebar" });
       }
-      
+
+      // Update topbar pills
       document.querySelectorAll(".nav-pill").forEach(pill => {
         pill.classList.toggle("active", pill.dataset.page === page);
       });
-      
+
+      // Close sidebar on mobile
       if (window.innerWidth <= 1024) {
         document.body.classList.add("sidebar-hidden");
       }
     });
   });
 
+  // Topbar pills
   document.querySelectorAll(".nav-pill").forEach(pill => {
-    pill.addEventListener("click", () => {
+    pill.addEventListener("click", (e) => {
+      e.preventDefault();
       const page = pill.dataset.page;
       if (!page) return;
-      
+
+      console.log("Topbar navigating to:", page);
+
+      // Update pill active states
       document.querySelectorAll(".nav-pill").forEach(p => p.classList.remove("active"));
       pill.classList.add("active");
-      
+
+      // Switch pages
       document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
-      const targetPage = document.querySelector(".page-" + page);
-      if (targetPage) targetPage.classList.add("active");
-      
-      document.querySelectorAll(".nav-item").forEach(item => {
+      const targetPage = document.querySelector(`.page-${page}`);
+      if (targetPage) {
+        targetPage.classList.add("active");
+        trackEvent("page_navigated", { page, source: "topbar" });
+      }
+
+      // Sync sidebar
+      document.querySelectorAll(".sidebar .nav-item").forEach(item => {
         item.classList.toggle("active", item.dataset.page === page);
       });
-      
-      trackEvent("page_navigated", { page });
     });
   });
 
-  // Login modal
-  el.loginBtn?.addEventListener("click", () => {
-    if (el.loginModal) el.loginModal.hidden = false;
-    trackEvent("login_modal_opened");
-  });
-
-  el.closeLogin?.addEventListener("click", () => {
-    if (el.loginModal) el.loginModal.hidden = true;
-  });
-
-  el.loginModal?.querySelector(".modal-backdrop")?.addEventListener("click", () => {
-    el.loginModal.hidden = true;
-  });
-
-  // Theme handling - updated for new theme names
-  const themeInputs = document.querySelectorAll('input[name="theme"]');
-  themeInputs.forEach(input => {
+  // ==================== THEME SWITCHING ====================
+  
+  // Theme radio buttons
+  el.themeInputs?.forEach(input => {
     input.addEventListener("change", () => {
+      if (!input.checked) return;
+      
       const theme = input.value;
+      console.log("Theme changed to:", theme);
+      
+      // Remove all theme classes
       document.body.classList.forEach(c => {
         if (c.startsWith("theme-")) document.body.classList.remove(c);
       });
-      document.body.classList.add("theme-" + theme);
+      
+      // Add new theme
+      document.body.classList.add(`theme-${theme}`);
       localStorage.setItem("anj-theme", theme);
       trackEvent("theme_changed", { theme });
     });
   });
 
+  // Load saved theme
   const savedTheme = localStorage.getItem("anj-theme");
   if (savedTheme) {
     const savedInput = document.querySelector(`input[name="theme"][value="${savedTheme}"]`);
     if (savedInput) {
       savedInput.checked = true;
-      document.body.classList.add("theme-" + savedTheme);
+      document.body.classList.add(`theme-${savedTheme}`);
     }
   }
 
-  // File upload
-  el.file?.addEventListener("change", () => {
-    const file = el.file.files[0];
+  // ==================== LOGIN MODAL ====================
+  
+  el.loginBtn?.addEventListener("click", (e) => {
+    e.preventDefault();
+    if (el.loginModal) {
+      el.loginModal.hidden = false;
+      trackEvent("login_modal_opened");
+    }
+  });
+
+  el.closeLoginBtn?.addEventListener("click", (e) => {
+    e.preventDefault();
+    if (el.loginModal) el.loginModal.hidden = true;
+  });
+
+  // Close on backdrop click
+  el.loginModal?.querySelector(".modal-backdrop")?.addEventListener("click", () => {
+    el.loginModal.hidden = true;
+  });
+
+  // Close on escape key
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && el.loginModal && !el.loginModal.hidden) {
+      el.loginModal.hidden = true;
+    }
+  });
+
+  // ==================== FILE UPLOAD ====================
+  
+  // File input change
+  el.fileInput?.addEventListener("change", () => {
+    const file = el.fileInput.files[0];
     if (!file) return;
     
     currentFile = file;
-    trackEvent("file_selected", { filename: file.name, type: file.type });
+    console.log("File selected:", file.name);
+    trackEvent("file_selected", { filename: file.name, type: file.type, size: file.size });
 
+    // Show filename pill
     if (el.filenameText) {
       el.filenameText.textContent = file.name.length > 30 ? file.name.slice(0, 27) + '...' : file.name;
     }
@@ -244,17 +330,28 @@ document.addEventListener("DOMContentLoaded", () => {
       el.filenamePill.hidden = false;
     }
     
+    // Update upload card state
     if (el.uploadCard) {
       el.uploadCard.classList.add("has-file");
     }
     
+    // Show OCR action buttons
     if (el.ocrActions) {
       el.ocrActions.hidden = false;
     }
+    
+    // Hide results from previous file
+    if (el.resultsSection) {
+      el.resultsSection.hidden = true;
+    }
   });
 
-  el.clearFile?.addEventListener("click", () => {
-    if (el.file) el.file.value = "";
+  // Clear file button
+  el.clearFileBtn?.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (el.fileInput) el.fileInput.value = "";
     currentFile = null;
     
     if (el.filenamePill) el.filenamePill.hidden = true;
@@ -265,7 +362,15 @@ document.addEventListener("DOMContentLoaded", () => {
     trackEvent("file_cleared");
   });
 
-  // OCR Functions
+  // Click on upload card triggers file input
+  el.uploadCard?.addEventListener("click", (e) => {
+    if (e.target === el.fileInput || e.target.closest('.upload-input')) return;
+    if (currentFile) return; // Don't trigger if file already selected
+    el.fileInput?.click();
+  });
+
+  // ==================== OCR PROCESSING ====================
+  
   async function pdfToCanvas(file, scale = 3) {
     const buffer = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
@@ -305,27 +410,29 @@ document.addEventListener("DOMContentLoaded", () => {
       
       return fullText.trim();
     } catch (e) {
+      console.error("PDF text extraction failed:", e);
       return null;
     }
   }
 
-  async function runTesseract(source, logger) {
+  async function runTesseract(source, onProgress) {
     const result = await Tesseract.recognize(source, "eng", {
       logger: m => {
-        if (m.status === "recognizing text" && logger) {
-          logger(m.progress);
+        if (m.status === "recognizing text" && onProgress) {
+          onProgress(m.progress);
         }
       }
     });
     return result.data.text || "";
   }
 
-  async function quickOCR(file) {
+  async function performQuickOCR(file) {
     setStatus("Reading file...");
-    await new Promise(r => setTimeout(r, 200));
-    setStatus("Extracting text...");
+    await new Promise(r => setTimeout(r, 150));
 
+    // Try direct PDF extraction first
     if (file.type === "application/pdf") {
+      setStatus("Extracting text from PDF...");
       const directText = await extractTextFromPDF(file);
       if (directText && directText.length > 50) {
         setStatus("Text extracted ✓");
@@ -333,6 +440,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
+    // Fall back to OCR
     let source = file;
     if (file.type === "application/pdf") {
       source = await pdfToCanvas(file, 2);
@@ -347,11 +455,12 @@ document.addEventListener("DOMContentLoaded", () => {
     return text;
   }
 
-  async function dualOCR(file) {
+  async function performDualOCR(file) {
     setStatus("Reading file...");
-    await new Promise(r => setTimeout(r, 200));
+    await new Promise(r => setTimeout(r, 150));
     setStatus("Pass 1: Standard extraction...");
 
+    // Pass 1: Standard
     let pass1Text = "";
     if (file.type === "application/pdf") {
       const directText = await extractTextFromPDF(file);
@@ -364,27 +473,31 @@ document.addEventListener("DOMContentLoaded", () => {
       pass1Text = await runTesseract(source);
     }
 
+    // Pass 2: Enhanced
     setStatus("Pass 2: Enhanced extraction...");
-    
     let pass2Text = "";
     if (file.type === "application/pdf") {
       const canvas = await pdfToCanvas(file, 3);
       pass2Text = await runTesseract(canvas);
     } else {
+      // For images, just use pass 1
       pass2Text = pass1Text;
     }
 
-    setStatus("Cross-checking results...");
-    await new Promise(r => setTimeout(r, 300));
+    setStatus("Merging results...");
+    await new Promise(r => setTimeout(r, 200));
 
+    // Merge: prefer longer, supplement with unique lines
     let mergedText = pass1Text;
-    if (pass2Text.length > pass1Text.length * 1.2) {
+    if (pass2Text.length > pass1Text.length * 1.1) {
       mergedText = pass2Text;
     } else {
-      const lines1 = new Set(pass1Text.split('\n'));
-      const lines2 = pass2Text.split('\n');
-      const uniqueLines2 = lines2.filter(l => !lines1.has(l));
-      mergedText = pass1Text + '\n' + uniqueLines2.join('\n');
+      const lines1 = new Set(pass1Text.split('\n').map(l => l.trim()));
+      const lines2 = pass2Text.split('\n').map(l => l.trim());
+      const uniqueLines2 = lines2.filter(l => l && !lines1.has(l));
+      if (uniqueLines2.length > 0) {
+        mergedText = pass1Text + '\n' + uniqueLines2.join('\n');
+      }
     }
 
     setStatus("Dual OCR complete ✓");
@@ -397,87 +510,142 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    if (el.quickOCR) {
-      el.quickOCR.disabled = true;
-      el.quickOCR.innerHTML = useDual ? '<span class="btn-icon">⏳</span>Processing...' : '<span class="btn-icon">⚡</span>Quick OCR';
+    console.log("Starting OCR:", useDual ? "Dual" : "Quick");
+
+    // Update button states
+    if (el.quickOCRBtn) {
+      el.quickOCRBtn.disabled = true;
+      el.quickOCRBtn.innerHTML = useDual 
+        ? '<span class="btn-icon">⏳</span>Processing...' 
+        : '<span class="btn-icon">⚡</span>Quick OCR';
     }
-    if (el.dualOCR) {
-      el.dualOCR.disabled = true;
-      el.dualOCR.innerHTML = useDual ? '<span class="btn-icon">🔍</span>Dual OCR' : '<span class="btn-icon">⏳</span>Processing...';
+    
+    if (el.dualOCRBtn) {
+      el.dualOCRBtn.disabled = true;
+      el.dualOCRBtn.innerHTML = useDual 
+        ? '<span class="btn-icon">🔍</span>Dual OCR'
+        : '<span class="btn-icon">⏳</span>Processing...';
     }
 
-    if (el.uploadCard) el.uploadCard.classList.add("processing");
+    if (el.uploadCard) {
+      el.uploadCard.classList.add("processing");
+    }
 
     trackEvent(useDual ? "dual_ocr_started" : "quick_ocr_started");
 
     try {
-      const rawText = useDual ? await dualOCR(currentFile) : await quickOCR(currentFile);
+      const rawText = useDual 
+        ? await performDualOCR(currentFile) 
+        : await performQuickOCR(currentFile);
 
-      if (el.raw) {
-        el.raw.textContent = rawText || "--";
+      console.log("OCR complete, text length:", rawText.length);
+
+      // Display raw text
+      if (el.rawText) {
+        el.rawText.textContent = rawText || "--";
       }
 
+      // Clean and display
       const cleanedText = normalizeOCRText(rawText);
-      if (el.clean) {
-        el.clean.textContent = cleanedText || "--";
+      if (el.cleanedText) {
+        el.cleanedText.textContent = cleanedText || "--";
       }
 
-      extractedItems = extractItems(cleanedText);
-      parsedData = parseInvoice(cleanedText);
+      // Extract items for verification
+      extractedItems = extractLineItems(cleanedText);
+      console.log("Extracted items:", extractedItems.length);
 
+      // Show results section
       if (el.resultsSection) {
         el.resultsSection.hidden = false;
-        setTimeout(() => el.resultsSection.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
+        // Smooth scroll
+        setTimeout(() => {
+          el.resultsSection.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 100);
       }
 
-      if (el.parse) {
-        el.parse.disabled = false;
+      // Enable parse button
+      if (el.parseBtn) {
+        el.parseBtn.disabled = false;
       }
 
+      // Add to recent
       addToRecent(currentFile.name);
-      updateParsedBadge();
-      trackEvent(useDual ? "dual_ocr_completed" : "quick_ocr_completed");
+      
+      trackEvent(useDual ? "dual_ocr_completed" : "quick_ocr_completed", { 
+        textLength: rawText.length,
+        itemsFound: extractedItems.length 
+      });
+
     } catch (error) {
       console.error("OCR failed:", error);
       setStatus("OCR failed: " + error.message, true);
       trackEvent("ocr_failed", { error: error.message });
     } finally {
-      if (el.quickOCR) {
-        el.quickOCR.disabled = false;
-        el.quickOCR.innerHTML = '<span class="btn-icon">⚡</span>Quick OCR';
+      // Reset button states
+      if (el.quickOCRBtn) {
+        el.quickOCRBtn.disabled = false;
+        el.quickOCRBtn.innerHTML = '<span class="btn-icon">⚡</span>Quick OCR';
       }
-      if (el.dualOCR) {
-        el.dualOCR.disabled = false;
-        el.dualOCR.innerHTML = '<span class="btn-icon">🔍</span>Dual OCR';
+      if (el.dualOCRBtn) {
+        el.dualOCRBtn.disabled = false;
+        el.dualOCRBtn.innerHTML = '<span class="btn-icon">🔍</span>Dual OCR';
       }
-      if (el.uploadCard) el.uploadCard.classList.remove("processing");
+      if (el.uploadCard) {
+        el.uploadCard.classList.remove("processing");
+      }
     }
   }
 
-  el.quickOCR?.addEventListener("click", () => processOCR(false));
-  el.dualOCR?.addEventListener("click", () => processOCR(true));
+  // OCR button event listeners
+  el.quickOCRBtn?.addEventListener("click", (e) => {
+    e.preventDefault();
+    processOCR(false);
+  });
 
+  el.dualOCRBtn?.addEventListener("click", (e) => {
+    e.preventDefault();
+    processOCR(true);
+  });
+
+  // ==================== TEXT PROCESSING ====================
+  
   function normalizeOCRText(text) {
     if (!text) return "";
     let lines = text.split('\n');
 
     lines = lines.map(line => {
+      // Normalize unicode
       line = line.normalize('NFC');
       
       // Fix common OCR spacing issues
-      line = line.replace(/A\s*mo\s*unt/gi, 'Amount');
-      line = line.replace(/To\s*tal/gi, 'Total');
-      line = line.replace(/Inv\s*o\s*ice/gi, 'Invoice');
-      line = line.replace(/Inv\s*No/gi, 'Invoice No');
-      line = line.replace(/Add\s*re\s*ss/gi, 'Address');
-      line = line.replace(/G\s*S\s*T\s*I\s*N/gi, 'GSTIN');
-      line = line.replace(/Da\s*te/gi, 'Date');
-      
-      // Clean up spacing around punctuation
+      const fixes = [
+        [/A\s*mo\s*unt/gi, 'Amount'],
+        [/To\s*tal/gi, 'Total'],
+        [/Gr\s*and\s*To\s*tal/gi, 'Grand Total'],
+        [/Sub\s*To\s*tal/gi, 'Sub Total'],
+        [/Inv\s*o\s*ice/gi, 'Invoice'],
+        [/Inv\s*No/gi, 'Invoice No'],
+        [/Bill\s*No/gi, 'Bill No'],
+        [/Add\s*re\s*ss/gi, 'Address'],
+        [/G\s*S\s*T\s*I\s*N/gi, 'GSTIN'],
+        [/C\s*G\s*ST/gi, 'CGST'],
+        [/S\s*G\s*ST/gi, 'SGST'],
+        [/Da\s*te/gi, 'Date'],
+        [/Qua\s*li\s*ty/gi, 'Quality'],
+        [/Ne\s*ar/gi, 'Near'],
+        [/ma\s*rket/gi, 'market'],
+        [/bus\s*st/gi, 'bus stand']
+      ];
+
+      fixes.forEach(([pattern, replacement]) => {
+        line = line.replace(pattern, replacement);
+      });
+      // Clean punctuation spacing
       line = line.replace(/\s*:\s*/g, ': ');
       line = line.replace(/\s*-\s*/g, ' - ');
       
-      // Add space between letters and numbers
+      // Space between letters and numbers
       line = line.replace(/([A-Za-z])(\d)/g, '$1 $2');
       line = line.replace(/(\d)([A-Za-z])/g, '$1 $2');
       
@@ -487,34 +655,36 @@ document.addEventListener("DOMContentLoaded", () => {
       return line;
     });
 
-    // Filter out noise
+    // Filter noise
     lines = lines.filter(line => {
-      if (/scanned\s*document/i.test(line)) return false;
-      if (/very\s*poor\s*quality/i.test(line)) return false;
+      const lower = line.toLowerCase();
+      if (lower.includes('scanned') && lower.includes('document')) return false;
+      if (lower.includes('very') && lower.includes('poor')) return false;
+      if (lower.includes('poor') && lower.includes('quality')) return false;
       return line.trim().length > 0;
     });
 
     return lines.join('\n');
   }
 
-  function extractItems(text) {
+  function extractLineItems(text) {
     const items = [];
     const lines = text.split('\n');
     
-    // Pattern: ItemName Qty Rate Amount
     lines.forEach(line => {
-      // Try pattern: Name Qty Rate Amount
-      let match = line.match(/^(\d*)\s*([A-Za-z\s\.]+?)\s+(\d+)\s+([\d\.]+)\s+([\d\.]+)$/);
+      // Pattern 1: Name Qty Rate Amount (with optional leading number)
+      let match = line.match(/^(?:\d+[\.\)]?\s*)?([A-Za-z][A-Za-z\s\.\-]+?)\s+(\d+)\s+([\d\.]+)\s+([\d\.]+)$/);
+      
       if (match) {
         items.push({
-          name: match[2].trim(),
-          qty: parseInt(match[3]),
-          rate: parseFloat(match[4]),
-          amount: parseFloat(match[5])
+          name: match[1].trim(),
+          qty: parseInt(match[2]),
+          rate: parseFloat(match[3]),
+          amount: parseFloat(match[4])
         });
       } else {
-        // Try alternative: Name Qty x Rate = Amount
-        match = line.match(/^([A-Za-z\s\.]+?)\s+x\s*(\d+)\s+([\d\.]+)\s+([\d\.]+)$/);
+        // Pattern 2: Name xQty Rate Amount
+        match = line.match(/^([A-Za-z][A-Za-z\s\.\-]+?)\s+x\s*(\d+)\s+([\d\.]+)\s+([\d\.]+)$/);
         if (match) {
           items.push({
             name: match[1].trim(),
@@ -529,90 +699,130 @@ document.addEventListener("DOMContentLoaded", () => {
     return items;
   }
 
-  function parseInvoice(text) {
+  function parseInvoiceData(text) {
     const lines = text.split('\n');
-    const out = { merchant: "", date: "", total: "" };
+    const result = { merchant: "", date: "", total: "" };
 
-    // Find merchant (first substantial line that's not a keyword)
-    for (let i = 0; i < Math.min(lines.length, 15); i++) {
+    // Find merchant - first substantial line
+    for (let i = 0; i < Math.min(lines.length, 20); i++) {
       const line = lines[i].trim();
-      if (line.length < 3 || line.length > 40) continue;
-      if (/invoice|bill|receipt|gst|tax|date|total|address|phone|email/i.test(line)) continue;
-      if (/^\d+$/.test(line)) continue;
-      if (/^[=\-]+$/.test(line)) continue;
       
-      out.merchant = line;
+      // Skip short/long lines
+      if (line.length < 3 || line.length > 40) continue;
+      
+      // Skip keywords
+      const skipWords = ['invoice', 'bill', 'receipt', 'tax', 'gst', 'date', 'total', 
+                        'address', 'phone', 'email', 'www', 'http', 'scanned', 'quality'];
+      if (skipWords.some(w => line.toLowerCase().includes(w))) continue;
+      
+      // Skip pure numbers
+      if (/^\d+$/.test(line)) continue;
+      
+      // Skip separator lines
+      if (/^[=\-_]+$/.test(line)) continue;
+      
+      // Must have some letters
+      if (!/[a-zA-Z]/.test(line)) continue;
+      
+      result.merchant = line;
       break;
     }
 
     // Find date
-    const dateRegex = /\b(\d{1,2}[-\/\. ]\d{1,2}[-\/\. ]\d{2,4})\b|\b(\d{1,2}\s+[A-Za-z]{3,9}\s+\d{2,4})\b/g;
-    const dates = text.match(dateRegex);
-    if (dates && dates.length > 0) {
-      out.date = dates[0];
+    const datePatterns = [
+      /\b(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4})\b/,
+      /\b(\d{1,2}\s+[A-Za-z]{3,9}\s+\d{2,4})\b/,
+      /\b(\d{4}[\/\-\.]\d{1,2}[\/\-\.]\d{1,2})\b/
+    ];
+    
+    for (const pattern of datePatterns) {
+      const match = text.match(pattern);
+      if (match) {
+        result.date = match[1];
+        break;
+      }
     }
 
     // Find total
-    const totalKeywords = ["total", "grand total", "net amount", "payable", "amount due"];
-    const numberRegex = /(?:₹|RS\.?|INR)?\s*([\d,]+(?:\.\d{2})?)/gi;
-    let candidates = [];
+    const totalKeywords = ['total', 'grand total', 'net amount', 'amount payable', 'amount due', 'sum'];
+    const candidates = [];
     
     lines.forEach((line, idx) => {
       const lowerLine = line.toLowerCase();
-      let hasKeyword = totalKeywords.some(kw => lowerLine.includes(kw));
+      const hasKeyword = totalKeywords.some(kw => lowerLine.includes(kw));
       
-      let match;
-      while ((match = numberRegex.exec(line)) !== null) {
-        const valStr = match[1].replace(/,/g, '');
-        const val = parseFloat(valStr);
-        if (isNaN(val) || val <= 0) continue;
-        
-        let score = 0;
-        if (hasKeyword) score += 50;
-        if (val < 100000) score += 10;
-        if (idx > lines.length * 0.5) score += 20;
-        if (line.includes('.')) score += 10;
-        
-        candidates.push({ value: val, score, str: valStr });
+      // Find all numbers in line
+      const numMatches = line.match(/(?:₹|Rs\.?|INR)?\s*([\d,]+(?:\.\d{2})?)/g);
+      if (numMatches) {
+        numMatches.forEach(match => {
+          const numStr = match.replace(/[₹RsINR,\s]/gi, '');
+          const num = parseFloat(numStr);
+          if (isNaN(num) || num <= 0) return;
+          
+          let score = 0;
+          if (hasKeyword) score += 50;
+          if (num < 100000) score += 10;
+          if (idx > lines.length * 0.4) score += 20;
+          if (match.includes('.')) score += 5;
+          
+          candidates.push({ value: num, str: numStr, score });
+        });
       }
     });
 
     if (candidates.length > 0) {
       candidates.sort((a, b) => b.score - a.score);
-      out.total = candidates[0].str;
+      result.total = candidates[0].str;
     }
 
-    return out;
+    return result;
   }
 
-  el.parse?.addEventListener("click", () => {
-    if (!el.clean || !el.clean.textContent || el.clean.textContent === "--") {
+  // ==================== PARSE & VERIFY ====================
+  
+  el.parseBtn?.addEventListener("click", (e) => {
+    e.preventDefault();
+    
+    if (!el.cleanedText || !el.cleanedText.textContent || el.cleanedText.textContent === "--") {
       setStatus("Nothing to parse", true);
       return;
     }
 
-    const rawText = el.clean.textContent;
-    parsedData = parseInvoice(rawText);
-    trackEvent("invoice_parsed");
+    console.log("Parsing invoice...");
+    trackEvent("invoice_parse_clicked");
 
-    const verification = verifyInvoiceTotals(parsedData, rawText, extractedItems);
+    const rawText = el.cleanedText.textContent;
+    parsedData = parseInvoiceData(rawText);
 
-      // Update items table
-    if (extractedItems.length > 0 && el.itemsSection && el.itemsTableBody) {
-      el.itemsSection.hidden = false;
-      if (el.itemsCount) el.itemsCount.textContent = `${extractedItems.length} item${extractedItems.length > 1 ? 's' : ''}`;
+    // Update form fields
+    if (el.editMerchant) el.editMerchant.value = parsedData.merchant || "";
+    if (el.editDate) el.editDate.value = parsedData.date || "";
+    if (el.editTotal) el.editTotal.value = parsedData.total || "";
+
+    // Update items table
+    if (extractedItems.length > 0) {
+      if (el.itemsSection) el.itemsSection.hidden = false;
+      if (el.itemsCount) {
+        el.itemsCount.textContent = `${extractedItems.length} item${extractedItems.length > 1 ? 's' : ''}`;
+      }
       
-      el.itemsTableBody.innerHTML = extractedItems.map(item => `
-        <tr>
-          <td>${escapeHtml(item.name)}</td>
-          <td class="numeric">${item.qty}</td>
-          <td class="numeric">₹${item.rate.toFixed(2)}</td>
-          <td class="numeric">₹${item.amount.toFixed(2)}</td>
-        </tr>
-      `).join('');
+      if (el.itemsTableBody) {
+        el.itemsTableBody.innerHTML = extractedItems.map(item => `
+          <tr>
+            <td>${escapeHtml(item.name)}</td>
+            <td class="numeric">${item.qty}</td>
+            <td class="numeric">₹${item.rate.toFixed(2)}</td>
+            <td class="numeric">₹${item.amount.toFixed(2)}</td>
+          </tr>
+        `).join('');
+      }
     } else {
       if (el.itemsSection) el.itemsSection.hidden = true;
     }
+
+    // Run verification
+    const verification = verifyInvoiceTotals(parsedData, rawText, extractedItems);
+    console.log("Verification result:", verification);
 
     // Update verification badge
     if (el.verificationBadge) {
@@ -626,7 +836,9 @@ document.addEventListener("DOMContentLoaded", () => {
         statusClass = "error";
         icon = "❌";
         title = "Cannot Verify";
-        subtitle = "Missing item structure or unclear total";
+        subtitle = extractedItems.length === 0 
+          ? "No line items detected in document"
+          : "Missing total or unclear structure";
       } else if (Math.abs(diff) <= 0.01) {
         statusClass = "verified";
         icon = "✓";
@@ -644,7 +856,10 @@ document.addEventListener("DOMContentLoaded", () => {
         subtitle = `You may have been overcharged ₹${Math.abs(diff).toFixed(2)}`;
       }
 
+      // Apply classes
       el.verificationBadge.className = "verification-badge " + statusClass;
+      
+      // Update content
       const badgeIcon = el.verificationBadge.querySelector('.badge-icon');
       const badgeTitle = el.verificationBadge.querySelector('.badge-title');
       
@@ -654,9 +869,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Update JSON preview
-    if (el.json) {
-      el.json.textContent = JSON.stringify({ 
-        ...parsedData, 
+    if (el.jsonPreview) {
+      const previewData = {
+        merchant: parsedData.merchant,
+        date: parsedData.date,
+        total: parsedData.total,
         items: extractedItems,
         verification: {
           status: verification.status,
@@ -664,67 +881,95 @@ document.addEventListener("DOMContentLoaded", () => {
           declaredTotal: verification.declaredTotal,
           difference: verification.differenceAmount
         }
-      }, null, 2);
+      };
+      el.jsonPreview.textContent = JSON.stringify(previewData, null, 2);
     }
     
     hasParsedData = true;
     updateParsedUI(true);
 
     // Navigate to parsed page
-    document.querySelector('[data-page="parsed"]')?.click();
+    const parsedNav = document.querySelector('[data-page="parsed"]');
+    if (parsedNav) parsedNav.click();
+    
+    trackEvent("invoice_parsed", { 
+      merchant: parsedData.merchant,
+      hasItems: extractedItems.length > 0,
+      verificationStatus: verification.status
+    });
   });
 
-  function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  }
+  // ==================== SAVE & HISTORY ====================
+  
+  el.saveBtn?.addEventListener("click", (e) => {
+    e.preventDefault();
+    
+    if (!hasParsedData || !db) {
+      setStatus("Nothing to save", true);
+      return;
+    }
 
-  // Save to history
-  el.saveBtn?.addEventListener("click", () => {
-    if (!hasParsedData || !db) return;
+    console.log("Saving to history...");
     
     const tx = db.transaction("history", "readwrite");
     const store = tx.objectStore("history");
     
-    store.add({
+    const record = {
       merchant: el.editMerchant?.value || "",
       date: el.editDate?.value || "",
       total: el.editTotal?.value || "",
       items: extractedItems,
       timestamp: Date.now()
-    });
+    };
     
-    tx.oncomplete = () => {
+    const request = store.add(record);
+    
+    request.onsuccess = () => {
+      console.log("Saved successfully");
       trackEvent("history_saved");
+      
       if (el.saveHint) {
         el.saveHint.textContent = "✓ Saved successfully";
         setTimeout(() => el.saveHint.textContent = "", 2000);
       }
+      
       loadHistory();
       updateParsedBadge();
+    };
+    
+    request.onerror = () => {
+      setStatus("Failed to save", true);
     };
   });
 
   // Copy preview
-  el.copyPreview?.addEventListener("click", () => {
-    if (el.json) {
-      navigator.clipboard.writeText(el.json.textContent).then(() => {
-        const originalText = el.copyPreview.textContent;
-        el.copyPreview.textContent = "Copied!";
-        setTimeout(() => el.copyPreview.textContent = originalText, 1500);
-      });
-    }
+  el.copyPreviewBtn?.addEventListener("click", (e) => {
+    e.preventDefault();
+    
+    if (!el.jsonPreview) return;
+    
+    navigator.clipboard.writeText(el.jsonPreview.textContent).then(() => {
+      const originalText = el.copyPreviewBtn.textContent;
+      el.copyPreviewBtn.textContent = "Copied!";
+      setTimeout(() => {
+        el.copyPreviewBtn.textContent = originalText;
+      }, 1500);
+      
+      trackEvent("preview_copied");
+    });
   });
 
-  // Recent files
+  // ==================== RECENT FILES ====================
+  
   const MAX_RECENT = 4;
   const RECENT_KEY = 'anj_recent_v2';
 
   function loadRecent() {
     try {
       return JSON.parse(localStorage.getItem(RECENT_KEY)) || [];
-    } catch { return []; }
+    } catch { 
+      return []; 
+    }
   }
 
   function saveRecent(items) {
@@ -733,6 +978,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function renderRecent() {
     if (!el.recentGrid) return;
+    
     const items = loadRecent();
     
     if (items.length === 0) {
@@ -753,22 +999,36 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="recent-time">${escapeHtml(item.time)}</div>
       </div>
     `).join('');
+    
+    // Add click handlers
+    el.recentGrid.querySelectorAll('.recent-card').forEach(card => {
+      card.addEventListener('click', () => {
+        trackEvent("recent_item_clicked");
+        // Could implement re-upload functionality here
+      });
+    });
   }
 
   function addToRecent(filename) {
     const items = loadRecent();
+    const now = new Date();
+    
     const newItem = {
       name: filename.length > 25 ? filename.slice(0, 22) + '...' : filename,
       fullName: filename,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
     
+    // Remove duplicates
     const filtered = items.filter(i => i.fullName !== filename);
+    
+    // Add new and save
     saveRecent([newItem, ...filtered]);
     renderRecent();
   }
 
-  el.clearRecent?.addEventListener("click", () => {
+  el.clearRecentBtn?.addEventListener("click", (e) => {
+    e.preventDefault();
     localStorage.removeItem(RECENT_KEY);
     renderRecent();
     trackEvent("recent_cleared");
@@ -776,18 +1036,28 @@ document.addEventListener("DOMContentLoaded", () => {
 
   renderRecent();
 
-  // IndexedDB History
+  // ==================== INDEXEDDB HISTORY ====================
+  
   function initDB() {
     const req = indexedDB.open("anj-dual-ocr-v2", 1);
+    
     req.onupgradeneeded = e => {
       const db = e.target.result;
       if (!db.objectStoreNames.contains("history")) {
-        db.createObjectStore("history", { keyPath: "id", autoIncrement: true });
+        const store = db.createObjectStore("history", { keyPath: "id", autoIncrement: true });
+        store.createIndex("timestamp", "timestamp", { unique: false });
       }
     };
+    
     req.onsuccess = e => {
       db = e.target.result;
+      console.log("Database opened");
       loadHistory();
+      updateParsedBadge();
+    };
+    
+    req.onerror = e => {
+      console.error("Database failed to open:", e);
     };
   }
 
@@ -802,8 +1072,11 @@ document.addEventListener("DOMContentLoaded", () => {
     
     store.openCursor(null, "prev").onsuccess = e => {
       const cursor = e.target.result;
+      
       if (!cursor) {
+        // Done
         if (el.historyCount) el.historyCount.textContent = count;
+        
         if (count === 0) {
           el.historyPageList.innerHTML = `
             <li class="history-empty">
@@ -818,6 +1091,7 @@ document.addEventListener("DOMContentLoaded", () => {
       
       count++;
       const item = cursor.value;
+      
       const li = document.createElement("li");
       li.className = "history-item";
       li.innerHTML = `
@@ -830,27 +1104,42 @@ document.addEventListener("DOMContentLoaded", () => {
       `;
       
       li.addEventListener("click", () => {
+        console.log("History item clicked:", item.id);
+        
+        // Populate form
         if (el.editMerchant) el.editMerchant.value = item.merchant || "";
         if (el.editDate) el.editDate.value = item.date || "";
         if (el.editTotal) el.editTotal.value = item.total || "";
         
-        if (item.items && el.itemsSection && el.itemsTableBody) {
+        // Populate items
+        if (item.items && item.items.length > 0) {
           extractedItems = item.items;
-          el.itemsSection.hidden = false;
-          if (el.itemsCount) el.itemsCount.textContent = `${item.items.length} item${item.items.length > 1 ? 's' : ''}`;
-          el.itemsTableBody.innerHTML = item.items.map(i => `
-            <tr>
-              <td>${escapeHtml(i.name)}</td>
-              <td class="numeric">${i.qty}</td>
-              <td class="numeric">₹${i.rate.toFixed(2)}</td>
-              <td class="numeric">₹${i.amount.toFixed(2)}</td>
-            </tr>
-          `).join('');
+          if (el.itemsSection) {
+            el.itemsSection.hidden = false;
+          }
+          if (el.itemsCount) {
+            el.itemsCount.textContent = `${item.items.length} item${item.items.length > 1 ? 's' : ''}`;
+          }
+          if (el.itemsTableBody) {
+            el.itemsTableBody.innerHTML = item.items.map(i => `
+              <tr>
+                <td>${escapeHtml(i.name)}</td>
+                <td class="numeric">${i.qty}</td>
+                <td class="numeric">₹${i.rate.toFixed(2)}</td>
+                <td class="numeric">₹${i.amount.toFixed(2)}</td>
+              </tr>
+            `).join('');
+          }
         }
         
         hasParsedData = true;
         updateParsedUI(true);
-        document.querySelector('[data-page="parsed"]')?.click();
+        
+        // Navigate to parsed
+        const parsedNav = document.querySelector('[data-page="parsed"]');
+        if (parsedNav) parsedNav.click();
+        
+        trackEvent("history_item_loaded", { id: item.id });
       });
       
       el.historyPageList.appendChild(li);
@@ -867,12 +1156,16 @@ document.addEventListener("DOMContentLoaded", () => {
     
     countReq.onsuccess = () => {
       const count = countReq.result;
-      el.parsedBadge.textContent = count;
-      el.parsedBadge.style.display = count > 0 ? 'block' : 'none';
+      if (el.parsedBadge) {
+        el.parsedBadge.textContent = count;
+        el.parsedBadge.style.display = count > 0 ? 'flex' : 'none';
+      }
     };
   }
 
-  el.clearHistoryBtn?.addEventListener("click", () => {
+  el.clearHistoryBtn?.addEventListener("click", (e) => {
+    e.preventDefault();
+    
     if (!confirm("Clear all saved history? This cannot be undone.")) return;
     
     const tx = db.transaction("history", "readwrite");
@@ -885,8 +1178,9 @@ document.addEventListener("DOMContentLoaded", () => {
     };
   });
 
+  // History search
   el.historySearch?.addEventListener("input", e => {
-    const term = e.target.value.toLowerCase();
+    const term = e.target.value.toLowerCase().trim();
     const items = el.historyPageList?.querySelectorAll('.history-item');
     
     items?.forEach(item => {
@@ -895,61 +1189,29 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // Export handlers
-  [el.exportJSON, el.exportTXT, el.exportCSV].forEach(btn => {
+  // ==================== EXPORT HANDLERS ====================
+  
+  const exportButtons = [
+    { btn: el.exportJSON, type: 'json' },
+    { btn: el.exportTXT, type: 'txt' },
+    { btn: el.exportCSV, type: 'csv' }
+  ];
+
+  exportButtons.forEach(({ btn, type }) => {
     btn?.addEventListener("click", (e) => {
-      const type = e.currentTarget.id.replace('export', '').toLowerCase();
+      e.preventDefault();
       trackEvent(`export_attempted_${type}`);
       setStatus("Export is a premium feature", true);
+      
+      // Visual feedback
+      btn.style.transform = "scale(0.95)";
+      setTimeout(() => btn.style.transform = "", 150);
     });
   });
 
-  initDB();
-  setStatus("Ready ✓");
-});
-And finally the invoiceVerification.js (unchanged but included for completeness):
-JavaScript
-Copy
-export function verifyInvoiceTotals(parsed, rawText, items = []) {
-  const result = {
-    status: "Unverifiable",
-    computedTotal: 0,
-    declaredTotal: parseFloat(parsed.total) || 0,
-    differenceAmount: 0,
-    itemCount: items.length
-  };
-
-  // If we have items, calculate from them
-  if (items.length > 0) {
-    result.computedTotal = items.reduce((sum, item) => sum + (item.amount || 0), 0);
-  } else {
-    // Try to extract from text patterns
-    const amountMatches = rawText.match(/(\d+\.\d{2})/g) || [];
-    const amounts = amountMatches.map(a => parseFloat(a)).filter(a => a > 0);
-    
-    // Use largest amount as likely total, or sum of line items if we can identify them
-    if (amounts.length > 0) {
-      // Sort descending
-      amounts.sort((a, b) => b - a);
-      // If declared total matches one of the amounts, use second largest as computed
-      const declaredIndex = amounts.indexOf(result.declaredTotal);
-      if (declaredIndex > -1 && amounts.length > 1) {
-        // Sum all except the declared total (assuming it's the final total)
-        result.computedTotal = amounts.slice(1).reduce((a, b) => a + b, 0);
-      } else {
-        // Can't determine, use largest as computed
-        result.computedTotal = amounts[0];
-      }
-    }
-  }
-
-  result.differenceAmount = result.computedTotal - result.declaredTotal;
+  // ==================== INITIALIZE ====================
   
-  if (items.length > 0) {
-    result.status = Math.abs(result.differenceAmount) <= 0.01 ? "Verified" : "Mismatch";
-  } else if (result.computedTotal > 0) {
-    result.status = Math.abs(result.differenceAmount) <= 0.01 ? "Verified" : "Partial";
-  }
-
-  return result;
-}
+  initDB();
+  
+  console.log("App initialized successfully");
+});
