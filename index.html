@@ -6,28 +6,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   
-  <!-- Content Security Policy - Prevents XSS attacks -->
+  <!-- Content Security Policy -->
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' blob: data:; connect-src 'self' blob:; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self';">
   
-  <!-- Additional Security Headers (meta equivalents) -->
+  <!-- Additional Security Headers -->
   <meta http-equiv="X-Content-Type-Options" content="nosniff">
   <meta http-equiv="X-Frame-Options" content="DENY">
   <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
   <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=()">
   
   <!-- SEO & Accessibility -->
-  <meta name="description" content="ANJ Dual OCR Parser - Secure local invoice verification with deterministic accuracy">
-  <meta name="keywords" content="invoice, OCR, verification, parser, privacy">
+  <meta name="description" content="ANJ Dual OCR Parser - Secure local invoice verification with cinematic interface">
+  <meta name="keywords" content="invoice, OCR, verification, parser, privacy, premium">
   <meta name="author" content="ANJ">
   <meta name="robots" content="noindex, nofollow">
   
-  <title>ANJ Dual OCR Parser - Secure Invoice Verification</title>
+  <title>ANJ Invoice OCR - Premium Invoice Verification</title>
   
   <!-- Preconnect for performance -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   
-  <!-- External Libraries with SRI (Subresource Integrity) -->
+  <!-- External Libraries with SRI -->
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js" crossorigin="anonymous" data-library="tesseract"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" crossorigin="anonymous" data-library="pdfjs"></script>
   
@@ -39,7 +39,7 @@
 <body class="theme-carbon sidebar-hidden" role="application" aria-label="Invoice OCR Application">
 
 <div class="app-shell">
-  <!-- Skip to main content for accessibility -->
+  <!-- Skip to main content -->
   <a href="#main-content" class="skip-link">Skip to main content</a>
   
   <aside class="sidebar" role="navigation" aria-label="Main Navigation">
@@ -116,14 +116,14 @@
     </header>
 
     <div class="page-container">
-      <!-- Loading Overlay for async operations -->
+      <!-- Loading Overlay -->
       <div id="loadingOverlay" class="loading-overlay" hidden role="alert" aria-live="assertive">
         <div class="loading-spinner" aria-hidden="true"></div>
         <p class="loading-text" id="loadingText">Processing...</p>
         <button id="cancelOperation" class="btn-secondary" type="button">Cancel</button>
       </div>
 
-      <!-- Error Boundary Container -->
+      <!-- Error Boundary -->
       <div id="errorBoundary" class="error-boundary" hidden role="alert">
         <div class="error-content">
           <span class="error-icon" aria-hidden="true">⚠️</span>
@@ -190,7 +190,9 @@
             <span class="badge-dot" aria-hidden="true"></span>
             Premium OCR Engine
           </div>
-          <h1 id="uploadHeading" class="hero-title">Verify any invoice<br>in seconds</h1>
+          <h1 id="uploadHeading" class="hero-title">
+            Verify any <span class="gradient-text">invoice</span><br>in seconds
+          </h1>
           <p class="hero-subtitle">Dual-engine extraction with deterministic verification. No data leaves your device.</p>
         </div>
 
@@ -200,6 +202,8 @@
             <div class="upload-content">
               <div class="upload-icon-wrap" aria-hidden="true">
                 <span class="upload-icon">📄</span>
+                <div class="upload-pulse"></div>
+                <div class="upload-pulse"></div>
                 <div class="upload-pulse"></div>
               </div>
               <p class="upload-text" id="uploadInstructions">Drop your invoice here</p>
@@ -465,7 +469,7 @@
               <label class="theme-option">
                 <input type="radio" name="theme" value="carbon" checked aria-label="Carbon theme, deep charcoal">
                 <div class="theme-preview">
-                  <div class="theme-swatch" style="background: #1a1a1f;">
+                  <div class="theme-swatch" style="background: #0a0a0b;">
                     <div class="swatch-accent" style="background: #6366f1;"></div>
                   </div>
                   <span class="theme-name">Carbon</span>
@@ -475,7 +479,7 @@
               <label class="theme-option">
                 <input type="radio" name="theme" value="midnight" aria-label="Midnight theme, navy blue">
                 <div class="theme-preview">
-                  <div class="theme-swatch" style="background: #0f172a;">
+                  <div class="theme-swatch" style="background: #050814;">
                     <div class="swatch-accent" style="background: #3b82f6;"></div>
                   </div>
                   <span class="theme-name">Midnight</span>
@@ -485,7 +489,7 @@
               <label class="theme-option">
                 <input type="radio" name="theme" value="forest" aria-label="Forest theme, deep emerald">
                 <div class="theme-preview">
-                  <div class="theme-swatch" style="background: #0f1f1a;">
+                  <div class="theme-swatch" style="background: #05140f;">
                     <div class="swatch-accent" style="background: #10b981;"></div>
                   </div>
                   <span class="theme-name">Forest</span>
@@ -515,7 +519,7 @@
               <label class="theme-option">
                 <input type="radio" name="theme" value="cyber" aria-label="Cyber theme, neon green">
                 <div class="theme-preview">
-                  <div class="theme-swatch" style="background: #0a0a0f;">
+                  <div class="theme-swatch" style="background: #030305;">
                     <div class="swatch-accent" style="background: #00ff88;"></div>
                   </div>
                   <span class="theme-name">Cyber</span>
@@ -671,4 +675,3 @@
 <script type="module" src="./script.js"></script>
 </body>
 </html>'''
-
