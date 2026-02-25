@@ -1,677 +1,490 @@
-'''<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- Security Meta Tags -->
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  
-  <!-- Content Security Policy -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' blob: data:; connect-src 'self' blob:; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self';">
-  
-  <!-- Additional Security Headers -->
-  <meta http-equiv="X-Content-Type-Options" content="nosniff">
-  <meta http-equiv="X-Frame-Options" content="DENY">
-  <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
-  <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=()">
-  
-  <!-- SEO & Accessibility -->
-  <meta name="description" content="ANJ Dual OCR Parser - Secure local invoice verification with cinematic interface">
-  <meta name="keywords" content="invoice, OCR, verification, parser, privacy, premium">
-  <meta name="author" content="ANJ">
-  <meta name="robots" content="noindex, nofollow">
-  
-  <title>ANJ Invoice OCR - Premium Invoice Verification</title>
-  
-  <!-- Preconnect for performance -->
+  <title>ANJ Invoice OCR - Premium</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  
-  <!-- External Libraries with SRI -->
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js" crossorigin="anonymous" data-library="tesseract"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" crossorigin="anonymous" data-library="pdfjs"></script>
-  
-  <link rel="stylesheet" href="style.css" />
-  
-  <!-- Favicon -->
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>◆</text></svg>">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <link rel="stylesheet" href="style.css">
+<base target="_blank">
 </head>
-<body class="theme-carbon sidebar-hidden" role="application" aria-label="Invoice OCR Application">
+<body class="theme-carbon">
 
-<div class="app-shell">
-  <!-- Skip to main content -->
-  <a href="#main-content" class="skip-link">Skip to main content</a>
-  
-  <aside class="sidebar" role="navigation" aria-label="Main Navigation">
+<!-- Ambient Background -->
+<div class="ambient-bg"></div>
+<div class="noise-overlay"></div>
+
+<div class="app-container">
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
-      <div class="logo" role="banner">
-        <span class="logo-icon" aria-hidden="true">◆</span>
-        <span class="logo-text">ANJ</span>
+      <div class="logo">
+        <div class="logo-mark">◆</div>
+        <span>ANJ</span>
       </div>
-      <button id="sidebarCloseBtn" class="sidebar-close" aria-label="Close sidebar" type="button">
-        <span aria-hidden="true">✕</span>
-      </button>
+      <button class="sidebar-close" id="sidebarClose">✕</button>
     </div>
-    
-    <div class="sidebar-user" id="sidebarUser" role="button" tabindex="0" aria-label="User profile">
-      <div class="user-avatar" aria-hidden="true">G</div>
+
+    <div class="user-card" id="userCard">
+      <div class="user-avatar">G</div>
       <div class="user-info">
-        <span class="user-name">Guest</span>
-        <span class="user-status">Not signed in</span>
+        <div class="user-name">Guest</div>
+        <div class="user-role">Not signed in</div>
       </div>
     </div>
-    
-    <nav class="sidebar-nav" aria-label="Primary Navigation">
-      <div class="nav-item active" data-page="upload" role="button" tabindex="0" aria-current="page">
-        <span class="nav-icon" aria-hidden="true">📤</span>
-        <span class="nav-label">Upload</span>
-      </div>
-      <div class="nav-item" data-page="parsed" role="button" tabindex="0">
-        <span class="nav-icon" aria-hidden="true">📄</span>
-        <span class="nav-label">Parsed</span>
-        <span class="nav-badge" id="parsedBadge" aria-label="Parsed documents count">0</span>
-      </div>
-      <div class="nav-item" data-page="history" role="button" tabindex="0">
-        <span class="nav-icon" aria-hidden="true">🕘</span>
-        <span class="nav-label">History</span>
-      </div>
-    </nav>
-    
-    <div class="sidebar-divider" role="separator"></div>
-    
-    <nav class="sidebar-secondary" aria-label="Secondary Navigation">
-      <div class="nav-item" data-page="settings" role="button" tabindex="0">
-        <span class="nav-icon" aria-hidden="true">⚙️</span>
-        <span class="nav-label">Settings</span>
-      </div>
-      <div class="nav-item" data-page="about" role="button" tabindex="0">
-        <span class="nav-icon" aria-hidden="true">ℹ️</span>
-        <span class="nav-label">About</span>
+
+    <nav class="nav-section">
+      <div class="nav-section-title">Menu</div>
+      <div class="nav-items">
+        <div class="nav-item active" data-page="upload">
+          <span class="nav-icon">📤</span>
+          <span>Upload</span>
+        </div>
+        <div class="nav-item" data-page="parsed">
+          <span class="nav-icon">📄</span>
+          <span>Parsed</span>
+          <span class="nav-badge" id="parsedBadge">0</span>
+        </div>
+        <div class="nav-item" data-page="history">
+          <span class="nav-icon">🕘</span>
+          <span>History</span>
+        </div>
       </div>
     </nav>
-    
+
+    <nav class="nav-section" style="margin-top: var(--space-8);">
+      <div class="nav-section-title">Settings</div>
+      <div class="nav-items">
+        <div class="nav-item" data-page="settings">
+          <span class="nav-icon">⚙️</span>
+          <span>Settings</span>
+        </div>
+        <div class="nav-item" data-page="about">
+          <span class="nav-icon">ℹ️</span>
+          <span>About</span>
+        </div>
+      </div>
+    </nav>
+
     <div class="sidebar-footer">
-      <button class="btn-login" id="loginBtn" type="button" aria-label="Sign in to your account">
-        <span class="btn-icon" aria-hidden="true">→</span>
+      <button class="btn-sidebar" id="loginBtn">
+        <span>→</span>
         <span>Sign In</span>
       </button>
-      <p class="footer-text" role="contentinfo">v2.1.0 • Local Processing</p>
+      <div class="version-text">v2.1.0 • Local Processing</div>
     </div>
   </aside>
 
-  <main class="main" id="main-content" role="main">
-    <header class="topbar" role="banner">
-      <button id="sidebarToggle" class="topbar-menu" type="button" aria-label="Toggle sidebar navigation" aria-expanded="false" aria-controls="sidebar">
-        <span aria-hidden="true">☰</span>
-      </button>
-      <nav class="topbar-nav" aria-label="Top Navigation">
-        <div class="nav-pill active" data-page="upload" role="button" tabindex="0" aria-current="page">Upload</div>
-        <div class="nav-pill" data-page="parsed" role="button" tabindex="0">Parsed</div>
-        <div class="nav-pill" data-page="history" role="button" tabindex="0">History</div>
-      </nav>
-      <div class="topbar-meta">
-        <span class="user-id" id="userIdDisplay" aria-live="polite">User: —</span>
-        <span class="status-indicator" id="statusBar" role="status" aria-live="polite">Ready</span>
+  <!-- Main Content -->
+  <main class="main-content">
+
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="menu-btn" id="menuBtn">☰</button>
+        <span class="page-title-sm">Upload</span>
+      </div>
+      <div class="topbar-right">
+        <span class="status-pill">
+          <span class="status-dot"></span>
+          <span id="statusText">Ready</span>
+        </span>
       </div>
     </header>
 
-    <div class="page-container">
-      <!-- Loading Overlay -->
-      <div id="loadingOverlay" class="loading-overlay" hidden role="alert" aria-live="assertive">
-        <div class="loading-spinner" aria-hidden="true"></div>
-        <p class="loading-text" id="loadingText">Processing...</p>
-        <button id="cancelOperation" class="btn-secondary" type="button">Cancel</button>
-      </div>
-
-      <!-- Error Boundary -->
-      <div id="errorBoundary" class="error-boundary" hidden role="alert">
-        <div class="error-content">
-          <span class="error-icon" aria-hidden="true">⚠️</span>
-          <h3>Something went wrong</h3>
-          <p id="errorMessage">An error occurred</p>
-          <div class="error-actions">
-            <button id="retryOperation" class="btn-primary" type="button">Try Again</button>
-            <button id="dismissError" class="btn-secondary" type="button">Dismiss</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- LOGIN MODAL -->
-      <div class="modal" id="loginModal" hidden role="dialog" aria-modal="true" aria-labelledby="loginTitle">
-        <div class="modal-backdrop" role="button" tabindex="0" aria-label="Close login modal"></div>
-        <div class="modal-content">
-          <button class="modal-close" id="closeLogin" type="button" aria-label="Close login modal">
-            <span aria-hidden="true">✕</span>
-          </button>
-          <div class="login-header">
-            <div class="login-logo" aria-hidden="true">◆</div>
-            <h2 id="loginTitle">Welcome to ANJ</h2>
-            <p>Sign in to sync across devices</p>
-          </div>
-          <form class="login-form" id="loginForm" novalidate>
-            <div class="form-group">
-              <label for="loginEmail">Email <span aria-label="required">*</span></label>
-              <input type="email" id="loginEmail" name="email" placeholder="you@company.com" required maxlength="254" pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,}$" autocomplete="email" aria-describedby="emailError" />
-              <span id="emailError" class="field-error" role="alert" hidden>Please enter a valid email address</span>
-            </div>
-            <div class="form-group">
-              <label for="loginPassword">Password <span aria-label="required">*</span></label>
-              <input type="password" id="loginPassword" name="password" placeholder="••••••••" required minlength="8" maxlength="128" autocomplete="current-password" aria-describedby="passwordError" />
-              <span id="passwordError" class="field-error" role="alert" hidden>Password must be at least 8 characters</span>
-            </div>
-            <button type="submit" class="btn-primary btn-full" id="loginSubmit">
-              <span class="btn-icon" aria-hidden="true">→</span>
-              Sign In
-            </button>
-          </form>
-          <div class="login-divider">
-            <span>or continue with</span>
-          </div>
-          <div class="login-social">
-            <button class="btn-social" type="button" aria-label="Sign in with Google">
-              <span class="social-icon" aria-hidden="true">G</span>
-              Google
-            </button>
-            <button class="btn-social" type="button" aria-label="Sign in with Magic Link">
-              <span class="social-icon" aria-hidden="true">⚡</span>
-              Magic Link
-            </button>
-          </div>
-          <p class="login-footer">
-            Don't have an account? <a href="#" id="signupLink">Get early access</a>
-          </p>
-        </div>
-      </div>
+    <!-- Pages -->
+    <div class="pages">
 
       <!-- UPLOAD PAGE -->
-      <section class="page page-upload active" id="uploadPage" aria-labelledby="uploadHeading">
-        <div class="upload-hero">
+      <div class="page active" id="uploadPage">
+
+        <!-- Hero Section -->
+        <section class="hero-section">
           <div class="hero-badge">
-            <span class="badge-dot" aria-hidden="true"></span>
-            Premium OCR Engine
+            <span class="hero-badge-dot"></span>
+            <span>Premium OCR Engine</span>
           </div>
-          <h1 id="uploadHeading" class="hero-title">
-            Verify any <span class="gradient-text">invoice</span><br>in seconds
+
+          <h1 class="hero-title">
+            Verify any <span class="hero-title-accent">invoice</span><br>in seconds
           </h1>
-          <p class="hero-subtitle">Dual-engine extraction with deterministic verification. No data leaves your device.</p>
-        </div>
 
-        <div class="upload-section">
-          <div class="upload-card" id="uploadCard" role="button" tabindex="0" aria-label="Upload invoice file. Supports PDF, JPG, PNG. Maximum file size 10MB." aria-describedby="uploadInstructions">
-            <input type="file" id="fileInput" class="upload-input" accept=".pdf,.jpg,.jpeg,.png,.webp" aria-label="Select invoice file" aria-describedby="fileRequirements" data-max-size="10485760" />
-            <div class="upload-content">
-              <div class="upload-icon-wrap" aria-hidden="true">
-                <span class="upload-icon">📄</span>
-                <div class="upload-pulse"></div>
-                <div class="upload-pulse"></div>
-                <div class="upload-pulse"></div>
-              </div>
-              <p class="upload-text" id="uploadInstructions">Drop your invoice here</p>
-              <p class="upload-hint" id="fileRequirements">or click to browse • Supports PDF, JPG, PNG (Max 10MB)</p>
-            </div>
-          </div>
-          
-          <div class="filename-pill" id="filenamePill" hidden role="status" aria-live="polite">
-            <span class="pill-icon" aria-hidden="true">📎</span>
-            <span id="filenameText"></span>
-            <button class="pill-clear" id="clearFile" type="button" aria-label="Remove selected file">✕</button>
-          </div>
-          
-          <div class="ocr-actions" id="ocrActions" hidden>
-            <div class="ocr-primary">
-              <button id="quickOCRBtn" class="btn-primary btn-large" type="button" aria-describedby="quickOCRDesc">
-                <span class="btn-icon" aria-hidden="true">⚡</span>
-                Quick OCR
-              </button>
-              <div class="ocr-meta" id="quickOCRDesc">
-                <span class="ocr-tag">Recommended</span>
-                <span class="ocr-desc">Fast extraction for clean documents</span>
+          <p class="hero-subtitle">
+            Dual-engine extraction with deterministic verification. 
+            No data leaves your device.
+          </p>
+
+          <!-- Upload Zone -->
+          <div class="upload-zone-container">
+            <div class="upload-zone" id="uploadZone">
+              <input type="file" class="upload-zone-input" id="fileInput" accept=".pdf,.jpg,.jpeg,.png,.webp">
+              <div class="upload-zone-content">
+                <div class="upload-icon-large">📄</div>
+                <div class="upload-zone-title">Drop your invoice here</div>
+                <div class="upload-zone-hint">or click to browse • PDF, JPG, PNG (Max 10MB)</div>
               </div>
             </div>
-            <div class="ocr-divider">
-              <span>or</span>
-            </div>
-            <div class="ocr-secondary">
-              <button id="dualOCRBtn" class="btn-secondary btn-large" type="button" aria-describedby="dualOCRDesc">
-                <span class="btn-icon" aria-hidden="true">🔍</span>
-                Dual OCR
-              </button>
-              <span class="ocr-desc" id="dualOCRDesc">Enhanced accuracy for scans & photos</span>
-            </div>
-          </div>
-        </div>
 
-        <div class="recent-section" id="recentSection" aria-labelledby="recentHeading">
-          <div class="section-header">
-            <p id="recentHeading" class="section-label">Recent</p>
-            <button class="btn-text" id="clearRecent" type="button">Clear all</button>
-          </div>
-          <div class="recent-grid" id="recentGrid" role="list" aria-label="Recent uploads">
-            <div class="recent-empty" role="status">
-              <div class="empty-icon" aria-hidden="true">📂</div>
-              <p>No recent invoices</p>
-              <span>Upload your first document to get started</span>
+            <div class="file-pill" id="filePill" hidden>
+              <span>📎</span>
+              <span id="fileName">document.pdf</span>
+              <button class="file-pill-remove" id="removeFile">✕</button>
             </div>
           </div>
-        </div>
 
-        <div class="results-section" id="resultsSection" hidden aria-live="polite">
-          <div class="results-header">
-            <div class="results-title">
-              <span class="title-icon" aria-hidden="true">✓</span>
-              <div>
-                <h3>Extraction Complete</h3>
-                <p>Review and verify the extracted data</p>
-              </div>
-            </div>
-            <button id="parseBtn" class="btn-primary" type="button" disabled aria-describedby="parseBtnDesc">
-              <span class="btn-icon" aria-hidden="true">🔍</span>
-              Parse Invoice
+          <!-- Action Buttons -->
+          <div class="action-buttons" id="actionButtons" hidden>
+            <button class="btn btn-primary btn-lg" id="quickOCRBtn">
+              <span>⚡</span>
+              <span>Quick OCR</span>
+            </button>
+            <button class="btn btn-secondary btn-lg" id="dualOCRBtn">
+              <span>🔍</span>
+              <span>Dual OCR</span>
             </button>
           </div>
-          <span id="parseBtnDesc" hidden>Parse extracted text into structured invoice data</span>
-          
-          <div class="results-grid">
-            <div class="result-panel panel-cleaned">
-              <div class="result-header">
-                <div class="result-title">
-                  <span class="title-badge">Cleaned</span>
-                  <span class="title-text">Processed Text</span>
-                </div>
-                <span class="result-status">Used for verification</span>
-              </div>
-              <div class="result-content">
-                <pre id="cleanedText" aria-label="Cleaned OCR text">—</pre>
+        </section>
+
+        <!-- Recent Section -->
+        <section class="section" id="recentSection">
+          <div class="section-header">
+            <span class="section-title">Recent</span>
+            <button class="btn-text" id="clearRecent">Clear all</button>
+          </div>
+
+          <div class="recent-grid" id="recentGrid">
+            <div class="recent-empty">
+              <div class="recent-empty-icon">📂</div>
+              <p>No recent invoices</p>
+              <p style="font-size: var(--text-sm);">Upload your first document</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Results Section -->
+        <section class="results-section" id="resultsSection" hidden>
+          <div class="results-header">
+            <div class="results-title">
+              <div class="results-icon">✓</div>
+              <div>
+                <div class="results-heading">Extraction Complete</div>
+                <div class="results-subheading">Review the extracted data</div>
               </div>
             </div>
-            
-            <div class="result-panel panel-raw collapsible collapsed">
-              <div class="result-header" role="button" tabindex="0" aria-expanded="false" aria-controls="rawTextContent" onclick="this.parentElement.classList.toggle('collapsed'); this.setAttribute('aria-expanded', this.parentElement.classList.contains('collapsed') ? 'false' : 'true')">
-                <div class="result-title">
-                  <span class="title-text">Raw OCR Output</span>
+            <button class="btn btn-primary" id="parseBtn">
+              <span>🔍</span>
+              <span>Parse Invoice</span>
+            </button>
+          </div>
+
+          <div class="panels-grid">
+            <div class="panel panel-highlight">
+              <div class="panel-header panel-header-highlight">
+                <div class="panel-title">
+                  <span class="panel-badge">Cleaned</span>
+                  <span class="panel-label">Processed Text</span>
                 </div>
-                <span class="collapse-hint">Click to expand</span>
-                <span class="collapse-icon" aria-hidden="true">▼</span>
               </div>
-              <div class="result-content" id="rawTextContent">
-                <pre id="rawText" aria-label="Raw OCR text">—</pre>
+              <div class="panel-content">
+                <pre id="cleanedText">—</pre>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-header">
+                <span class="panel-label">Raw OCR Output</span>
+                <span style="color: var(--text-tertiary);">▼</span>
+              </div>
+              <div class="panel-content">
+                <pre id="rawText">—</pre>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
 
       <!-- PARSED PAGE -->
-      <section class="page page-parsed" id="parsedPage" aria-labelledby="parsedHeading">
-        <h2 id="parsedHeading" class="visually-hidden">Parsed Invoice Details</h2>
+      <div class="page" id="parsedPage">
         <div class="parsed-layout">
-          <div class="verification-badge" id="verificationBadge" role="status" aria-live="polite">
-            <div class="badge-visual">
-              <span class="badge-icon" aria-hidden="true">⏳</span>
-            </div>
-            <div class="badge-content">
-              <p class="badge-title">Waiting for verification</p>
-              <p class="badge-subtitle" id="badgeSubtitle">Upload and parse an invoice first</p>
-            </div>
-            <div class="badge-action">
-              <button class="btn-icon-only" id="badgeHelp" type="button" aria-label="Help about verification">?</button>
+
+          <!-- Verification Card -->
+          <div class="verification-card" id="verificationCard">
+            <div class="verification-icon">⏳</div>
+            <div class="verification-content">
+              <div class="verification-title">Waiting for verification</div>
+              <div class="verification-desc">Upload and parse an invoice first</div>
             </div>
           </div>
 
-          <div class="parsed-section">
-            <div class="section-header">
-              <p class="section-label">Extracted Details</p>
-              <span class="edit-hint">Edit only if OCR is incorrect</span>
+          <!-- Form Card -->
+          <div class="form-card">
+            <div class="form-header">
+              <span class="form-title">Extracted Details</span>
+              <span class="form-hint">Edit if OCR is incorrect</span>
             </div>
-            
-            <form class="invoice-form" id="invoiceForm" novalidate>
+
+            <div class="form-fields">
               <div class="form-field">
-                <label for="editMerchant" class="field-label">
-                  <span class="label-icon" aria-hidden="true">🏢</span>
-                  Merchant
+                <label class="form-label">
+                  <span>🏢</span>
+                  <span>Merchant</span>
                 </label>
-                <input type="text" id="editMerchant" class="field-input" placeholder="Not detected" maxlength="100" autocomplete="organization" aria-describedby="merchantHelp" />
-                <span id="merchantHelp" class="field-help" hidden>Invoice issuer name</span>
+                <input type="text" class="form-input" id="editMerchant" placeholder="Not detected">
               </div>
+
               <div class="form-row">
                 <div class="form-field">
-                  <label for="editDate" class="field-label">
-                    <span class="label-icon" aria-hidden="true">📅</span>
-                    Date
+                  <label class="form-label">
+                    <span>📅</span>
+                    <span>Date</span>
                   </label>
-                  <input type="text" id="editDate" class="field-input" placeholder="Not detected" maxlength="50" pattern="^(\\d{1,2}[\\/\\-\\.]\\d{1,2}[\\/\\-\\.]\\d{2,4})|(\\d{4}[\\/\\-\\.]\\d{1,2}[\\/\\-\\.]\\d{1,2})|([A-Za-z]+\\s+\\d{1,2},?\\s+\\d{4})$" aria-describedby="dateHelp" />
-                  <span id="dateHelp" class="field-help" hidden>Invoice date (DD/MM/YYYY or MM/DD/YYYY)</span>
+                  <input type="text" class="form-input" id="editDate" placeholder="Not detected">
                 </div>
                 <div class="form-field">
-                  <label for="editTotal" class="field-label">
-                    <span class="label-icon" aria-hidden="true">💰</span>
-                    Total Amount
+                  <label class="form-label">
+                    <span>💰</span>
+                    <span>Total Amount</span>
                   </label>
-                  <input type="text" id="editTotal" class="field-input" placeholder="Not detected" maxlength="20" pattern="^[\\d,\\.\\s₹RsINR]+$" inputmode="decimal" aria-describedby="totalHelp" />
-                  <span id="totalHelp" class="field-help" hidden>Total amount with currency symbol</span>
+                  <input type="text" class="form-input" id="editTotal" placeholder="Not detected">
                 </div>
               </div>
-            </form>
+            </div>
           </div>
 
-          <div class="items-section" id="itemsSection" hidden>
-            <div class="section-header">
-              <p class="section-label">Line Items</p>
+          <!-- Items Card -->
+          <div class="items-card" id="itemsCard" hidden>
+            <div class="items-header">
+              <span class="form-title">Line Items</span>
               <span class="items-count" id="itemsCount">0 items</span>
             </div>
-            <div class="items-table-wrap">
-              <table class="items-table" id="itemsTable" aria-label="Invoice line items">
+            <div class="table-wrap">
+              <table class="data-table" id="itemsTable">
                 <thead>
                   <tr>
-                    <th scope="col">Item</th>
-                    <th scope="col" class="numeric">Qty</th>
-                    <th scope="col" class="numeric">Rate</th>
-                    <th scope="col" class="numeric">Amount</th>
+                    <th>Item</th>
+                    <th class="numeric">Qty</th>
+                    <th class="numeric">Rate</th>
+                    <th class="numeric">Amount</th>
                   </tr>
                 </thead>
-                <tbody id="itemsTableBody">
-                </tbody>
+                <tbody id="itemsTableBody"></tbody>
               </table>
             </div>
           </div>
 
-          <div class="parsed-actions">
-            <button id="saveBtn" class="btn-primary btn-full" type="button" aria-describedby="saveHint">
-              <span class="btn-icon" aria-hidden="true">💾</span>
-              Save to History
+          <!-- Actions -->
+          <div style="display: flex; gap: var(--space-4); margin-bottom: var(--space-8);">
+            <button class="btn btn-primary" id="saveBtn" style="flex: 1;">
+              <span>💾</span>
+              <span>Save to History</span>
             </button>
-            <p class="save-hint" id="saveHint" role="status" aria-live="polite"></p>
           </div>
 
-          <div class="export-section" aria-labelledby="exportHeading">
-            <div class="section-header">
-              <p id="exportHeading" class="section-label">Export Data</p>
-            </div>
-            <div class="export-grid" role="group" aria-label="Export format options">
-              <button id="exportJSON" class="btn-export" type="button" aria-label="Export as JSON">
-                <span class="export-icon" aria-hidden="true">{ }</span>
-                <span>JSON</span>
-              </button>
-              <button id="exportTXT" class="btn-export" type="button" aria-label="Export as plain text">
-                <span class="export-icon" aria-hidden="true">T</span>
-                <span>TXT</span>
-              </button>
-              <button id="exportCSV" class="btn-export" type="button" aria-label="Export as CSV">
-                <span class="export-icon" aria-hidden="true">▦</span>
-                <span>CSV</span>
-              </button>
-            </div>
-            <div class="export-preview-wrap">
-              <div class="export-preview-header">
-                <span>Preview</span>
-                <button class="btn-copy" id="copyPreview" type="button">Copy</button>
-              </div>
-              <pre class="export-preview" id="jsonPreview" aria-label="Export preview" tabindex="0">// Parsed data will appear here</pre>
-            </div>
-          </div>
         </div>
-      </section>
+      </div>
 
       <!-- HISTORY PAGE -->
-      <section class="page page-history" id="historyPage" aria-labelledby="historyHeading">
-        <div class="history-layout">
-          <div class="history-header">
+      <div class="page" id="historyPage">
+        <section class="section">
+          <div class="section-header">
             <div>
-              <h2 id="historyHeading" class="page-title">History</h2>
-              <p class="page-subtitle">Your saved invoices</p>
+              <h2 style="font-family: var(--font-display); font-size: var(--text-3xl); margin-bottom: var(--space-2);">History</h2>
+              <p style="color: var(--text-secondary);">Your saved invoices</p>
             </div>
-            <div class="history-stats">
-              <div class="stat">
-                <span class="stat-value" id="historyCount">0</span>
-                <span class="stat-label">invoices</span>
+            <div style="text-align: right;">
+              <div style="font-family: var(--font-display); font-size: var(--text-4xl); font-weight: 700; color: var(--accent);" id="historyCount">0</div>
+              <div style="font-size: var(--text-sm); color: var(--text-tertiary);">invoices</div>
+            </div>
+          </div>
+
+          <div style="max-width: 800px; margin: 0 auto;">
+            <div style="position: relative; margin-bottom: var(--space-8);">
+              <span style="position: absolute; left: var(--space-4); top: 50%; transform: translateY(-50%); opacity: 0.5;">🔍</span>
+              <input type="search" class="form-input" id="historySearch" placeholder="Search by merchant, date, or amount..." style="padding-left: var(--space-12);">
+            </div>
+
+            <div class="recent-grid" id="historyList">
+              <div class="recent-empty" style="grid-column: 1 / -1;">
+                <div class="recent-empty-icon">📭</div>
+                <p>No saved invoices yet</p>
+                <p style="font-size: var(--text-sm);">Parsed invoices will appear here</p>
               </div>
             </div>
+
+            <button class="btn btn-danger" id="clearHistoryBtn" style="width: 100%; margin-top: var(--space-8);">
+              <span>🗑</span>
+              <span>Clear All History</span>
+            </button>
           </div>
-          
-          <div class="history-search">
-            <span class="search-icon" aria-hidden="true">🔍</span>
-            <input type="search" id="historySearch" class="search-input" placeholder="Search by merchant, date, or amount..." maxlength="100" aria-label="Search saved invoices" />
-          </div>
-          
-          <ul class="history-list" id="historyPageList" role="list" aria-label="Saved invoices">
-            <li class="history-empty" role="status">
-              <div class="empty-icon" aria-hidden="true">📭</div>
-              <p>No saved invoices yet</p>
-              <span>Parsed invoices will appear here</span>
-            </li>
-          </ul>
-          
-          <button id="clearHistoryBtn" class="btn-danger btn-full" type="button" aria-describedby="clearWarning">
-            <span class="btn-icon" aria-hidden="true">🗑</span>
-            Clear All History
-          </button>
-          <span id="clearWarning" class="visually-hidden">This action cannot be undone</span>
-        </div>
-      </section>
+        </section>
+      </div>
 
       <!-- SETTINGS PAGE -->
-      <section class="page page-settings" id="settingsPage" aria-labelledby="settingsHeading">
-        <div class="settings-layout">
-          <div class="settings-header">
-            <h2 id="settingsHeading" class="page-title">Settings</h2>
-            <p class="page-subtitle">Customize your experience</p>
-          </div>
+      <div class="page" id="settingsPage">
+        <section class="section">
+          <div style="max-width: 600px; margin: 0 auto;">
+            <h2 style="font-family: var(--font-display); font-size: var(--text-3xl); margin-bottom: var(--space-2);">Settings</h2>
+            <p style="color: var(--text-secondary); margin-bottom: var(--space-12);">Customize your experience</p>
 
-          <div class="settings-card">
-            <div class="card-header">
-              <span class="card-icon" aria-hidden="true">🎨</span>
-              <div>
-                <p class="card-title">Appearance</p>
-                <p class="card-desc">Choose your preferred theme</p>
+            <!-- Theme Card -->
+            <div class="form-card">
+              <div class="form-header">
+                <span class="form-title">Appearance</span>
               </div>
-            </div>
-            <div class="theme-grid" role="radiogroup" aria-label="Theme selection">
-              <label class="theme-option">
-                <input type="radio" name="theme" value="carbon" checked aria-label="Carbon theme, deep charcoal">
-                <div class="theme-preview">
-                  <div class="theme-swatch" style="background: #0a0a0b;">
-                    <div class="swatch-accent" style="background: #6366f1;"></div>
-                  </div>
-                  <span class="theme-name">Carbon</span>
-                  <span class="theme-desc">Deep charcoal</span>
-                </div>
-              </label>
-              <label class="theme-option">
-                <input type="radio" name="theme" value="midnight" aria-label="Midnight theme, navy blue">
-                <div class="theme-preview">
-                  <div class="theme-swatch" style="background: #050814;">
-                    <div class="swatch-accent" style="background: #3b82f6;"></div>
-                  </div>
-                  <span class="theme-name">Midnight</span>
-                  <span class="theme-desc">Navy blue</span>
-                </div>
-              </label>
-              <label class="theme-option">
-                <input type="radio" name="theme" value="forest" aria-label="Forest theme, deep emerald">
-                <div class="theme-preview">
-                  <div class="theme-swatch" style="background: #05140f;">
-                    <div class="swatch-accent" style="background: #10b981;"></div>
-                  </div>
-                  <span class="theme-name">Forest</span>
-                  <span class="theme-desc">Deep emerald</span>
-                </div>
-              </label>
-              <label class="theme-option">
-                <input type="radio" name="theme" value="ivory" aria-label="Ivory theme, warm light">
-                <div class="theme-preview">
-                  <div class="theme-swatch" style="background: #fafaf9; border: 1px solid #e5e5e5;">
-                    <div class="swatch-accent" style="background: #ea580c;"></div>
-                  </div>
-                  <span class="theme-name">Ivory</span>
-                  <span class="theme-desc">Warm light</span>
-                </div>
-              </label>
-              <label class="theme-option">
-                <input type="radio" name="theme" value="rose" aria-label="Rose theme, soft pink">
-                <div class="theme-preview">
-                  <div class="theme-swatch" style="background: #fdf2f8;">
-                    <div class="swatch-accent" style="background: #ec4899;"></div>
-                  </div>
-                  <span class="theme-name">Rose</span>
-                  <span class="theme-desc">Soft pink</span>
-                </div>
-              </label>
-              <label class="theme-option">
-                <input type="radio" name="theme" value="cyber" aria-label="Cyber theme, neon green">
-                <div class="theme-preview">
-                  <div class="theme-swatch" style="background: #030305;">
-                    <div class="swatch-accent" style="background: #00ff88;"></div>
-                  </div>
-                  <span class="theme-name">Cyber</span>
-                  <span class="theme-desc">Neon green</span>
-                </div>
-              </label>
-            </div>
-          </div>
 
-          <div class="settings-card">
-            <div class="card-header">
-              <span class="card-icon" aria-hidden="true">⚙️</span>
-              <div>
-                <p class="card-title">OCR Engine</p>
-                <p class="card-desc">Balance speed and accuracy</p>
-              </div>
-            </div>
-            <div class="setting-control">
-              <div class="range-labels">
-                <span>Fast</span>
-                <span>Balanced</span>
-                <span>Accurate</span>
-              </div>
-              <input type="range" class="range-slider" min="1" max="3" value="2" aria-label="OCR accuracy vs speed balance" aria-valuemin="1" aria-valuemax="3" aria-valuenow="2" />
-            </div>
-          </div>
+              <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-4);">
+                <label style="cursor: pointer;">
+                  <input type="radio" name="theme" value="carbon" checked style="position: absolute; opacity: 0;">
+                  <div style="padding: var(--space-4); background: var(--bg-primary); border: 2px solid var(--accent); border-radius: var(--radius-lg); text-align: center;">
+                    <div style="width: 100%; height: 60px; background: #0a0a0b; border-radius: var(--radius-md); margin-bottom: var(--space-3); position: relative;">
+                      <div style="position: absolute; bottom: 8px; right: 8px; width: 20px; height: 20px; background: #6366f1; border-radius: var(--radius-full); border: 2px solid white;"></div>
+                    </div>
+                    <div style="font-weight: 600;">Carbon</div>
+                  </div>
+                </label>
 
-          <div class="settings-card">
-            <div class="card-header">
-              <span class="card-icon" aria-hidden="true">🔒</span>
-              <div>
-                <p class="card-title">Privacy</p>
-                <p class="card-desc">Your data stays local</p>
-              </div>
-            </div>
-            <div class="privacy-info">
-              <div class="privacy-item">
-                <span class="privacy-check" aria-hidden="true">✓</span>
-                <span>All processing happens in your browser</span>
-              </div>
-              <div class="privacy-item">
-                <span class="privacy-check" aria-hidden="true">✓</span>
-                <span>No data sent to external servers</span>
-              </div>
-              <div class="privacy-item">
-                <span class="privacy-check" aria-hidden="true">✓</span>
-                <span>IndexedDB storage only</span>
-              </div>
-            </div>
-            <div class="storage-info">
-              <div class="storage-bar" role="progressbar" aria-valuenow="15" aria-valuemin="0" aria-valuemax="100">
-                <div class="storage-used" style="width: 15%;"></div>
-              </div>
-              <div class="storage-text">
-                <span>~2.4 MB used</span>
-                <span>Unlimited</span>
+                <label style="cursor: pointer;">
+                  <input type="radio" name="theme" value="midnight" style="position: absolute; opacity: 0;">
+                  <div style="padding: var(--space-4); background: var(--bg-primary); border: 2px solid var(--border); border-radius: var(--radius-lg); text-align: center;">
+                    <div style="width: 100%; height: 60px; background: #020617; border-radius: var(--radius-md); margin-bottom: var(--space-3); position: relative;">
+                      <div style="position: absolute; bottom: 8px; right: 8px; width: 20px; height: 20px; background: #3b82f6; border-radius: var(--radius-full); border: 2px solid white;"></div>
+                    </div>
+                    <div style="font-weight: 600;">Midnight</div>
+                  </div>
+                </label>
+
+                <label style="cursor: pointer;">
+                  <input type="radio" name="theme" value="forest" style="position: absolute; opacity: 0;">
+                  <div style="padding: var(--space-4); background: var(--bg-primary); border: 2px solid var(--border); border-radius: var(--radius-lg); text-align: center;">
+                    <div style="width: 100%; height: 60px; background: #022c22; border-radius: var(--radius-md); margin-bottom: var(--space-3); position: relative;">
+                      <div style="position: absolute; bottom: 8px; right: 8px; width: 20px; height: 20px; background: #10b981; border-radius: var(--radius-full); border: 2px solid white;"></div>
+                    </div>
+                    <div style="font-weight: 600;">Forest</div>
+                  </div>
+                </label>
+
+                <label style="cursor: pointer;">
+                  <input type="radio" name="theme" value="ivory" style="position: absolute; opacity: 0;">
+                  <div style="padding: var(--space-4); background: var(--bg-primary); border: 2px solid var(--border); border-radius: var(--radius-lg); text-align: center;">
+                    <div style="width: 100%; height: 60px; background: #fafaf9; border-radius: var(--radius-md); margin-bottom: var(--space-3); position: relative;">
+                      <div style="position: absolute; bottom: 8px; right: 8px; width: 20px; height: 20px; background: #ea580c; border-radius: var(--radius-full); border: 2px solid white;"></div>
+                    </div>
+                    <div style="font-weight: 600;">Ivory</div>
+                  </div>
+                </label>
+
+                <label style="cursor: pointer;">
+                  <input type="radio" name="theme" value="rose" style="position: absolute; opacity: 0;">
+                  <div style="padding: var(--space-4); background: var(--bg-primary); border: 2px solid var(--border); border-radius: var(--radius-lg); text-align: center;">
+                    <div style="width: 100%; height: 60px; background: #fff1f2; border-radius: var(--radius-md); margin-bottom: var(--space-3); position: relative;">
+                      <div style="position: absolute; bottom: 8px; right: 8px; width: 20px; height: 20px; background: #ec4899; border-radius: var(--radius-full); border: 2px solid white;"></div>
+                    </div>
+                    <div style="font-weight: 600;">Rose</div>
+                  </div>
+                </label>
+
+                <label style="cursor: pointer;">
+                  <input type="radio" name="theme" value="cyber" style="position: absolute; opacity: 0;">
+                  <div style="padding: var(--space-4); background: var(--bg-primary); border: 2px solid var(--border); border-radius: var(--radius-lg); text-align: center;">
+                    <div style="width: 100%; height: 60px; background: #000000; border-radius: var(--radius-md); margin-bottom: var(--space-3); position: relative;">
+                      <div style="position: absolute; bottom: 8px; right: 8px; width: 20px; height: 20px; background: #00ff41; border-radius: var(--radius-full); border: 2px solid white;"></div>
+                    </div>
+                    <div style="font-weight: 600;">Cyber</div>
+                  </div>
+                </label>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
 
       <!-- ABOUT PAGE -->
-      <section class="page page-about" id="aboutPage" aria-labelledby="aboutHeading">
-        <div class="about-layout">
-          <div class="about-hero">
-            <div class="hero-logo" aria-hidden="true">
-              <span>◆</span>
-            </div>
-            <h1 id="aboutHeading" class="hero-title">ANJ</h1>
-            <p class="hero-version">Version 2.1.0</p>
-            <p class="hero-tagline">Precision invoice verification for professionals who demand accuracy</p>
+      <div class="page" id="aboutPage">
+        <section class="hero-section" style="min-height: 60vh;">
+          <div style="width: 100px; height: 100px; background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%); border-radius: var(--radius-2xl); display: flex; align-items: center; justify-content: center; font-size: var(--text-5xl); margin-bottom: var(--space-8); box-shadow: 0 0 60px var(--accent-glow); animation: float 4s ease-in-out infinite;">
+            ◆
           </div>
+          <h1 class="hero-title" style="margin-bottom: var(--space-4);">ANJ</h1>
+          <p style="color: var(--accent); font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: var(--space-6);">Version 2.1.0</p>
+          <p class="hero-subtitle">Precision invoice verification for professionals who demand accuracy</p>
+        </section>
 
-          <div class="about-stats">
-            <div class="stat-card">
-              <span class="stat-number">50+</span>
-              <span class="stat-label">Currency formats</span>
-            </div>
-            <div class="stat-card">
-              <span class="stat-number">0</span>
-              <span class="stat-label">Data leaves device</span>
-            </div>
-            <div class="stat-card">
-              <span class="stat-number">2×</span>
-              <span class="stat-label">OCR engines</span>
-            </div>
-            <div class="stat-card">
-              <span class="stat-number">100%</span>
-              <span class="stat-label">Private</span>
+        <section class="section">
+          <div style="max-width: 1000px; margin: 0 auto;">
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-6); margin-bottom: var(--space-16);">
+              <div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-2xl); padding: var(--space-10); text-align: center;">
+                <div style="font-family: var(--font-display); font-size: var(--text-5xl); font-weight: 700; color: var(--accent); margin-bottom: var(--space-2);">50+</div>
+                <div style="color: var(--text-secondary);">Currency formats</div>
+              </div>
+              <div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-2xl); padding: var(--space-10); text-align: center;">
+                <div style="font-family: var(--font-display); font-size: var(--text-5xl); font-weight: 700; color: var(--accent); margin-bottom: var(--space-2);">0</div>
+                <div style="color: var(--text-secondary);">Data leaves device</div>
+              </div>
+              <div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-2xl); padding: var(--space-10); text-align: center;">
+                <div style="font-family: var(--font-display); font-size: var(--text-5xl); font-weight: 700; color: var(--accent); margin-bottom:  var(--space-2);">50+</div>
+                <div style="color: var(--text-secondary);">Currency formats</div>
+              </div>
+              <div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-2xl); padding: var(--space-10); text-align: center;">
+                <div style="font-family: var(--font-display); font-size: var(--text-5xl); font-weight: 700; color: var(--accent); margin-bottom: var(--space-2);">0</div>
+                <div style="color: var(--text-secondary);">Data leaves device</div>
+              </div>
+              <div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-2xl); padding: var(--space-10); text-align: center;">
+                <div style="font-family: var(--font-display); font-size: var(--text-5xl); font-weight: 700; color: var(--accent); margin-bottom: var(--space-2);">2×</div>
+                <div style="color: var(--text-secondary);">OCR engines</div>
+              </div>
+              <div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-2xl); padding: var(--space-10); text-align: center;">
+                <div style="font-family: var(--font-display); font-size: var(--text-5xl); font-weight: 700; color: var(--accent); margin-bottom: var(--space-2);">100%</div>
+                <div style="color: var(--text-secondary);">Private</div>
+              </div>
             </div>
           </div>
+        </section>
+      </div>
 
-          <div class="about-features">
-            <div class="feature-card">
-              <div class="feature-icon" aria-hidden="true">🔍</div>
-              <h3>Dual-Engine OCR</h3>
-              <p>Tesseract.js + PDF.js working together for maximum extraction accuracy on any document type.</p>
-            </div>
-            <div class="feature-card">
-              <div class="feature-icon" aria-hidden="true">✓</div>
-              <h3>Deterministic Verification</h3>
-              <p>No guessing. Line items are explicitly matched against declared totals with mathematical precision.</p>
-            </div>
-            <div class="feature-card">
-              <div class="feature-icon" aria-hidden="true">🔒</div>
-              <h3>Bank-Level Privacy</h3>
-              <p>All processing happens locally in your browser. No cloud, no servers, no data leaks possible.</p>
-            </div>
-            <div class="feature-card">
-              <div class="feature-icon" aria-hidden="true">📱</div>
-              <h3>Works Everywhere</h3>
-              <p>Progressive web app works on any device. Install on mobile or desktop, works offline too.</p>
-            </div>
-          </div>
-
-          <div class="about-tech">
-            <p class="tech-title">Built with modern web technologies</p>
-            <div class="tech-stack">
-              <span class="tech-badge">Tesseract.js</span>
-              <span class="tech-badge">PDF.js</span>
-              <span class="tech-badge">IndexedDB</span>
-              <span class="tech-badge">Web Workers</span>
-              <span class="tech-badge">PWA</span>
-            </div>
-          </div>
-
-          <div class="about-cta">
-            <a href="#" class="btn-primary" role="button">
-              <span class="btn-icon" aria-hidden="true">⭐</span>
-              Star on GitHub
-            </a>
-            <a href="#" class="btn-secondary" role="button">
-              <span class="btn-icon" aria-hidden="true">🐛</span>
-              Report Issue
-            </a>
-          </div>
-
-          <div class="about-footer">
-            <p>Created by a solo developer obsessed with accuracy.</p>
-            <p class="copyright">© 2024 ANJ. All processing local.</p>
-          </div>
-        </div>
-      </section>
     </div>
   </main>
+  </div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay" hidden>
+  <div class="spinner"></div>
+  <div class="loading-text" id="loadingText">Processing...</div>
 </div>
 
-<!-- Production Scripts -->
+<!-- Login Modal -->
+<div class="modal-overlay" id="loginModal" hidden>
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Sign In</span>
+      <button class="modal-close" id="closeLogin">✕</button>
+    </div>
+    <div class="modal-body">
+      <form id="loginForm">
+        <div class="form-field" style="margin-bottom: var(--space-6);">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-input" placeholder="you@company.com" required>
+        </div>
+        <div class="form-field" style="margin-bottom: var(--space-6);">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-input" placeholder="you@company.com" required>
+        </div>
+        <div class="form-field" style="margin-bottom: var(--space-6);">
+          <label class="form-label">Password</label>
+          <input type="password" class="form-input" placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Sign In</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Scripts -->
 <script src="config.js"></script>
-<script src="pdf.min.js"></script>
-<script src="tesseract.min.js"></script>
-<script type="module" src="./script.js"></script>
+<script type="module" src="script.js"></script>
 </body>
-</html>'''
+</html>
