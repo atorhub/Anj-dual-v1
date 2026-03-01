@@ -10,9 +10,22 @@
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <link rel="stylesheet" href="style.css">
-<base target="_blank">
+  <base target="_blank">
 </head>
 <body class="theme-carbon">
+
+<!-- Error Boundary (Hidden by default) -->
+<div id="errorBoundary" class="loading-overlay" hidden style="z-index: 2000;">
+  <div style="text-align: center; max-width: 400px; padding: var(--space-8);">
+    <div style="font-size: var(--text-6xl); margin-bottom: var(--space-4);">⚠️</div>
+    <h2 style="margin-bottom: var(--space-4);">Something went wrong</h2>
+    <p id="errorMessage" style="color: var(--text-secondary); margin-bottom: var(--space-6);">An unexpected error occurred.</p>
+    <div style="display: flex; gap: var(--space-4); justify-content: center;">
+      <button id="retryOperation" class="btn btn-primary">Retry</button>
+      <button id="dismissError" class="btn btn-secondary">Dismiss</button>
+    </div>
+  </div>
+</div>
 
 <!-- Ambient Background -->
 <div class="ambient-bg"></div>
@@ -31,10 +44,10 @@
     </div>
 
     <div class="user-card" id="userCard">
-      <div class="user-avatar">G</div>
+      <div class="user-avatar" id="userIdDisplay">G</div>
       <div class="user-info">
         <div class="user-name">Guest</div>
-        <div class="user-role">Not signed in</div>
+        <div class="user-role" id="userRole">Not signed in</div>
       </div>
     </div>
 
@@ -48,7 +61,7 @@
         <div class="nav-item" data-page="parsed">
           <span class="nav-icon">📄</span>
           <span>Parsed</span>
-          <span class="nav-badge" id="parsedBadge">0</span>
+          <span class="nav-badge" id="parsedBadge" style="display: none;">0</span>
         </div>
         <div class="nav-item" data-page="history">
           <span class="nav-icon">🕘</span>
@@ -92,7 +105,7 @@
       <div class="topbar-right">
         <span class="status-pill">
           <span class="status-dot"></span>
-          <span id="statusText">Ready</span>
+          <span id="statusBar">Ready ✓</span>
         </span>
       </div>
     </header>
@@ -101,7 +114,7 @@
     <div class="pages">
 
       <!-- UPLOAD PAGE -->
-      <div class="page active" id="uploadPage">
+      <div class="page active page-upload" id="uploadPage">
 
         <!-- Hero Section -->
         <section class="hero-section">
@@ -121,7 +134,7 @@
 
           <!-- Upload Zone -->
           <div class="upload-zone-container">
-            <div class="upload-zone" id="uploadZone">
+            <div class="upload-zone" id="uploadCard">
               <input type="file" class="upload-zone-input" id="fileInput" accept=".pdf,.jpg,.jpeg,.png,.webp">
               <div class="upload-zone-content">
                 <div class="upload-icon-large">📄</div>
@@ -130,21 +143,21 @@
               </div>
             </div>
 
-            <div class="file-pill" id="filePill" hidden>
+            <div class="file-pill" id="filenamePill" hidden>
               <span>📎</span>
-              <span id="fileName">document.pdf</span>
-              <button class="file-pill-remove" id="removeFile">✕</button>
+              <span id="filenameText">document.pdf</span>
+              <button class="file-pill-remove" id="clearFile">✕</button>
             </div>
           </div>
 
           <!-- Action Buttons -->
-          <div class="action-buttons" id="actionButtons" hidden>
+          <div class="action-buttons" id="ocrActions" hidden>
             <button class="btn btn-primary btn-lg" id="quickOCRBtn">
-              <span>⚡</span>
+              <span class="btn-icon">⚡</span>
               <span>Quick OCR</span>
             </button>
             <button class="btn btn-secondary btn-lg" id="dualOCRBtn">
-              <span>🔍</span>
+              <span class="btn-icon">🔍</span>
               <span>Dual OCR</span>
             </button>
           </div>
@@ -176,7 +189,7 @@
                 <div class="results-subheading">Review the extracted data</div>
               </div>
             </div>
-            <button class="btn btn-primary" id="parseBtn">
+            <button class="btn btn-primary" id="parseBtn" disabled>
               <span>🔍</span>
               <span>Parse Invoice</span>
             </button>
@@ -209,15 +222,15 @@
       </div>
 
       <!-- PARSED PAGE -->
-      <div class="page" id="parsedPage">
+      <div class="page page-parsed" id="parsedPage">
         <div class="parsed-layout">
 
           <!-- Verification Card -->
-          <div class="verification-card" id="verificationCard">
+          <div class="verification-card" id="verificationBadge">
             <div class="verification-icon">⏳</div>
             <div class="verification-content">
-              <div class="verification-title">Waiting for verification</div>
-              <div class="verification-desc">Upload and parse an invoice first</div>
+              <div class="badge-title verification-title">Waiting for verification</div>
+              <div class="verification-desc" id="badgeSubtitle">Upload and parse an invoice first</div>
             </div>
           </div>
 
@@ -234,7 +247,7 @@
                   <span>🏢</span>
                   <span>Merchant</span>
                 </label>
-                <input type="text" class="form-input" id="editMerchant" placeholder="Not detected">
+                <input type="text" class="form-input" id="editMerchant" placeholder="Not detected" disabled>
               </div>
 
               <div class="form-row">
@@ -243,21 +256,21 @@
                     <span>📅</span>
                     <span>Date</span>
                   </label>
-                  <input type="text" class="form-input" id="editDate" placeholder="Not detected">
+                  <input type="text" class="form-input" id="editDate" placeholder="Not detected" disabled>
                 </div>
                 <div class="form-field">
                   <label class="form-label">
                     <span>💰</span>
                     <span>Total Amount</span>
                   </label>
-                  <input type="text" class="form-input" id="editTotal" placeholder="Not detected">
+                  <input type="text" class="form-input" id="editTotal" placeholder="Not detected" disabled>
                 </div>
               </div>
             </div>
           </div>
 
           <!-- Items Card -->
-          <div class="items-card" id="itemsCard" hidden>
+          <div class="items-card" id="itemsSection" hidden>
             <div class="items-header">
               <span class="form-title">Line Items</span>
               <span class="items-count" id="itemsCount">0 items</span>
@@ -277,11 +290,39 @@
             </div>
           </div>
 
+          <!-- JSON Preview Panel -->
+          <div class="panel" style="margin-bottom: var(--space-8);">
+            <div class="panel-header">
+              <span class="panel-label">JSON Preview</span>
+              <button class="btn-text" id="copyPreview">Copy</button>
+            </div>
+            <div class="panel-content">
+              <pre id="jsonPreview">// Parse an invoice to see JSON output</pre>
+            </div>
+          </div>
+
           <!-- Actions -->
-          <div style="display: flex; gap: var(--space-4); margin-bottom: var(--space-8);">
-            <button class="btn btn-primary" id="saveBtn" style="flex: 1;">
+          <div style="display: flex; gap: var(--space-4); margin-bottom: var(--space-4);">
+            <button class="btn btn-primary" id="saveBtn" disabled style="flex: 1;">
               <span>💾</span>
               <span>Save to History</span>
+            </button>
+          </div>
+          <div id="saveHint" style="text-align: center; color: var(--accent); font-size: var(--text-sm); min-height: 20px;"></div>
+
+          <!-- Export Buttons -->
+          <div style="display: flex; gap: var(--space-4); margin-top: var(--space-8);">
+            <button class="btn btn-secondary" id="exportJSON" disabled style="flex: 1;">
+              <span>📤</span>
+              <span>Export JSON</span>
+            </button>
+            <button class="btn btn-secondary" id="exportTXT" disabled style="flex: 1;">
+              <span>📄</span>
+              <span>Export TXT</span>
+            </button>
+            <button class="btn btn-secondary" id="exportCSV" disabled style="flex: 1;">
+              <span>📊</span>
+              <span>Export CSV</span>
             </button>
           </div>
 
@@ -289,7 +330,7 @@
       </div>
 
       <!-- HISTORY PAGE -->
-      <div class="page" id="historyPage">
+      <div class="page page-history" id="historyPage">
         <section class="section">
           <div class="section-header">
             <div>
@@ -308,15 +349,15 @@
               <input type="search" class="form-input" id="historySearch" placeholder="Search by merchant, date, or amount..." style="padding-left: var(--space-12);">
             </div>
 
-            <div class="recent-grid" id="historyList">
-              <div class="recent-empty" style="grid-column: 1 / -1;">
+            <ul class="recent-grid" id="historyPageList" style="list-style: none;">
+              <li class="recent-empty" style="grid-column: 1 / -1;">
                 <div class="recent-empty-icon">📭</div>
                 <p>No saved invoices yet</p>
                 <p style="font-size: var(--text-sm);">Parsed invoices will appear here</p>
-              </div>
-            </div>
+              </li>
+            </ul>
 
-            <button class="btn btn-danger" id="clearHistoryBtn" style="width: 100%; margin-top: var(--space-8);">
+            <button class="btn btn-secondary" id="clearHistoryBtn" style="width: 100%; margin-top: var(--space-8); color: #ef4444; border-color: #ef4444;">
               <span>🗑</span>
               <span>Clear All History</span>
             </button>
@@ -325,7 +366,7 @@
       </div>
 
       <!-- SETTINGS PAGE -->
-      <div class="page" id="settingsPage">
+      <div class="page page-settings" id="settingsPage">
         <section class="section">
           <div style="max-width: 600px; margin: 0 auto;">
             <h2 style="font-family: var(--font-display); font-size: var(--text-3xl); margin-bottom: var(--space-2);">Settings</h2>
@@ -404,7 +445,7 @@
       </div>
 
       <!-- ABOUT PAGE -->
-      <div class="page" id="aboutPage">
+      <div class="page page-about" id="aboutPage">
         <section class="hero-section" style="min-height: 60vh;">
           <div style="width: 100px; height: 100px; background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%); border-radius: var(--radius-2xl); display: flex; align-items: center; justify-content: center; font-size: var(--text-5xl); margin-bottom: var(--space-8); box-shadow: 0 0 60px var(--accent-glow); animation: float 4s ease-in-out infinite;">
             ◆
@@ -426,14 +467,6 @@
                 <div style="color: var(--text-secondary);">Data leaves device</div>
               </div>
               <div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-2xl); padding: var(--space-10); text-align: center;">
-                <div style="font-family: var(--font-display); font-size: var(--text-5xl); font-weight: 700; color: var(--accent); margin-bottom: var(--accent); margin-bottom: var(--space-2);">50+</div>
-                <div style="color: var(--text-secondary);">Currency formats</div>
-              </div>
-              <div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-2xl); padding: var(--space-10); text-align: center;">
-                <div style="font-family: var(--font-display); font-size: var(--text-5xl); font-weight: 700; color: var(--accent); margin-bottom: var(--space-2);">0</div>
-                <div style="color: var(--text-secondary);">Data leaves device</div>
-                </div>
-              <div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-2xl); padding: var(--space-10); text-align: center;">
                 <div style="font-family: var(--font-display); font-size: var(--text-5xl); font-weight: 700; color: var(--accent); margin-bottom: var(--space-2);">2×</div>
                 <div style="color: var(--text-secondary);">OCR engines</div>
               </div>
@@ -448,12 +481,13 @@
 
     </div>
   </main>
-  </div>
+</div>
 
 <!-- Loading Overlay -->
 <div class="loading-overlay" id="loadingOverlay" hidden>
   <div class="spinner"></div>
   <div class="loading-text" id="loadingText">Processing...</div>
+  <button class="btn btn-secondary" id="cancelOperation" style="margin-top: var(--space-6);">Cancel</button>
 </div>
 
 <!-- Login Modal -->
@@ -484,4 +518,3 @@
 <script type="module" src="script.js"></script>
 </body>
 </html>
-  
