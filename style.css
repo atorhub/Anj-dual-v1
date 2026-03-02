@@ -289,6 +289,52 @@ body {
   color: var(--text-primary);
   transform: rotate(90deg);
 }
+/* === FIXED SIDEBAR TOGGLE STYLES === */
+
+/* Mobile: sidebar hidden by default */
+@media (max-width: 1023px) {
+  .sidebar {
+    transform: translateX(-100%);
+  }
+  
+  body.sidebar-hidden .sidebar {
+    transform: translateX(-100%);
+  }
+  
+  body:not(.sidebar-hidden) .sidebar {
+    transform: translateX(0);
+  }
+}
+
+/* Desktop: sidebar always visible */
+@media (min-width: 1024px) {
+  .sidebar {
+    transform: translateX(0) !important;
+    position: sticky;
+  }
+  
+  body.sidebar-hidden .sidebar {
+    transform: translateX(-100%) !important;
+  }
+}
+
+/* Backdrop when sidebar is open on mobile */
+@media (max-width: 1023px) {
+  body:not(.sidebar-hidden)::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 99;
+    opacity: 1;
+    transition: opacity 300ms;
+  }
+  
+  body.sidebar-hidden::before {
+    opacity: 0;
+    pointer-events: none;
+  }
+    }
 
 /* User Profile Card */
 
